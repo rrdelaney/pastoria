@@ -7,6 +7,7 @@
     "check:format": "prettier --check ."
   },
   "devDependencies": {
+    "@changesets/cli": "^2.29.7",
     "prettier": "^3.4.2",
     "prettier-plugin-tailwindcss": "^0.6.9"
   },
