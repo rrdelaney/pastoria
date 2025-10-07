@@ -1,5 +1,5 @@
 {
-  "name": "pastoria",
+  "name": "pastoria-monorepo",
   "private": true,
   "scripts": {
     "check:types": "pnpm -r --parallel check:types",

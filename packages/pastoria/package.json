@@ -2,6 +2,7 @@
   "name": "pastoria",
   "version": "0.0.1",
   "description": "Pastoria Development CLI",
+  "license": "MIT",
   "type": "module",
   "bin": {
     "pastoria": "src/index.mts"

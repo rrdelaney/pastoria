@@ -6,7 +6,7 @@
     "pastoria-server": "src/index.mts"
   },
   "author": "",
-  "license": "ISC",
+  "license": "MIT",
   "type": "module",
   "scripts": {
     "check:types": "tsc --noEmit"
