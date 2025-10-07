@@ -1,0 +1,13 @@
+{
+  "name": "pastoria",
+  "private": true,
+  "scripts": {
+    "check:types": "pnpm -r --parallel check:types",
+    "format": "prettier --write .",
+    "check:format": "prettier --check ."
+  },
+  "devDependencies": {
+    "prettier": "^3.4.2",
+    "prettier-plugin-tailwindcss": "^0.6.9"
+  }
+}
