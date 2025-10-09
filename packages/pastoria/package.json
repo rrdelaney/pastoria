@@ -1,6 +1,6 @@
 {
   "name": "pastoria",
-  "version": "1.0.4",
+  "version": "1.0.5",
   "description": "Pastoria Development CLI",
   "license": "MIT",
   "type": "module",
@@ -29,7 +29,12 @@
     "@types/cookie-parser": "catalog:",
     "@types/express": "catalog:",
     "@types/node": "catalog:",
+    "@types/react": "catalog:",
+    "@types/react-dom": "catalog:",
+    "@types/react-relay": "catalog:",
     "pastoria-runtime": "workspace:*",
-    "typescript": "catalog:"
+    "typescript": "catalog:",
+    "radix3": "^1.1.2",
+    "zod": "^3.25.76"
   }
 }

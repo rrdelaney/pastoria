@@ -1,5 +1,11 @@
 # pastoria
 
+## 1.0.5
+
+### Patch Changes
+
+- Add pastoria-runtime to `noExternal`
+
 ## 1.0.4
 
 ### Patch Changes
