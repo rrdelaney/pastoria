@@ -19,8 +19,8 @@ import {
   AnyPreloadedQuery,
   EnvironmentProvider,
   RouterOps,
-} from '../relay_client_environment';
-import {createServerEnvironment} from './relay_server_environment';
+} from '../relay_client_environment.js';
+import {createServerEnvironment} from './relay_server_environment.js';
 
 type SrcOfModuleId = (id: string) => string | null;
 type AppComponent = ComponentType<PropsWithChildren<{}>>;

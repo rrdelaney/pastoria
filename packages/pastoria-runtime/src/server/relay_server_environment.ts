@@ -4,7 +4,7 @@ import {Environment, Network, RecordSource, Store} from 'relay-runtime';
 import {
   EnvironmentProvider,
   RelayResolverContext,
-} from '../relay_client_environment';
+} from '../relay_client_environment.js';
 
 export function createServerEnvironment(
   req: Request,

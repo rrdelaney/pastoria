@@ -5,4 +5,4 @@ export {
   relayClientEnvironment,
   RelayResolverContext,
   RouterOps,
-} from './relay_client_environment';
+} from './relay_client_environment.js';
