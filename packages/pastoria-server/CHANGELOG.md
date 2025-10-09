@@ -1,5 +1,11 @@
 # pastoria-server
 
+## 1.0.3
+
+### Patch Changes
+
+- Fix package.json bin config
+
 ## 1.0.2
 
 ### Patch Changes

@@ -1,13 +1,13 @@
 {
   "name": "pastoria",
-  "version": "1.0.2",
+  "version": "1.0.3",
   "description": "Pastoria Development CLI",
   "license": "MIT",
   "type": "module",
   "main": "./dist/index.js",
   "types": "./dist/index.d.ts",
   "bin": {
-    "pastoria": "dist/index.js"
+    "pastoria": "./dist/index.js"
   },
   "scripts": {
     "build": "tsc",
