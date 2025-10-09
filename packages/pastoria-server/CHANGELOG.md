@@ -1,5 +1,11 @@
 # pastoria-server
 
+## 1.0.4
+
+### Patch Changes
+
+- Update tsconfig to target nodenext modules
+
 ## 1.0.3
 
 ### Patch Changes

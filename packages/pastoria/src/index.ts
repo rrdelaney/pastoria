@@ -3,9 +3,9 @@
 import {program} from 'commander';
 import {readFile} from 'node:fs/promises';
 import * as path from 'node:path';
-import {createBuild} from './build';
-import {startDevserver} from './devserver';
-import {generatePastoriaArtifacts} from './generate';
+import {createBuild} from './build.js';
+import {startDevserver} from './devserver.js';
+import {generatePastoriaArtifacts} from './generate.js';
 
 async function main() {
   const packageData = JSON.parse(

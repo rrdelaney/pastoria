@@ -4,7 +4,7 @@ import express from 'express';
 import {readFile} from 'node:fs/promises';
 import pc from 'picocolors';
 import {createServer as createViteServer, type Manifest} from 'vite';
-import {CLIENT_BUILD, createBuildConfig} from './build';
+import {CLIENT_BUILD, createBuildConfig} from './build.js';
 
 interface PersistedQueries {
   [hash: string]: string;
