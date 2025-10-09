@@ -4,6 +4,66 @@ settings:
   autoInstallPeers: true
   excludeLinksFromLockfile: false
 
+catalogs:
+  default:
+    '@types/cookie-parser':
+      specifier: ^1.4.9
+      version: 1.4.9
+    '@types/express':
+      specifier: ^5.0.3
+      version: 5.0.3
+    '@types/node':
+      specifier: ^22.12.0
+      version: 22.18.8
+    '@types/react':
+      specifier: ^19.1.2
+      version: 19.2.1
+    '@types/react-dom':
+      specifier: ^19.1.3
+      version: 19.2.0
+    '@types/react-relay':
+      specifier: ^18.2.1
+      version: 18.2.1
+    '@types/relay-runtime':
+      specifier: ^19.0.2
+      version: 19.0.3
+    commander:
+      specifier: ^14.0.1
+      version: 14.0.1
+    cookie-parser:
+      specifier: ^1.4.7
+      version: 1.4.7
+    dotenv:
+      specifier: ^16.6.1
+      version: 16.6.1
+    express:
+      specifier: ^5.1.0
+      version: 5.1.0
+    graphql:
+      specifier: ^16.8.1
+      version: 16.11.0
+    picocolors:
+      specifier: ^1.1.1
+      version: 1.1.1
+    react:
+      specifier: ^19.1.0
+      version: 19.2.0
+    react-dom:
+      specifier: ^19.1.0
+      version: 19.2.0
+    react-relay:
+      specifier: ^20.1.1
+      version: 20.1.1
+    relay-runtime:
+      specifier: ^20.1.1
+      version: 20.1.1
+    typescript:
+      specifier: ^5.9.2
+      version: 5.9.3
+    vite:
+      specifier: ^7.1.9
+      version: 7.1.9
+
 importers:
 
   .:
@@ -12,10 +72,10 @@ importers:
         specifier: ^2.29.7
         version: 2.29.7(@types/node@22.18.8)
       prettier:
-        specifier: ^3.4.2
+        specifier: ^3.6.2
         version: 3.6.2
       prettier-plugin-tailwindcss:
-        specifier: ^0.6.9
+        specifier: ^0.6.14
         version: 0.6.14(prettier@3.6.2)
 
   packages/create-pastoria: {}
@@ -29,38 +89,44 @@ importers:
         specifier: ^5.0.4
         version: 5.0.4(vite@7.1.9(@types/node@22.18.8)(jiti@2.6.1)(lightningcss@1.30.1))
       commander:
-        specifier: ^14.0.1
+        specifier: 'catalog:'
         version: 14.0.1
       cookie-parser:
-        specifier: ^1.4.7
+        specifier: 'catalog:'
         version: 1.4.7
       dotenv:
-        specifier: ^16.6.1
+        specifier: 'catalog:'
         version: 16.6.1
       express:
-        specifier: ^5.1.0
+        specifier: 'catalog:'
         version: 5.1.0
       picocolors:
-        specifier: ^1.1.1
+        specifier: 'catalog:'
         version: 1.1.1
       ts-morph:
         specifier: ^26.0.0
         version: 26.0.0
       vite:
-        specifier: ^7.1.9
+        specifier: 'catalog:'
         version: 7.1.9(@types/node@22.18.8)(jiti@2.6.1)(lightningcss@1.30.1)
       vite-plugin-cjs-interop:
         specifier: ^2.3.0
         version: 2.3.0(vite@7.1.9(@types/node@22.18.8)(jiti@2.6.1)(lightningcss@1.30.1))
     devDependencies:
+      '@types/cookie-parser':
+        specifier: 'catalog:'
+        version: 1.4.9(@types/express@5.0.3)
+      '@types/express':
+        specifier: 'catalog:'
+        version: 5.0.3
       '@types/node':
-        specifier: ^22.12.0
+        specifier: 'catalog:'
         version: 22.18.8
       pastoria-runtime:
         specifier: workspace:*
         version: link:../pastoria-runtime
       typescript:
-        specifier: ^5.9.2
+        specifier: 'catalog:'
         version: 5.9.3
 
   packages/pastoria-runtime:
@@ -69,81 +135,87 @@ importers:
         specifier: ^3.14.0
         version: 3.16.0(graphql-yoga@5.16.0(graphql@16.11.0))(graphql@16.11.0)
       express:
-        specifier: ^5.1.0
+        specifier: 'catalog:'
         version: 5.1.0
       graphql:
-        specifier: ^16.8.1
+        specifier: 'catalog:'
         version: 16.11.0
       graphql-yoga:
         specifier: ^5.13.4
         version: 5.16.0(graphql@16.11.0)
       react:
-        specifier: ^19.1.0
+        specifier: 'catalog:'
         version: 19.2.0
       react-dom:
-        specifier: ^19.1.0
+        specifier: 'catalog:'
         version: 19.2.0(react@19.2.0)
       react-relay:
-        specifier: ^20.1.1
+        specifier: 'catalog:'
         version: 20.1.1(react@19.2.0)
       relay-runtime:
-        specifier: ^20.1.1
+        specifier: 'catalog:'
         version: 20.1.1
       serialize-javascript:
         specifier: ^6.0.2
         version: 6.0.2
     devDependencies:
       '@types/express':
-        specifier: ^5.0.3
+        specifier: 'catalog:'
         version: 5.0.3
       '@types/node':
-        specifier: ^22.12.0
+        specifier: 'catalog:'
         version: 22.18.8
       '@types/react':
-        specifier: ^19.1.2
+        specifier: 'catalog:'
         version: 19.2.1
       '@types/react-dom':
-        specifier: ^19.1.3
+        specifier: 'catalog:'
         version: 19.2.0(@types/react@19.2.1)
       '@types/react-relay':
-        specifier: ^18.2.1
+        specifier: 'catalog:'
         version: 18.2.1
       '@types/relay-runtime':
-        specifier: ^19.0.2
+        specifier: 'catalog:'
         version: 19.0.3
       '@types/serialize-javascript':
         specifier: ^5.0.4
         version: 5.0.4
       typescript:
-        specifier: ^5.9.2
+        specifier: 'catalog:'
         version: 5.9.3
       vite:
-        specifier: ^7.1.9
+        specifier: 'catalog:'
         version: 7.1.9(@types/node@22.18.8)(jiti@2.6.1)(lightningcss@1.30.1)
 
   packages/pastoria-server:
     dependencies:
       cookie-parser:
-        specifier: ^1.4.7
+        specifier: 'catalog:'
         version: 1.4.7
       dotenv:
-        specifier: ^16.5.0
+        specifier: 'catalog:'
         version: 16.6.1
       express:
-        specifier: ^5.1.0
+        specifier: 'catalog:'
         version: 5.1.0
       picocolors:
-        specifier: ^1.1.1
+        specifier: 'catalog:'
         version: 1.1.1
     devDependencies:
+      '@types/cookie-parser':
+        specifier: 'catalog:'
+        version: 1.4.9(@types/express@5.0.3)
+      '@types/express':
+        specifier: 'catalog:'
+        version: 5.0.3
       '@types/node':
-        specifier: ^22.12.0
+        specifier: 'catalog:'
         version: 22.18.8
       typescript:
-        specifier: ^5.9.2
+        specifier: 'catalog:'
         version: 5.9.3
       vite:
-        specifier: ^7.1.9
+        specifier: 'catalog:'
         version: 7.1.9(@types/node@22.18.8)(jiti@2.6.1)(lightningcss@1.30.1)
 
 packages:
@@ -897,6 +969,11 @@ packages:
 
   '@types/connect@3.4.38':
     resolution: {integrity: sha512-K6uROf1LD88uDQqJCktA4yzL1YYAK6NgfsI0v/mTgyPKWsX1CnJ0XPSDhViejru1GcRkLWb8RlzFYJRqGUbaug==}
+
+  '@types/cookie-parser@1.4.9':
+    resolution: {integrity: sha512-tGZiZ2Gtc4m3wIdLkZ8mkj1T6CEHb35+VApbL2T14Dew8HA7c+04dmKqsKRNC+8RJPm16JEK0tFSwdZqubfc4g==}
+    peerDependencies:
+      '@types/express': '*'
 
   '@types/estree@1.0.8':
     resolution: {integrity: sha512-dWHzHa2WqEXI/O1E9OjrocMTKJl2mSrEolh1Iomrv6U+JuNwaHXsXx9bLu5gG7BUWFIN0skIQJQ/L1rIex4X6w==}
@@ -1776,8 +1853,8 @@ packages:
     resolution: {integrity: sha512-BR7VvDCVHO+q2xBEWskxS6DJE1qRnb7DxzUrogb71CWoSficBxYsiAGd+Kl0mmq/MprG9yArRkyrQxTO6XjMzA==}
     hasBin: true
 
-  semver@7.7.2:
-    resolution: {integrity: sha512-RF0Fw+rO5AMf9MAyaRXI4AV0Ulj5lMHqVxxdSgiVbixSCXoEmmX/jk0CuJw4+3SqroYO9VoUh+HcuJivvtJemA==}
+  semver@7.7.3:
+    resolution: {integrity: sha512-SdsKMrI9TdgjdweUSR9MweHA4EJ8YxHn8DFaDisvhVlUOe4BF1tLD7GAj0lIqWVl+dPb/rExr0Btby5loQm20Q==}
     engines: {node: '>=10'}
     hasBin: true
 
@@ -2125,7 +2202,7 @@ snapshots:
       outdent: 0.5.0
       prettier: 2.8.8
       resolve-from: 5.0.0
-      semver: 7.7.2
+      semver: 7.7.3
 
   '@changesets/assemble-release-plan@6.0.9':
     dependencies:
@@ -2134,7 +2211,7 @@ snapshots:
       '@changesets/should-skip-package': 0.1.2
       '@changesets/types': 6.1.0
       '@manypkg/get-packages': 1.1.3
-      semver: 7.7.2
+      semver: 7.7.3
 
   '@changesets/changelog-git@0.2.1':
     dependencies:
@@ -2167,7 +2244,7 @@ snapshots:
       package-manager-detector: 0.2.11
       picocolors: 1.1.1
       resolve-from: 5.0.0
-      semver: 7.7.2
+      semver: 7.7.3
       spawndamnit: 3.0.1
       term-size: 2.2.1
     transitivePeerDependencies:
@@ -2192,7 +2269,7 @@ snapshots:
       '@changesets/types': 6.1.0
       '@manypkg/get-packages': 1.1.3
       picocolors: 1.1.1
-      semver: 7.7.2
+      semver: 7.7.3
 
   '@changesets/get-release-plan@4.0.13':
     dependencies:
@@ -2727,6 +2804,10 @@ snapshots:
   '@types/connect@3.4.38':
     dependencies:
       '@types/node': 22.18.8
+
+  '@types/cookie-parser@1.4.9(@types/express@5.0.3)':
+    dependencies:
+      '@types/express': 5.0.3
 
   '@types/estree@1.0.8': {}
 
@@ -3580,7 +3661,7 @@ snapshots:
 
   semver@6.3.1: {}
 
-  semver@7.7.2: {}
+  semver@7.7.3: {}
 
   send@1.2.0:
     dependencies:

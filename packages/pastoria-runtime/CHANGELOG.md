@@ -1,5 +1,11 @@
 # pastoria-runtime
 
+## 1.0.2
+
+### Patch Changes
+
+- Remove usage of experimentalStripTypes
+
 ## 1.0.1
 
 ### Patch Changes

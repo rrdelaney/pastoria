@@ -1,25 +1,30 @@
 {
   "name": "pastoria-server",
-  "version": "1.0.1",
+  "version": "1.0.2",
   "description": "",
+  "main": "./dist/index.js",
+  "types": "./dist/index.d.ts",
   "bin": {
-    "pastoria-server": "src/index.mts"
+    "pastoria-server": "src/index.j"
   },
   "author": "",
   "license": "MIT",
   "type": "module",
   "scripts": {
+    "build": "tsc",
     "check:types": "tsc --noEmit"
   },
   "dependencies": {
-    "cookie-parser": "^1.4.7",
-    "dotenv": "^16.5.0",
-    "express": "^5.1.0",
-    "picocolors": "^1.1.1"
+    "cookie-parser": "catalog:",
+    "dotenv": "catalog:",
+    "express": "catalog:",
+    "picocolors": "catalog:"
   },
   "devDependencies": {
-    "@types/node": "^22.12.0",
-    "typescript": "^5.9.2",
-    "vite": "^7.1.9"
+    "@types/cookie-parser": "catalog:",
+    "@types/express": "catalog:",
+    "@types/node": "catalog:",
+    "typescript": "catalog:",
+    "vite": "catalog:"
   }
 }

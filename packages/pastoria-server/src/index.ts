@@ -1,4 +1,4 @@
-#!/usr/bin/env node --experimental-strip-types
+#!/usr/bin/env node
 
 import cookieParser from 'cookie-parser';
 import dotenv from 'dotenv';

@@ -28,13 +28,13 @@ import {Project, SourceFile, Symbol, SyntaxKind, ts, TypeFlags} from 'ts-morph';
 
 const JS_RESOURCE_FILENAME = '__generated__/router/js_resource.ts';
 const JS_RESOURCE_TEMPLATE = path.join(
-  path.dirname(new URL(import.meta.url).pathname),
+  import.meta.dirname,
   '../templates/js_resource.ts',
 );
 
 const ROUTER_FILENAME = '__generated__/router/router.tsx';
 const ROUTER_TEMPLATE = path.join(
-  path.dirname(new URL(import.meta.url).pathname),
+  import.meta.dirname,
   '../templates/router.tsx',
 );
 
