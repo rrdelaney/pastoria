@@ -137,7 +137,14 @@ export function createBuildConfig(
     plugins: [
       pastoriaEntryPlugin(),
       tailwindcss(),
-      react({babel: {plugins: ['relay']}}),
+      react({
+        babel: {
+          plugins: [
+            ['babel-plugin-react-compiler', {}],
+            'relay',
+          ],
+        },
+      }),
       cjsInterop({
         dependencies: ['react-relay', 'react-relay/hooks', 'relay-runtime'],
       }),
