@@ -81,6 +81,9 @@ type AppRoot = {
   symbol: Symbol;
 };
 
+// Regex to quickly check if a file contains any Pastoria JSDoc tags
+const PASTORIA_TAG_REGEX = /@(route|resource|appRoot|param)\b/;
+
 function collectRouterNodes(project: Project): {
   resources: RouterResource[];
   routes: RouterRoute[];
@@ -91,7 +94,12 @@ function collectRouterNodes(project: Project): {
   let appRoot: AppRoot | null = null;
 
   function visitRouterNodes(sourceFile: SourceFile) {
-    // TODO: Skip sourceFile if a pastora JSDoc tag isn't used at all.
+    // Skip files that don't contain any Pastoria JSDoc tags
+    const fileText = sourceFile.getFullText();
+    if (!PASTORIA_TAG_REGEX.test(fileText)) {
+      return;
+    }
+
     sourceFile.getExportSymbols().forEach((symbol) => {
       let routerResource = null as RouterResource | null;
       let routerRoute = null as RouterRoute | null;
