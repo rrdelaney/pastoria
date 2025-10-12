@@ -3,8 +3,8 @@
   "private": true,
   "scripts": {
     "check:types": "pnpm -r --parallel check:types",
-    "format": "prettier --write .",
-    "check:format": "prettier --check ."
+    "check:format": "prettier --check .",
+    "format": "prettier --write ."
   },
   "devDependencies": {
     "@changesets/cli": "^2.29.7",
