@@ -1,7 +1,5 @@
-import {usePersistedOperations} from '@graphql-yoga/plugin-persisted-operations';
 import express from 'express';
-import {GraphQLSchema} from 'graphql';
-import {createYoga, GraphQLParams} from 'graphql-yoga';
+import {GraphQLSchema, graphql} from 'graphql';
 import {ComponentType, PropsWithChildren} from 'react';
 import {renderToPipeableStream} from 'react-dom/server';
 import {
@@ -44,21 +42,83 @@ function createGraphqlHandler(
   schema: GraphQLSchema,
   createContext: CreateContextFn,
   persistedQueries: Record<string, string>,
-) {
-  return createYoga({
-    schema,
-    context: ({request}) => createContext(request),
-    plugins: [
-      // eslint-disable-next-line react-hooks/rules-of-hooks
-      usePersistedOperations({
-        allowArbitraryOperations: true,
-        extractPersistedOperationId: (
-          params: GraphQLParams & {id?: unknown},
-        ) => (typeof params.id === 'string' ? params.id : null),
-        getPersistedOperation: (key) => persistedQueries[key] ?? null,
-      }),
-    ],
-  });
+): express.Handler {
+  return async (req, res) => {
+    try {
+      let query: string | undefined;
+      let id: string | undefined;
+      let variables: Record<string, any> | undefined;
+      let extensions: Record<string, any> | undefined;
+      let operationName: string | undefined;
+
+      // Parse parameters based on request method
+      if (req.method === 'GET') {
+        // GET request: parse from query string
+        query = req.query.query as string | undefined;
+        id = req.query.id as string | undefined;
+        operationName = req.query.operationName as string | undefined;
+
+        // Parse JSON-encoded variables and extensions
+        if (req.query.variables) {
+          try {
+            variables = JSON.parse(req.query.variables as string);
+          } catch (e) {
+            res.status(400).json({
+              errors: [{message: 'Invalid variables JSON'}],
+            });
+            return;
+          }
+        }
+
+        if (req.query.extensions) {
+          try {
+            extensions = JSON.parse(req.query.extensions as string);
+          } catch (e) {
+            res.status(400).json({
+              errors: [{message: 'Invalid extensions JSON'}],
+            });
+            return;
+          }
+        }
+      } else {
+        // POST request: parse from body
+        ({query, id, variables, extensions, operationName} = req.body);
+      }
+
+      // Resolve the query source (support persisted queries)
+      let source = query;
+      if (source == null && id != null) {
+        source = persistedQueries[id] ?? null;
+      }
+
+      if (source == null) {
+        res.status(400).json({
+          errors: [{message: 'No query provided'}],
+        });
+        return;
+      }
+
+      // Create context for this request
+      const contextValue = createContext(req as any);
+
+      // Execute the GraphQL query
+      const result = await graphql({
+        schema,
+        source,
+        contextValue,
+        variableValues: variables,
+        operationName,
+      });
+
+      // Return the result
+      res.json(result);
+    } catch (error) {
+      console.error('GraphQL handler error:', error);
+      res.status(500).json({
+        errors: [{message: 'Internal server error'}],
+      });
+    }
+  };
 }
 
 function createReactHandler(
@@ -72,8 +132,6 @@ function createReactHandler(
   manifest?: Manifest | null,
 ): express.Handler {
   return async (req, res) => {
-    // TODO: Unify the GraphQL Yoga request with this one.
-    // Do we even need GraphQL yoga at this point?
     const context = createContext(null!);
     const provider = createServerEnvironment(
       req,
@@ -124,10 +182,15 @@ export function createRouterHandler(
 ): express.Router {
   const r = express.Router();
 
-  r.use(
-    '/api/graphql',
-    createGraphqlHandler(schema, createContext, persistedQueries),
+  const graphqlHandler = createGraphqlHandler(
+    schema,
+    createContext,
+    persistedQueries,
   );
+
+  // Support both GET and POST for GraphQL endpoint
+  r.get('/api/graphql', graphqlHandler);
+  r.post('/api/graphql', express.json(), graphqlHandler);
 
   r.get(
     routes,
