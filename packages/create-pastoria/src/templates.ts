@@ -19,11 +19,13 @@ export const templates: Record<string, () => object | string> = {
     },
     dependencies: {
       '@graphql-yoga/plugin-persisted-operations': '^3.16.0',
+      dataloader: '^2.2.3',
       dotenv: '^16.6.1',
       express: '^5.1.0',
       graphql: '^16.11.0',
       'graphql-relay': '^0.10.2',
       'graphql-yoga': '^5.16.0',
+      grats: '^0.0.33',
       'pastoria-runtime': '^1.0.3',
       'pastoria-server': '^1.0.4',
       react: '^19.2.0',
@@ -40,7 +42,6 @@ export const templates: Record<string, () => object | string> = {
       '@types/relay-runtime': '^19.0.3',
       '@vitejs/plugin-react': '^4.7.0',
       'babel-plugin-relay': '^16.2.0',
-      grats: '^0.0.33',
       pastoria: '^1.0.5',
       prettier: '^3.6.2',
       'prettier-plugin-tailwindcss': '^0.6.14',
@@ -140,15 +141,48 @@ yarn-error.log*
 *.tsbuildinfo
 `,
 
-  'src/lib/server/context.ts': () => `import type {YogaInitialContext} from 'graphql-yoga';
-
-export type GraphQLContext = YogaInitialContext;
+  'src/lib/server/context.ts': () => `import DataLoader from 'dataloader';
 
 /**
- * Factory function to create GraphQL context for each request
+ * GraphQL context class providing request-scoped caching and data loading.
+ *
+ * @gqlContext
  */
-export function createContext(): GraphQLContext {
-  return {};
+export class Context {
+  constructor() {}
+
+  private readonly DERIVED_CACHE = new Map<string, unknown>();
+
+  /**
+   * Get or create a derived value with caching.
+   * Useful for creating DataLoaders or other per-request singletons.
+   */
+  derived = <T>(key: string, make: () => T): T => {
+    if (!this.DERIVED_CACHE.has(key)) {
+      this.DERIVED_CACHE.set(key, make());
+    }
+
+    return this.DERIVED_CACHE.get(key) as T;
+  };
+
+  /**
+   * Create or get a cached DataLoader instance.
+   * Prevents duplicate requests within a single GraphQL operation.
+   */
+  loader = <K, V>(
+    key: string,
+    batchLoadFn: DataLoader.BatchLoadFn<K, V>,
+  ): DataLoader<K, V> => {
+    return this.derived(key, () => new DataLoader(batchLoadFn));
+  };
+}
+
+/**
+ * Factory function to create a new Context for each GraphQL request.
+ * Add your database connections, authentication, etc. here.
+ */
+export function createContext(): Context {
+  return new Context();
 }
 `,
 
@@ -192,15 +226,25 @@ export default function AppRoot({children}: AppRootProps) {
 }
 `,
 
-  'src/lib/schema/hello.ts': () => `/** @gqlType */
-type Query = unknown;
+  'src/lib/schema/hello.ts': () => `import {Context} from '../server/context.js';
 
 /**
- * A simple hello world query
- * @gqlField
+ * A simple hello world query that returns a greeting message.
+ *
+ * @gqlQueryField
  */
-export function hello(_: Query): string {
+export function hello(ctx: Context): string {
   return 'Hello from Pastoria!';
+}
+
+/**
+ * Example query showing how to accept arguments.
+ * Try querying: { greet(name: "World") }
+ *
+ * @gqlQueryField
+ */
+export function greet(args: {name: string}, ctx: Context): string {
+  return \`Hello, \${args.name}! Welcome to Pastoria.\`;
 }
 `,
 
