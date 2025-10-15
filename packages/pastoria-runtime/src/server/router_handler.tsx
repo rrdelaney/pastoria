@@ -1,7 +1,5 @@
-import {usePersistedOperations} from '@graphql-yoga/plugin-persisted-operations';
 import express from 'express';
 import {GraphQLSchema} from 'graphql';
-import {createYoga, GraphQLParams} from 'graphql-yoga';
 import {ComponentType, PropsWithChildren} from 'react';
 import {renderToPipeableStream} from 'react-dom/server';
 import {
@@ -44,21 +42,25 @@ function createGraphqlHandler(
   schema: GraphQLSchema,
   createContext: CreateContextFn,
   persistedQueries: Record<string, string>,
-) {
-  return createYoga({
-    schema,
-    context: ({request}) => createContext(request),
-    plugins: [
-      // eslint-disable-next-line react-hooks/rules-of-hooks
-      usePersistedOperations({
-        allowArbitraryOperations: true,
-        extractPersistedOperationId: (
-          params: GraphQLParams & {id?: unknown},
-        ) => (typeof params.id === 'string' ? params.id : null),
-        getPersistedOperation: (key) => persistedQueries[key] ?? null,
-      }),
-    ],
-  });
+): express.Handler {
+  return (req, res) => {
+    let query: string;
+    let variables: {};
+  };
+  // return createYoga({
+  //   schema,
+  //   context: ({request}) => createContext(request),
+  //   plugins: [
+  //     // eslint-disable-next-line react-hooks/rules-of-hooks
+  //     usePersistedOperations({
+  //       allowArbitraryOperations: true,
+  //       extractPersistedOperationId: (
+  //         params: GraphQLParams & {id?: unknown},
+  //       ) => (typeof params.id === 'string' ? params.id : null),
+  //       getPersistedOperation: (key) => persistedQueries[key] ?? null,
+  //     }),
+  //   ],
+  // });
 }
 
 function createReactHandler(
@@ -122,28 +124,28 @@ export function createRouterHandler(
   persistedQueries: Record<string, string>,
   manifest?: Manifest | null,
 ): express.Router {
-  const r = express.Router();
-
-  r.use(
-    '/api/graphql',
-    createGraphqlHandler(schema, createContext, persistedQueries),
+  const graphqlHandler = createGraphqlHandler(
+    schema,
+    createContext,
+    persistedQueries,
   );
 
-  r.get(
-    routes,
-    createReactHandler(
-      srcOfModuleId,
-      loadEntryPoint,
-      createAppFromEntryPoint,
-      App,
-      schema,
-      createContext,
-      persistedQueries,
-      manifest,
-    ),
+  const reactHandler = createReactHandler(
+    srcOfModuleId,
+    loadEntryPoint,
+    createAppFromEntryPoint,
+    App,
+    schema,
+    createContext,
+    persistedQueries,
+    manifest,
   );
 
-  return r;
+  return express
+    .Router()
+    .use(express.json())
+    .use('/api/graphql', graphqlHandler)
+    .get(routes, reactHandler);
 }
 
 async function loadQueries(entryPoint: AnyPreloadedEntryPoint) {
