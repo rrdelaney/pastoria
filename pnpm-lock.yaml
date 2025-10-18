@@ -167,30 +167,9 @@ importers:
       dataloader:
         specifier: ^2.2.3
         version: 2.2.3
-      express:
-        specifier: 'catalog:'
-        version: 5.1.0
-      graphql:
-        specifier: 'catalog:'
-        version: 16.11.0
-      react:
-        specifier: 'catalog:'
-        version: 19.2.0
-      react-dom:
-        specifier: 'catalog:'
-        version: 19.2.0(react@19.2.0)
-      react-relay:
-        specifier: 'catalog:'
-        version: 20.1.1(react@19.2.0)
-      relay-runtime:
-        specifier: 'catalog:'
-        version: 20.1.1
       serialize-javascript:
         specifier: ^6.0.2
         version: 6.0.2
-      zod:
-        specifier: 'catalog:'
-        version: 3.25.76
     devDependencies:
       '@types/express':
         specifier: 'catalog:'
@@ -213,15 +192,36 @@ importers:
       '@types/serialize-javascript':
         specifier: ^5.0.4
         version: 5.0.4
+      express:
+        specifier: 'catalog:'
+        version: 5.1.0
+      graphql:
+        specifier: 'catalog:'
+        version: 16.11.0
       pastoria-config:
         specifier: workspace:*
         version: link:../pastoria-config
+      react:
+        specifier: 'catalog:'
+        version: 19.2.0
+      react-dom:
+        specifier: 'catalog:'
+        version: 19.2.0(react@19.2.0)
+      react-relay:
+        specifier: 'catalog:'
+        version: 20.1.1(react@19.2.0)
+      relay-runtime:
+        specifier: 'catalog:'
+        version: 20.1.1
       typescript:
         specifier: 'catalog:'
         version: 5.9.3
       vite:
         specifier: 'catalog:'
         version: 7.1.9(@types/node@22.18.8)(jiti@2.6.1)(lightningcss@1.30.1)(terser@5.44.0)
+      zod:
+        specifier: 'catalog:'
+        version: 3.25.76
 
   packages/pastoria-server:
     dependencies:
