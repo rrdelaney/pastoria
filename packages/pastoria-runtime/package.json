@@ -24,6 +24,7 @@
   "author": "",
   "license": "MIT",
   "dependencies": {
+    "dataloader": "^2.2.3",
     "serialize-javascript": "^6.0.2"
   },
   "devDependencies": {

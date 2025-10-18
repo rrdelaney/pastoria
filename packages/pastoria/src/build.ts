@@ -44,7 +44,7 @@ import {
   router__loadEntryPoint,
 } from '#genfiles/router/router';
 import {getSchema} from '#genfiles/schema/schema';
-import {Context} from '#src/lib/server/context';
+import {Context} from '#genfiles/router/context';
 ${appImport}
 import {GraphQLSchema, specifiedDirectives} from 'graphql';
 import {createRouterHandler} from 'pastoria-runtime/server';
@@ -67,7 +67,7 @@ export function createHandler(
     router__createAppFromEntryPoint,
     ${appValue},
     schema,
-    () => new Context(),
+    (req) => Context.createFromRequest(req),
     persistedQueries,
     manifest,
   );
