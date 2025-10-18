@@ -6,6 +6,7 @@ import express from 'express';
 import {readFile} from 'node:fs/promises';
 import * as path from 'node:path';
 import pc from 'picocolors';
+import {loadConfig, PastoriaConfig} from 'pastoria-runtime/server';
 import type {Manifest} from 'vite';
 
 interface PersistedQueries {
@@ -15,6 +16,7 @@ interface PersistedQueries {
 interface ServerEntry {
   createHandler(
     persistedQueries: PersistedQueries,
+    config: Required<PastoriaConfig>,
     manifest?: Manifest,
   ): express.Router;
 }
@@ -31,9 +33,10 @@ async function createServer() {
 
   const manifest: Manifest = JSON.parse(await readFile(MANIFEST_JSON, 'utf-8'));
   const persistedQueries = JSON.parse(await readFile(QUERIES_JSON, 'utf-8'));
+  const config = await loadConfig();
   const {createHandler} = (await import(ENTRY_SERVER)) as ServerEntry;
 
-  const handler = createHandler(persistedQueries, manifest);
+  const handler = createHandler(persistedQueries, config, manifest);
 
   const app = express();
   app.use(cookieParser());

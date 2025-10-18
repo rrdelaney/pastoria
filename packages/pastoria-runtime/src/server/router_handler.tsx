@@ -20,6 +20,7 @@ import {
 import serialize from 'serialize-javascript';
 import type {Manifest} from 'vite';
 import {z} from 'zod/v4-mini';
+import {PastoriaConfig} from '../config.js';
 import {
   AnyPreloadedEntryPoint,
   AnyPreloadedQuery,
@@ -64,6 +65,7 @@ function createGraphqlHandler(
   schema: GraphQLSchema,
   createContext: CreateContextFn,
   persistedQueries: Record<string, string>,
+  config: Required<PastoriaConfig>,
 ): express.Handler {
   const parsedPersistedQueries: Record<string, DocumentNode> = {};
   for (const [id, doc] of Object.entries(persistedQueries)) {
@@ -76,7 +78,11 @@ function createGraphqlHandler(
   }
 
   return async (req, res) => {
-    if (req.method === 'GET' && process.env.NODE_ENV !== 'production') {
+    const allowGraphiQL =
+      process.env.NODE_ENV !== 'production' ||
+      config.enableGraphiQLInProduction;
+
+    if (req.method === 'GET' && allowGraphiQL) {
       return res.status(200).send(graphiqlScript('http://localhost:3000'));
     } else if (req.method !== 'POST') {
       return res.sendStatus(404);
@@ -115,6 +121,15 @@ function createGraphqlHandler(
     } else if (querySource == null) {
       return res.status(400).send('Query is required.');
     } else {
+      // If persistedQueriesOnly is enabled, reject plain text queries
+      if (config.persistedQueriesOnly) {
+        return res
+          .status(400)
+          .send(
+            'Only persisted queries are allowed. Plain text queries are disabled.',
+          );
+      }
+
       try {
         requestDocument = parse(querySource);
       } catch (e) {
@@ -200,12 +215,14 @@ export function createRouterHandler(
   schema: GraphQLSchema,
   createContext: CreateContextFn,
   persistedQueries: Record<string, string>,
+  config: Required<PastoriaConfig>,
   manifest?: Manifest | null,
 ): express.Router {
   const graphqlHandler = createGraphqlHandler(
     schema,
     createContext,
     persistedQueries,
+    config,
   );
 
   const reactHandler = createReactHandler(

@@ -232,6 +232,9 @@ importers:
       '@types/node':
         specifier: 'catalog:'
         version: 22.18.8
+      pastoria-runtime:
+        specifier: workspace:*
+        version: link:../pastoria-runtime
       typescript:
         specifier: 'catalog:'
         version: 5.9.3
