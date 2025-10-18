@@ -167,16 +167,36 @@ function collectRouterNodes(project: Project): {
               break;
             }
             case 'gqlContext': {
-              if (gqlContext != null) {
-                console.warn(
-                  pc.yellow('Warning:'),
-                  'Multiple @gqlContext tags found. Using the first one.',
-                );
-              } else {
-                gqlContext = {
-                  sourceFile,
-                  symbol,
-                };
+              // Check if this class extends PastoriaRootContext
+              const declarations = symbol.getDeclarations();
+              let extendsPastoriaRootContext = false;
+
+              for (const decl of declarations) {
+                if (decl.isKind(SyntaxKind.ClassDeclaration)) {
+                  const classDecl = decl.asKindOrThrow(SyntaxKind.ClassDeclaration);
+                  const extendsClause = classDecl.getExtends();
+                  if (extendsClause != null) {
+                    const baseClassName = extendsClause.getExpression().getText();
+                    if (baseClassName === 'PastoriaRootContext') {
+                      extendsPastoriaRootContext = true;
+                      break;
+                    }
+                  }
+                }
+              }
+
+              if (extendsPastoriaRootContext) {
+                if (gqlContext != null) {
+                  console.warn(
+                    pc.yellow('Warning:'),
+                    'Multiple classes with @gqlContext extending PastoriaRootContext found. Using the first one.',
+                  );
+                } else {
+                  gqlContext = {
+                    sourceFile,
+                    symbol,
+                  };
+                }
               }
               break;
             }
