@@ -121,12 +121,15 @@ function createGraphqlHandler(
     } else if (querySource == null) {
       return res.status(400).send('Query is required.');
     } else {
-      // If persistedQueriesOnly is enabled, reject plain text queries
-      if (config.persistedQueriesOnly) {
+      // If persistedQueriesOnlyInProduction is enabled, reject plain text queries in production
+      if (
+        process.env.NODE_ENV === 'production' &&
+        config.persistedQueriesOnlyInProduction
+      ) {
         return res
           .status(400)
           .send(
-            'Only persisted queries are allowed. Plain text queries are disabled.',
+            'Only persisted queries are allowed in production. Plain text queries are disabled.',
           );
       }
 

@@ -13,13 +13,14 @@ export interface PastoriaConfig {
   enableGraphiQLInProduction?: boolean;
 
   /**
-   * Only allow persisted queries to be executed.
-   * When true, plain text GraphQL queries will be rejected.
+   * Only allow persisted queries to be executed in production.
+   * When true, plain text GraphQL queries will be rejected in production.
    * This improves security and enables optimizations like GraphQL-JIT.
+   * In development mode, plain text queries are always allowed (for GraphiQL).
    *
    * @default false
    */
-  persistedQueriesOnly?: boolean;
+  persistedQueriesOnlyInProduction?: boolean;
 }
 
 /**
@@ -29,7 +30,7 @@ export interface PastoriaConfig {
 export async function loadConfig(): Promise<Required<PastoriaConfig>> {
   const defaults: Required<PastoriaConfig> = {
     enableGraphiQLInProduction: false,
-    persistedQueriesOnly: false,
+    persistedQueriesOnlyInProduction: false,
   };
 
   try {
@@ -41,8 +42,9 @@ export async function loadConfig(): Promise<Required<PastoriaConfig>> {
       enableGraphiQLInProduction:
         userConfig.enableGraphiQLInProduction ??
         defaults.enableGraphiQLInProduction,
-      persistedQueriesOnly:
-        userConfig.persistedQueriesOnly ?? defaults.persistedQueriesOnly,
+      persistedQueriesOnlyInProduction:
+        userConfig.persistedQueriesOnlyInProduction ??
+        defaults.persistedQueriesOnlyInProduction,
     };
   } catch (e) {
     // If package.json doesn't exist or can't be read, return defaults
