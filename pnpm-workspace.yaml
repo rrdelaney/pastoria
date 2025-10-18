@@ -14,7 +14,7 @@ catalog:
   cookie-parser: ^1.4.7
   dotenv: ^16.6.1
   express: ^5.1.0
-  graphql: ^16.8.1
+  graphql: 17.0.0-alpha.9
   picocolors: ^1.1.1
   react: ^19.2.0
   react-dom: ^19.2.0
@@ -28,3 +28,4 @@ onlyBuiltDependencies:
   - '@tailwindcss/oxide'
   - core-js
   - core-js-pure
+  - esbuild

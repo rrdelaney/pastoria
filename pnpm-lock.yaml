@@ -40,8 +40,8 @@ catalogs:
       specifier: ^5.1.0
       version: 5.1.0
     graphql:
-      specifier: ^16.8.1
-      version: 16.11.0
+      specifier: 17.0.0-alpha.9
+      version: 17.0.0-alpha.9
     picocolors:
       specifier: ^1.1.1
       version: 1.1.1
@@ -197,7 +197,7 @@ importers:
         version: 5.1.0
       graphql:
         specifier: 'catalog:'
-        version: 16.11.0
+        version: 17.0.0-alpha.9
       pastoria-config:
         specifier: workspace:*
         version: link:../pastoria-config
@@ -3663,9 +3663,9 @@ packages:
   graceful-fs@4.2.11:
     resolution: {integrity: sha512-RbJ5/jmFcNNCcDV5o9eTnBLJ/HszWV0P73bc+Ff4nS/rJj+YaS6IGyiOL0VoBYX+l1Wrl3k63h/KrH+nhJ0XvQ==}
 
-  graphql@16.11.0:
-    resolution: {integrity: sha512-mS1lbMsxgQj6hge1XZ6p7GPhbrtFwUFYi3wRzXAC/FmYnyXMTvvI3td3rjmQ2u8ewXueaSvRPWaEcgVVOT9Jnw==}
-    engines: {node: ^12.22.0 || ^14.16.0 || ^16.0.0 || >=17.0.0}
+  graphql@17.0.0-alpha.9:
+    resolution: {integrity: sha512-jVK1BsvX5pUIEpRDlEgeKJr80GAxl3B8ISsFDjXHtl2xAxMXVGTEFF4Q4R8NH0Gw7yMwcHDndkNjoNT5CbwHKA==}
+    engines: {node: ^16.19.0 || ^18.14.0 || >=19.7.0}
 
   gray-matter@4.0.3:
     resolution: {integrity: sha512-5v6yZd4JK3eMI3FqqCouswVqwugaA9r4dNZB1wwcmrD02QkV5H0y7XBQW8QwQqEaZY1pM9aqORSORhJRdNK44Q==}
@@ -10722,7 +10722,7 @@ snapshots:
 
   graceful-fs@4.2.11: {}
 
-  graphql@16.11.0: {}
+  graphql@17.0.0-alpha.9: {}
 
   gray-matter@4.0.3:
     dependencies:
