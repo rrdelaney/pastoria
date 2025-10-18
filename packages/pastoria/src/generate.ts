@@ -105,6 +105,11 @@ function collectRouterNodes(project: Project): {
   let gqlContext: GqlContext | null = null;
 
   function visitRouterNodes(sourceFile: SourceFile) {
+    // Skip generated files
+    if (sourceFile.getFilePath().includes('__generated__')) {
+      return;
+    }
+
     // Skip files that don't contain any Pastoria JSDoc tags
     const fileText = sourceFile.getFullText();
     if (!PASTORIA_TAG_REGEX.test(fileText)) {
