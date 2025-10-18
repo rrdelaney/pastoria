@@ -127,13 +127,11 @@ function createGraphqlHandler(
         process.env.NODE_ENV === 'production' &&
         config.persistedQueriesOnlyInProduction
       ) {
-        return res
-          .status(200)
-          .send({
-            errors: [
-              'Only persisted queries are allowed in production. Plain text queries are disabled.',
-            ],
-          });
+        return res.status(200).send({
+          errors: [
+            'Only persisted queries are allowed in production. Plain text queries are disabled.',
+          ],
+        });
       }
 
       try {
