@@ -61,6 +61,15 @@ const requestSchema = z.object({
   extensions: z.nullish(jsonSchema),
 });
 
+function createAbortControllFromReq(req: express.Request): AbortController {
+  const controller = new AbortController();
+  req.on('close', () => {
+    controller.abort();
+  });
+
+  return controller;
+}
+
 function createGraphqlHandler(
   schema: GraphQLSchema,
   createContext: CreateContextFn,
@@ -148,12 +157,14 @@ function createGraphqlHandler(
         .send({errors: validationErrors.map((e) => e.toString())});
     }
 
+    const controller = createAbortControllFromReq(req);
     const graphqlResponse = await execute({
       document: requestDocument,
       schema,
       operationName,
       contextValue: await createContext(req),
       variableValues: variables,
+      abortSignal: controller.signal,
     });
 
     return res.status(200).send(graphqlResponse);
