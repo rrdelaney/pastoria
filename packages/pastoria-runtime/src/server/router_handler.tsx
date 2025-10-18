@@ -46,7 +46,7 @@ type LoadEntryPointFn = (
   provider: EnvironmentProvider,
   initialPath?: string,
 ) => Promise<AnyPreloadedEntryPoint | null>;
-type CreateContextFn = (req: express.Request) => unknown;
+type CreateContextFn = (req: express.Request) => unknown | Promise<unknown>;
 
 const jsonSchema = z.record(z.string(), z.json());
 
@@ -135,7 +135,7 @@ function createGraphqlHandler(
       document: requestDocument,
       schema,
       operationName,
-      contextValue: createContext(req),
+      contextValue: await createContext(req),
       variableValues: variables,
     });
 
@@ -154,7 +154,7 @@ function createReactHandler(
   manifest?: Manifest | null,
 ): express.Handler {
   return async (req, res) => {
-    const context = createContext(req);
+    const context = await createContext(req);
     const provider = createServerEnvironment(
       req,
       schema,
