@@ -36,6 +36,6 @@
     "pastoria-runtime": "workspace:*",
     "typescript": "catalog:",
     "radix3": "^1.1.2",
-    "zod": "^3.25.76"
+    "zod": "catalog:"
   }
 }
