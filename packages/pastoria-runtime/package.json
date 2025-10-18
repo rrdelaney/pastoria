@@ -29,15 +29,22 @@
   },
   "devDependencies": {
     "@types/express": "catalog:",
-    "@types/react": "catalog:",
+    "@types/node": "catalog:",
     "@types/react-dom": "catalog:",
     "@types/react-relay": "catalog:",
+    "@types/react": "catalog:",
     "@types/relay-runtime": "catalog:",
     "@types/serialize-javascript": "^5.0.4",
-    "@types/node": "catalog:",
+    "express": "catalog:",
+    "graphql": "catalog:",
     "pastoria-config": "workspace:*",
+    "react-dom": "catalog:",
+    "react-relay": "catalog:",
+    "react": "catalog:",
+    "relay-runtime": "catalog:",
     "typescript": "catalog:",
-    "vite": "catalog:"
+    "vite": "catalog:",
+    "zod": "catalog:"
   },
   "peerDependencies": {
     "express": "catalog:",
