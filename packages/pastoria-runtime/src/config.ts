@@ -1,0 +1,51 @@
+/**
+ * Configuration options for Pastoria framework.
+ * These can be specified in the "pastoria" field of package.json.
+ */
+export interface PastoriaConfig {
+  /**
+   * Enable GraphiQL interface in production.
+   * By default, GraphiQL is only available in development mode.
+   * Set to true to enable it in production as well.
+   *
+   * @default false
+   */
+  enableGraphiQLInProduction?: boolean;
+
+  /**
+   * Only allow persisted queries to be executed.
+   * When true, plain text GraphQL queries will be rejected.
+   * This improves security and enables optimizations like GraphQL-JIT.
+   *
+   * @default false
+   */
+  persistedQueriesOnly?: boolean;
+}
+
+/**
+ * Loads Pastoria configuration from package.json.
+ * Returns default configuration if no config is found.
+ */
+export async function loadConfig(): Promise<Required<PastoriaConfig>> {
+  const defaults: Required<PastoriaConfig> = {
+    enableGraphiQLInProduction: false,
+    persistedQueriesOnly: false,
+  };
+
+  try {
+    const {readFile} = await import('node:fs/promises');
+    const packageJson = JSON.parse(await readFile('package.json', 'utf-8'));
+    const userConfig = packageJson.pastoria ?? {};
+
+    return {
+      enableGraphiQLInProduction:
+        userConfig.enableGraphiQLInProduction ??
+        defaults.enableGraphiQLInProduction,
+      persistedQueriesOnly:
+        userConfig.persistedQueriesOnly ?? defaults.persistedQueriesOnly,
+    };
+  } catch (e) {
+    // If package.json doesn't exist or can't be read, return defaults
+    return defaults;
+  }
+}

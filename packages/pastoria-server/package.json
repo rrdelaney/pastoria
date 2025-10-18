@@ -24,7 +24,11 @@
     "@types/cookie-parser": "catalog:",
     "@types/express": "catalog:",
     "@types/node": "catalog:",
+    "pastoria-runtime": "workspace:*",
     "typescript": "catalog:",
     "vite": "catalog:"
+  },
+  "peerDependencies": {
+    "pastoria-runtime": "workspace:*"
   }
 }

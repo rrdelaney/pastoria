@@ -47,7 +47,7 @@ import {getSchema} from '#genfiles/schema/schema';
 import {Context} from '#genfiles/router/context';
 ${appImport}
 import {GraphQLSchema, specifiedDirectives} from 'graphql';
-import {createRouterHandler} from 'pastoria-runtime/server';
+import {createRouterHandler, PastoriaConfig} from 'pastoria-runtime/server';
 import type {Manifest} from 'vite';
 
 const schemaConfig = getSchema().toConfig();
@@ -58,6 +58,7 @@ const schema = new GraphQLSchema({
 
 export function createHandler(
   persistedQueries: Record<string, string>,
+  config: Required<PastoriaConfig>,
   manifest?: Manifest,
 ) {
   return createRouterHandler(
@@ -69,6 +70,7 @@ export function createHandler(
     schema,
     (req) => Context.createFromRequest(req),
     persistedQueries,
+    config,
     manifest,
   );
 }
