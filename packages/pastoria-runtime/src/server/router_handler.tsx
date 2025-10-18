@@ -1,5 +1,12 @@
 import express from 'express';
-import {GraphQLSchema} from 'graphql';
+import {
+  DocumentNode,
+  execute,
+  GraphQLSchema,
+  parse,
+  specifiedRules,
+  validate,
+} from 'graphql';
 import {ComponentType, PropsWithChildren} from 'react';
 import {renderToPipeableStream} from 'react-dom/server';
 import {
@@ -12,12 +19,15 @@ import {
 } from 'relay-runtime';
 import serialize from 'serialize-javascript';
 import type {Manifest} from 'vite';
+import {z} from 'zod/v4-mini';
 import {
   AnyPreloadedEntryPoint,
   AnyPreloadedQuery,
   EnvironmentProvider,
+  PASTORIA_ID_EXTENSION,
   RouterOps,
 } from '../relay_client_environment.js';
+import {graphiqlScript} from './graphiql.js';
 import {createServerEnvironment} from './relay_server_environment.js';
 
 type SrcOfModuleId = (id: string) => string | null;
@@ -36,31 +46,101 @@ type LoadEntryPointFn = (
   provider: EnvironmentProvider,
   initialPath?: string,
 ) => Promise<AnyPreloadedEntryPoint | null>;
-type CreateContextFn = (req: Request) => unknown;
+type CreateContextFn = (req: express.Request) => unknown;
+
+const jsonSchema = z.record(z.string(), z.json());
+
+const requestSchema = z.object({
+  query: z.nullish(z.string()),
+  operationName: z.pipe(
+    z.nullish(z.string()),
+    z.transform((op) => (!!op ? op : undefined)),
+  ),
+  variables: z.nullish(jsonSchema),
+  extensions: z.nullish(jsonSchema),
+});
 
 function createGraphqlHandler(
   schema: GraphQLSchema,
   createContext: CreateContextFn,
   persistedQueries: Record<string, string>,
 ): express.Handler {
-  return (req, res) => {
-    let query: string;
-    let variables: {};
+  const parsedPersistedQueries: Record<string, DocumentNode> = {};
+  for (const [id, doc] of Object.entries(persistedQueries)) {
+    try {
+      parsedPersistedQueries[id] = parse(doc);
+    } catch (e) {
+      console.error(`Could not parse persisted query: ${id}`);
+      console.error(e);
+    }
+  }
+
+  return async (req, res) => {
+    if (req.method === 'GET' && process.env.NODE_ENV !== 'production') {
+      return res.status(200).send(graphiqlScript('http://localhost:3000'));
+    } else if (req.method !== 'POST') {
+      return res.sendStatus(404);
+    }
+
+    if (req.headers['content-type'] !== 'application/json') {
+      return res
+        .status(400)
+        .send(`Unsupported Content-Type: ${req.headers['content-type']}`);
+    }
+
+    const requestDataResult = requestSchema.safeParse(req.body);
+    if (requestDataResult.error != null) {
+      return res.status(200).send({
+        errors: requestDataResult.error.issues,
+      });
+    }
+
+    let {
+      query: querySource,
+      extensions: queryExtensions,
+      operationName,
+      variables,
+    } = requestDataResult.data;
+
+    let requestDocument: DocumentNode;
+    if (typeof queryExtensions?.[PASTORIA_ID_EXTENSION] === 'string') {
+      const persistedQueryId = queryExtensions?.[PASTORIA_ID_EXTENSION];
+      if (parsedPersistedQueries[persistedQueryId] == null) {
+        return res
+          .status(400)
+          .send(`Unable to find persisted query: ${persistedQueryId}`);
+      }
+
+      requestDocument = parsedPersistedQueries[persistedQueryId];
+    } else if (querySource == null) {
+      return res.status(400).send('Query is required.');
+    } else {
+      try {
+        requestDocument = parse(querySource);
+      } catch (e) {
+        return res.status(400).send(`Could not parse query: ${e}`);
+      }
+    }
+
+    const validationErrors = validate(schema, requestDocument, specifiedRules);
+    if (validationErrors.length) {
+      return res
+        .status(500)
+        .send(
+          `Query failed validation:\n ${validationErrors.map((e) => e.toString()).join('\n\n')}`,
+        );
+    }
+
+    const graphqlResponse = await execute({
+      document: requestDocument,
+      schema,
+      operationName,
+      contextValue: createContext(req),
+      variableValues: variables,
+    });
+
+    return res.status(200).send(graphqlResponse);
   };
-  // return createYoga({
-  //   schema,
-  //   context: ({request}) => createContext(request),
-  //   plugins: [
-  //     // eslint-disable-next-line react-hooks/rules-of-hooks
-  //     usePersistedOperations({
-  //       allowArbitraryOperations: true,
-  //       extractPersistedOperationId: (
-  //         params: GraphQLParams & {id?: unknown},
-  //       ) => (typeof params.id === 'string' ? params.id : null),
-  //       getPersistedOperation: (key) => persistedQueries[key] ?? null,
-  //     }),
-  //   ],
-  // });
 }
 
 function createReactHandler(
@@ -74,9 +154,7 @@ function createReactHandler(
   manifest?: Manifest | null,
 ): express.Handler {
   return async (req, res) => {
-    // TODO: Unify the GraphQL Yoga request with this one.
-    // Do we even need GraphQL yoga at this point?
-    const context = createContext(null!);
+    const context = createContext(req);
     const provider = createServerEnvironment(
       req,
       schema,

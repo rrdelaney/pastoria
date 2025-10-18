@@ -26,6 +26,8 @@ export interface RelayResolverContext {
   cookies?: Request['cookies'];
 }
 
+export const PASTORIA_ID_EXTENSION = 'pastoria-id';
+
 function createClientNetwork() {
   return Network.create(async (params, variables) => {
     const response = await fetch('/api/graphql', {
@@ -36,9 +38,10 @@ function createClientNetwork() {
       },
       body: JSON.stringify({
         query: params.text,
-        id: params.id,
         variables,
-        extensions: {},
+        extensions: {
+          [PASTORIA_ID_EXTENSION]: params.id,
+        },
       }),
     });
 

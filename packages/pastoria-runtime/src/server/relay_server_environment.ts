@@ -16,7 +16,8 @@ export function createServerEnvironment(
     let source = request.text;
     if (source == null && request.id) {
       source = persistedQueries?.[request.id] ?? null;
-    } else if (source == null) {
+    }
+    if (source == null) {
       throw new Error(`Could not find source for query: ${request.id}`);
     }
 

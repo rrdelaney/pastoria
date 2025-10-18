@@ -24,10 +24,7 @@
   "author": "",
   "license": "MIT",
   "dependencies": {
-    "@graphql-yoga/plugin-persisted-operations": "^3.14.0",
-    "graphql-yoga": "^5.13.4",
-    "serialize-javascript": "^6.0.2",
-    "graphql": "catalog:"
+    "serialize-javascript": "^6.0.2"
   },
   "devDependencies": {
     "@types/express": "catalog:",
@@ -42,9 +39,11 @@
   },
   "peerDependencies": {
     "express": "catalog:",
+    "graphql": "catalog:",
     "react": "catalog:",
     "react-dom": "catalog:",
     "react-relay": "catalog:",
-    "relay-runtime": "catalog:"
+    "relay-runtime": "catalog:",
+    "zod": "catalog:"
   }
 }
