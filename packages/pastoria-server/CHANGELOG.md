@@ -1,5 +1,14 @@
 # pastoria-server
 
+## 1.0.5
+
+### Patch Changes
+
+- d81851d: Added a custom GraphQL server to remove the Yoga dependency
+- Updated dependencies [d81851d]
+- Updated dependencies [da57512]
+  - pastoria-runtime@1.0.4
+
 ## 1.0.4
 
 ### Patch Changes

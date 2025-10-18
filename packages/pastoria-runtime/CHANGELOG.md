@@ -1,5 +1,12 @@
 # pastoria-runtime
 
+## 1.0.4
+
+### Patch Changes
+
+- d81851d: Added a custom GraphQL server to remove the Yoga dependency
+- da57512: Add support for cancelling in-flight requests
+
 ## 1.0.3
 
 ### Patch Changes

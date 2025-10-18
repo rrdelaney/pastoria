@@ -1,5 +1,11 @@
 # pastoria
 
+## 1.0.6
+
+### Patch Changes
+
+- d81851d: Added a custom GraphQL server to remove the Yoga dependency
+
 ## 1.0.5
 
 ### Patch Changes
