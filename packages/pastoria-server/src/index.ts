@@ -6,7 +6,7 @@ import express from 'express';
 import {readFile} from 'node:fs/promises';
 import * as path from 'node:path';
 import pc from 'picocolors';
-import {loadConfig, PastoriaConfig} from 'pastoria-runtime/server';
+import {loadConfig, PastoriaConfig} from 'pastoria-config';
 import type {Manifest} from 'vite';
 
 interface PersistedQueries {

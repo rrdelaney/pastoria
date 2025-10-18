@@ -47,7 +47,8 @@ import {getSchema} from '#genfiles/schema/schema';
 import {Context} from '#genfiles/router/context';
 ${appImport}
 import {GraphQLSchema, specifiedDirectives} from 'graphql';
-import {createRouterHandler, PastoriaConfig} from 'pastoria-runtime/server';
+import {PastoriaConfig} from 'pastoria-config';
+import {createRouterHandler} from 'pastoria-runtime/server';
 import type {Manifest} from 'vite';
 
 const schemaConfig = getSchema().toConfig();
