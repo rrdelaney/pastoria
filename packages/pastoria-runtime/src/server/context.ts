@@ -1,5 +1,5 @@
-import type { Request } from "express";
-import DataLoader from "dataloader";
+import type {Request} from 'express';
+import DataLoader from 'dataloader';
 
 /**
  * Base class for Pastoria GraphQL contexts.

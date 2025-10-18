@@ -188,6 +188,9 @@ User projects are expected to have:
 ## Development Notes
 
 - Always build packages before testing CLI functionality: `pnpm -r build`
+- **Always format code before creating a PR**: `pnpm format`
+  - CI will fail if code is not formatted with Prettier
+  - Run `pnpm check:format` to verify formatting without making changes
 - The framework has no test suite currently (package.json scripts show no test
   command)
 - When modifying templates (`packages/pastoria/templates/`), the changes affect

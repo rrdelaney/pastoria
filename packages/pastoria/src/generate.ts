@@ -178,10 +178,14 @@ function collectRouterNodes(project: Project): {
 
               for (const decl of declarations) {
                 if (decl.isKind(SyntaxKind.ClassDeclaration)) {
-                  const classDecl = decl.asKindOrThrow(SyntaxKind.ClassDeclaration);
+                  const classDecl = decl.asKindOrThrow(
+                    SyntaxKind.ClassDeclaration,
+                  );
                   const extendsClause = classDecl.getExtends();
                   if (extendsClause != null) {
-                    const baseClassName = extendsClause.getExpression().getText();
+                    const baseClassName = extendsClause
+                      .getExpression()
+                      .getText();
                     if (baseClassName === 'PastoriaRootContext') {
                       extendsPastoriaRootContext = true;
                       break;
