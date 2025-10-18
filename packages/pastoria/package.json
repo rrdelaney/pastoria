@@ -21,7 +21,6 @@
     "cookie-parser": "catalog:",
     "dotenv": "catalog:",
     "express": "catalog:",
-    "pastoria-config": "workspace:*",
     "picocolors": "catalog:",
     "ts-morph": "^26.0.0",
     "vite": "catalog:",
@@ -34,9 +33,13 @@
     "@types/react": "catalog:",
     "@types/react-dom": "catalog:",
     "@types/react-relay": "catalog:",
+    "pastoria-config": "workspace:*",
     "pastoria-runtime": "workspace:*",
     "typescript": "catalog:",
     "radix3": "^1.1.2",
     "zod": "catalog:"
+  },
+  "peerDependencies": {
+    "pastoria-config": "workspace:*"
   }
 }

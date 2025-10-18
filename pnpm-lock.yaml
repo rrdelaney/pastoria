@@ -106,9 +106,6 @@ importers:
       express:
         specifier: 'catalog:'
         version: 5.1.0
-      pastoria-config:
-        specifier: workspace:*
-        version: link:../pastoria-config
       picocolors:
         specifier: 'catalog:'
         version: 1.1.1
@@ -140,6 +137,9 @@ importers:
       '@types/react-relay':
         specifier: 'catalog:'
         version: 18.2.1
+      pastoria-config:
+        specifier: workspace:*
+        version: link:../pastoria-config
       pastoria-runtime:
         specifier: workspace:*
         version: link:../pastoria-runtime
@@ -173,9 +173,6 @@ importers:
       graphql:
         specifier: 'catalog:'
         version: 16.11.0
-      pastoria-config:
-        specifier: workspace:*
-        version: link:../pastoria-config
       react:
         specifier: 'catalog:'
         version: 19.2.0
@@ -216,6 +213,9 @@ importers:
       '@types/serialize-javascript':
         specifier: ^5.0.4
         version: 5.0.4
+      pastoria-config:
+        specifier: workspace:*
+        version: link:../pastoria-config
       typescript:
         specifier: 'catalog:'
         version: 5.9.3
