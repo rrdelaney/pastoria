@@ -89,7 +89,10 @@ function pastoriaEntryPlugin(): Plugin {
       }
     },
     async load(id) {
-      const appRootPath = path.join(process.cwd(), '__generated__/router/app_root.ts');
+      const appRootPath = path.join(
+        process.cwd(),
+        '__generated__/router/app_root.ts',
+      );
 
       let hasAppRoot = false;
       try {
@@ -139,10 +142,7 @@ export function createBuildConfig(
       tailwindcss(),
       react({
         babel: {
-          plugins: [
-            ['babel-plugin-react-compiler', {}],
-            'relay',
-          ],
+          plugins: [['babel-plugin-react-compiler', {}], 'relay'],
         },
       }),
       cjsInterop({
