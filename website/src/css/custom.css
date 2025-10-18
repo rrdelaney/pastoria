@@ -16,9 +16,9 @@
 
   --docusaurus-highlighted-code-line-bg: rgba(0, 0, 0, 0.1);
 
-  --ifm-heading-font-family: "Source Serif 4", serif;
-  --ifm-font-family-base: "Work Sans", system-ui, sans-serif;
-  --ifm-font-family-monospace: "Cascadia Code", monospace
+  --ifm-heading-font-family: 'Source Serif 4', serif;
+  --ifm-font-family-base: 'Work Sans', system-ui, sans-serif;
+  --ifm-font-family-monospace: 'Cascadia Code', monospace;
 }
 
 /* For readability concerns, you should choose a lighter palette in dark mode. */
