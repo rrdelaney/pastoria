@@ -3,7 +3,7 @@ import dotenv from 'dotenv';
 import express from 'express';
 import {readFile} from 'node:fs/promises';
 import pc from 'picocolors';
-import {loadConfig, PastoriaConfig} from 'pastoria-runtime/server';
+import {loadConfig, PastoriaConfig} from 'pastoria-config';
 import {createServer as createViteServer, type Manifest} from 'vite';
 import {CLIENT_BUILD, createBuildConfig} from './build.js';
 

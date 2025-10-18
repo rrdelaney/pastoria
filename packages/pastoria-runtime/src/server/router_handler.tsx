@@ -20,7 +20,7 @@ import {
 import serialize from 'serialize-javascript';
 import type {Manifest} from 'vite';
 import {z} from 'zod/v4-mini';
-import {PastoriaConfig} from '../config.js';
+import {PastoriaConfig} from 'pastoria-config';
 import {
   AnyPreloadedEntryPoint,
   AnyPreloadedQuery,
