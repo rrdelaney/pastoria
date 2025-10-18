@@ -83,7 +83,8 @@ function createGraphqlHandler(
       config.enableGraphiQLInProduction;
 
     if (req.method === 'GET' && allowGraphiQL) {
-      return res.status(200).send(graphiqlScript('http://localhost:3000'));
+      const graphqlHost = `${req.protocol}://${req.host}`;
+      return res.status(200).send(graphiqlScript(graphqlHost));
     } else if (req.method !== 'POST') {
       return res.sendStatus(404);
     }
@@ -127,10 +128,12 @@ function createGraphqlHandler(
         config.persistedQueriesOnlyInProduction
       ) {
         return res
-          .status(400)
-          .send(
-            'Only persisted queries are allowed in production. Plain text queries are disabled.',
-          );
+          .status(200)
+          .send({
+            errors: [
+              'Only persisted queries are allowed in production. Plain text queries are disabled.',
+            ],
+          });
       }
 
       try {
@@ -143,10 +146,8 @@ function createGraphqlHandler(
     const validationErrors = validate(schema, requestDocument, specifiedRules);
     if (validationErrors.length) {
       return res
-        .status(500)
-        .send(
-          `Query failed validation:\n ${validationErrors.map((e) => e.toString()).join('\n\n')}`,
-        );
+        .status(200)
+        .send({errors: validationErrors.map((e) => e.toString())});
     }
 
     const graphqlResponse = await execute({
