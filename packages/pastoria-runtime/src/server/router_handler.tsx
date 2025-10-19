@@ -65,7 +65,6 @@ function createAbortControllFromRes(res: express.Response): AbortController {
   const controller = new AbortController();
   res.on('close', () => {
     if (!res.writableEnded) {
-      console.log('request has been cancelled');
       controller.abort();
     }
   });
@@ -170,7 +169,6 @@ function createGraphqlHandler(
       abortSignal: controller.signal,
     });
 
-    console.log('Got GraphQL response!');
     return res.status(200).send(graphqlResponse);
   };
 }
