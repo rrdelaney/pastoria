@@ -1,0 +1,51 @@
+{
+  "name": "pastoria-starter",
+  "version": "0.1.0",
+  "private": true,
+  "type": "module",
+  "scripts": {
+    "format": "prettier -w .",
+    "generate:schema": "grats",
+    "generate:relay": "relay-compiler",
+    "generate:router": "pastoria gen",
+    "build": "pastoria build",
+    "dev": "pastoria dev",
+    "start": "NODE_ENV=production pastoria-server"
+  },
+  "imports": {
+    "#src/*": "./src/*",
+    "#genfiles/*": "./__generated__/*"
+  },
+  "dependencies": {
+    "dotenv": "^16.6.1",
+    "express": "^5.1.0",
+    "graphql": "^16.11.0",
+    "graphql-relay": "^0.10.2",
+    "grats": "^0.0.33",
+    "pastoria-runtime": "workspace:*",
+    "pastoria-server": "workspace:*",
+    "radix3": "^1.1.2",
+    "react": "^19.2.0",
+    "react-dom": "^19.2.0",
+    "react-relay": "^20.1.1",
+    "relay-runtime": "^20.1.1",
+    "zod": "^3.25.76"
+  },
+  "devDependencies": {
+    "@tailwindcss/vite": "^4.1.14",
+    "@types/node": "^22.18.8",
+    "@types/react": "^19.2.2",
+    "@types/react-dom": "^19.2.1",
+    "@types/react-relay": "^18.2.1",
+    "@types/relay-runtime": "^19.0.3",
+    "@vitejs/plugin-react": "^4.7.0",
+    "babel-plugin-relay": "^16.2.0",
+    "pastoria": "workspace:*",
+    "prettier": "^3.6.2",
+    "prettier-plugin-tailwindcss": "^0.6.14",
+    "relay-compiler": "^20.1.1",
+    "relay-config": "^12.0.1",
+    "tailwindcss": "^4.1.14",
+    "typescript": "^5.9.3"
+  }
+}

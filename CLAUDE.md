@@ -140,7 +140,7 @@ The runtime provides Relay environment setup for framework users:
 - **Server environment** (`src/server/relay_server_environment.ts`): Executes
   queries directly against schema
 - **Persisted queries**: Framework expects
-  `__generated__/persisted_queries.json` in user projects
+  `__generated__/router/persisted_queries.json` in user projects
 
 ### Server-Side Rendering (`packages/pastoria-runtime/src/server/router_handler.tsx`)
 
@@ -170,7 +170,7 @@ User projects are expected to have:
   (replaces hardcoded `src/pages/_app.tsx`)
 - `src/lib/server/context.ts`: GraphQL context factory
 - `__generated__/schema/schema.ts`: GraphQL schema (from Relay compiler)
-- `__generated__/persisted_queries.json`: Persisted query map (from Relay
+- `__generated__/router/persisted_queries.json`: Persisted query map (from Relay
   compiler)
 - Route components with JSDoc annotations (`@route`, `@param`)
 - Resource exports with JSDoc annotation (`@resource`)

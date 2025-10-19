@@ -36,7 +36,7 @@ export async function startDevserver(opts: {port: string}) {
   app.use(vite.middlewares);
   app.use(async (req, res, next) => {
     const persistedQueries = JSON.parse(
-      await readFile('__generated__/persisted_queries.json', 'utf-8'),
+      await readFile('__generated__/router/persisted_queries.json', 'utf-8'),
     );
 
     const {createHandler} = (await vite.ssrLoadModule(

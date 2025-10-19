@@ -5,12 +5,12 @@ import DataLoader from 'dataloader';
  * Base class for Pastoria GraphQL contexts.
  *
  * To provide a custom context, export a class that extends PastoriaRootContext
- * and add the @gqlContext JSDoc tag:
+ * and add the `@gqlContext` JSDoc tag:
  *
  * @example
  * ```typescript
  * /**
- *  * @gqlContext
+ *  * `@gqlContext`
  *  *\/
  * export class Context extends PastoriaRootContext {
  *   // Add custom properties and methods
@@ -27,7 +27,7 @@ import DataLoader from 'dataloader';
  * }
  * ```
  *
- * Pastoria will automatically discover your context class via the @gqlContext tag
+ * Pastoria will automatically discover your context class via the `@gqlContext` tag
  * and use it for GraphQL operations. If no custom context is found, a default
  * context will be generated.
  */

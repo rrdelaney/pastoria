@@ -1,6 +1,7 @@
 packages:
   - packages/*
   - website
+  - examples/*
 
 catalog:
   '@types/cookie-parser': ^1.4.9
