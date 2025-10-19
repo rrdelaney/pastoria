@@ -18,3 +18,5 @@ coverage/
 
 # Misc
 .turbo/
+
+examples/*/__generated__
