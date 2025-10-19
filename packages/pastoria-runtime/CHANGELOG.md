@@ -1,5 +1,11 @@
 # pastoria-runtime
 
+## 1.0.5
+
+### Patch Changes
+
+- a70ff3c: Fix issue with abort controller ending too early
+
 ## 1.0.4
 
 ### Patch Changes
