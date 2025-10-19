@@ -61,10 +61,13 @@ const requestSchema = z.object({
   extensions: z.nullish(jsonSchema),
 });
 
-function createAbortControllFromReq(req: express.Request): AbortController {
+function createAbortControllFromRes(res: express.Response): AbortController {
   const controller = new AbortController();
-  req.on('close', () => {
-    controller.abort();
+  res.on('close', () => {
+    if (!res.writableEnded) {
+      console.log('request has been cancelled');
+      controller.abort();
+    }
   });
 
   return controller;
@@ -157,7 +160,7 @@ function createGraphqlHandler(
         .send({errors: validationErrors.map((e) => e.toString())});
     }
 
-    const controller = createAbortControllFromReq(req);
+    const controller = createAbortControllFromRes(res);
     const graphqlResponse = await execute({
       document: requestDocument,
       schema,
@@ -167,6 +170,7 @@ function createGraphqlHandler(
       abortSignal: controller.signal,
     });
 
+    console.log('Got GraphQL response!');
     return res.status(200).send(graphqlResponse);
   };
 }
