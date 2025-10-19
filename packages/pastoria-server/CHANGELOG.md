@@ -1,5 +1,13 @@
 # pastoria-server
 
+## 1.0.8
+
+### Patch Changes
+
+- Move generated persisted queries output
+- Updated dependencies
+  - pastoria-runtime@1.0.7
+
 ## 1.0.7
 
 ### Patch Changes
