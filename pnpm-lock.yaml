@@ -57,6 +57,9 @@ catalogs:
     relay-runtime:
       specifier: ^20.1.1
       version: 20.1.1
+    tailwindcss:
+      specifier: ^4.1.14
+      version: 4.1.14
     typescript:
       specifier: ^5.9.2
       version: 5.9.3
@@ -150,6 +153,9 @@ importers:
       relay-config:
         specifier: ^12.0.1
         version: 12.0.1
+      tailwindcss:
+        specifier: 'catalog:'
+        version: 4.1.14
       typescript:
         specifier: 'catalog:'
         version: 5.9.3

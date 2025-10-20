@@ -42,6 +42,7 @@
     "zod": "catalog:"
   },
   "peerDependencies": {
-    "pastoria-config": "workspace:*"
+    "pastoria-config": "workspace:*",
+    "tailwindcss": "catalog:"
   }
 }
