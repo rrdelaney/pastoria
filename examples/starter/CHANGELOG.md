@@ -1,5 +1,12 @@
 # pastoria-starter
 
+## 0.1.3
+
+### Patch Changes
+
+- Updated dependencies
+  - pastoria-server@1.0.9
+
 ## 0.1.2
 
 ### Patch Changes

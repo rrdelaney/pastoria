@@ -5,8 +5,8 @@ import dotenv from 'dotenv';
 import express from 'express';
 import {readFile} from 'node:fs/promises';
 import * as path from 'node:path';
-import pc from 'picocolors';
 import {loadConfig, PastoriaConfig} from 'pastoria-config';
+import pc from 'picocolors';
 import type {Manifest} from 'vite';
 
 interface PersistedQueries {
@@ -22,19 +22,30 @@ interface ServerEntry {
 }
 
 const MANIFEST_JSON = 'dist/client/.vite/manifest.json';
+const SERVER_MANIFEST_JSON = 'dist/server/.vite/manifest.json';
 const QUERIES_JSON = '__generated__/router/persisted_queries.json';
-const ENTRY_SERVER = path.join(
-  process.cwd(),
-  'dist/server/virtual_pastoria-entry-server.mjs',
-);
 
 async function createServer() {
   dotenv.config();
 
-  const manifest: Manifest = JSON.parse(await readFile(MANIFEST_JSON, 'utf-8'));
-  const persistedQueries = JSON.parse(await readFile(QUERIES_JSON, 'utf-8'));
-  const config = await loadConfig();
-  const {createHandler} = (await import(ENTRY_SERVER)) as ServerEntry;
+  const [manifest, serverManifest, persistedQueries, config] =
+    await Promise.all([
+      JSON.parse(await readFile(MANIFEST_JSON, 'utf-8')) as Manifest,
+      JSON.parse(await readFile(SERVER_MANIFEST_JSON, 'utf-8')) as Manifest,
+      JSON.parse(await readFile(QUERIES_JSON, 'utf-8')),
+      loadConfig(),
+    ]);
+
+  const serverEntry = serverManifest['virtual:pastoria-entry-server.tsx']?.file;
+  if (serverEntry == null) {
+    throw new Error(
+      'Could not load entry for virtual:pastoria-entry-server.tsx',
+    );
+  }
+
+  const {createHandler} = (await import(
+    path.join(process.cwd(), 'dist/server', serverEntry)
+  )) as ServerEntry;
 
   const handler = createHandler(persistedQueries, config, manifest);
 

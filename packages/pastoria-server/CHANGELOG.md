@@ -1,5 +1,11 @@
 # pastoria-server
 
+## 1.0.9
+
+### Patch Changes
+
+- Update to read from vite manifest instead of assuming output file
+
 ## 1.0.8
 
 ### Patch Changes
