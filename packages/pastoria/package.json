@@ -23,6 +23,7 @@
     "dotenv": "catalog:",
     "express": "catalog:",
     "picocolors": "catalog:",
+    "tailwindcss": "^4.1.14",
     "ts-morph": "^26.0.0",
     "vite": "catalog:",
     "vite-plugin-cjs-interop": "^2.3.0"
