@@ -17,6 +17,7 @@
     "@tailwindcss/vite": "^4.1.14",
     "@vitejs/plugin-react": "^5.0.4",
     "babel-plugin-react-compiler": "^1.0.0",
+    "babel-plugin-relay": "^20.1.1",
     "commander": "catalog:",
     "cookie-parser": "catalog:",
     "dotenv": "catalog:",
@@ -35,8 +36,8 @@
     "@types/react-relay": "catalog:",
     "pastoria-config": "workspace:*",
     "pastoria-runtime": "workspace:*",
-    "typescript": "catalog:",
     "radix3": "^1.1.2",
+    "typescript": "catalog:",
     "zod": "catalog:"
   },
   "peerDependencies": {
