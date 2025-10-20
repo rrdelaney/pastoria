@@ -31,4 +31,10 @@ jobs:
         run: pnpm check:format
 
       - name: Build packages
-        run: pnpm -r build
+        run: pnpm --filter 'pastoria*' -r build
+
+      - name: Link local pastoria CLI
+        run: pnpm install --frozen-lockfile
+
+      - name: Build examples
+        run: pnpm run --parallel --filter 'create-pastoria-*' build
