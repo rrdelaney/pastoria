@@ -1,13 +1,32 @@
 {
   "name": "create-pastoria",
   "version": "1.0.1",
-  "description": "",
-  "main": "index.js",
-  "scripts": {
-    "test": "echo \"Error: no test specified\" && exit 1"
+  "description": "Scaffolding tool for creating new Pastoria projects",
+  "type": "module",
+  "main": "./dist/index.js",
+  "types": "./dist/index.d.ts",
+  "bin": {
+    "create-pastoria": "./dist/index.js"
   },
-  "keywords": [],
+  "scripts": {
+    "build": "tsc",
+    "check:types": "tsc --noEmit"
+  },
+  "keywords": [
+    "pastoria",
+    "framework",
+    "scaffold",
+    "create"
+  ],
   "author": "",
   "license": "MIT",
-  "type": "commonjs"
+  "dependencies": {
+    "degit": "^2.8.4",
+    "picocolors": "catalog:"
+  },
+  "devDependencies": {
+    "@types/degit": "^2.8.6",
+    "@types/node": "catalog:",
+    "typescript": "catalog:"
+  }
 }
