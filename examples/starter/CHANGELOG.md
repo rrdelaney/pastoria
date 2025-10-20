@@ -1,5 +1,11 @@
 # pastoria-starter
 
+## 0.1.2
+
+### Patch Changes
+
+- 265903c: Add babel-plugin-relay dependency
+
 ## 0.1.1
 
 ### Patch Changes

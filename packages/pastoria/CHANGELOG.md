@@ -1,5 +1,11 @@
 # pastoria
 
+## 1.0.8
+
+### Patch Changes
+
+- 265903c: Add babel-plugin-relay dependency
+
 ## 1.0.7
 
 ### Patch Changes
