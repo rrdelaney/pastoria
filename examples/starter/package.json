@@ -20,7 +20,6 @@
     "dotenv": "catalog:",
     "express": "catalog:",
     "graphql": "catalog:",
-    "graphql-relay": "^0.10.2",
     "grats": "^0.0.33",
     "pastoria-runtime": "workspace:*",
     "pastoria-server": "workspace:*",
