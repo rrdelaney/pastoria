@@ -285,6 +285,10 @@ async function loadQueries(entryPoint: AnyPreloadedEntryPoint) {
     }
   }
 
+  for (const nestedEntry of Object.values(entryPoint.entryPoints)) {
+    preloadedQueryOps.push(...(await loadQueries(nestedEntry)));
+  }
+
   return preloadedQueryOps;
 }
 

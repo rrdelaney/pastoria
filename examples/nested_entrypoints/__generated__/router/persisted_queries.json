@@ -1,0 +1,3 @@
+{
+  "976a7f67a139b2c31e8e83558b5e3660": "query search_SearchResultsQuery(\n  $query: String!\n) {\n  cities(query: $query) {\n    name\n  }\n}\n"
+}

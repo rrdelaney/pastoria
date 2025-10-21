@@ -15,6 +15,6 @@ export function hello(ctx: Context): string {
  *
  * @gqlQueryField
  */
-export function greet(args: {name: string}, ctx: Context): string {
-  return `Hello, ${args.name}! Welcome to Pastoria.`;
+export function greet(name: string, ctx: Context): string {
+  return `Hello, ${name}! Welcome to Pastoria.`;
 }
