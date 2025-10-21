@@ -6,10 +6,12 @@ import {existsSync, readFileSync, writeFileSync} from 'fs';
 import {mkdir} from 'fs/promises';
 import {join, dirname} from 'path';
 import {fileURLToPath} from 'url';
+import {getLogger} from 'pastoria-logger';
 import pc from 'picocolors';
 import {parse as parseYaml} from 'yaml';
 
 const __dirname = dirname(fileURLToPath(import.meta.url));
+const logger = getLogger('create-pastoria');
 
 const GITHUB_REPO = 'rrdelaney/pastoria';
 const STARTER_PATH = 'examples/starter';
@@ -18,12 +20,12 @@ async function main() {
   const args = process.argv.slice(2);
   const projectName = args[0] || 'my-pastoria-app';
 
-  console.log(pc.cyan(`Creating a new Pastoria project in ${projectName}...`));
+  logger.info(pc.cyan(`Creating a new Pastoria project in ${projectName}...`));
 
   const targetDir = join(process.cwd(), projectName);
 
   if (existsSync(targetDir)) {
-    console.error(
+    logger.error(
       pc.red(
         `Error: Directory ${projectName} already exists. Please choose a different name.`,
       ),
@@ -33,7 +35,7 @@ async function main() {
 
   try {
     // Clone the starter project using degit
-    console.log(pc.blue('Cloning starter project...'));
+    logger.info(pc.blue('Cloning starter project...'));
     const emitter = degit(`${GITHUB_REPO}/${STARTER_PATH}`, {
       cache: false,
       force: true,
@@ -42,42 +44,42 @@ async function main() {
     await emitter.clone(targetDir);
 
     // Replace workspace: dependencies with published versions
-    console.log(pc.blue('Updating dependencies...'));
+    logger.info(pc.blue('Updating dependencies...'));
     await updatePackageJson(targetDir);
 
     // Create .prettierignore
-    console.log(pc.blue('Creating .prettierignore...'));
+    logger.info(pc.blue('Creating .prettierignore...'));
     await createPrettierIgnore(targetDir);
 
     // Update .gitignore
-    console.log(pc.blue('Updating .gitignore...'));
+    logger.info(pc.blue('Updating .gitignore...'));
     await updateGitIgnore(targetDir);
 
     // Install dependencies
-    console.log(pc.blue('Installing dependencies...'));
+    logger.info(pc.blue('Installing dependencies...'));
     await installDependencies(targetDir);
 
     // Create required directories for code generation
-    console.log(pc.blue('Creating required directories...'));
+    logger.info(pc.blue('Creating required directories...'));
     await createDirectories(targetDir);
 
     // Run code generation
-    console.log(pc.blue('Generating GraphQL schema...'));
+    logger.info(pc.blue('Generating GraphQL schema...'));
     await runCommand('npm', ['run', 'generate:schema'], targetDir);
 
-    console.log(pc.blue('Generating Relay artifacts...'));
+    logger.info(pc.blue('Generating Relay artifacts...'));
     await runCommand('npm', ['run', 'generate:relay'], targetDir);
 
-    console.log(pc.blue('Generating router...'));
+    logger.info(pc.blue('Generating router...'));
     await runCommand('npm', ['run', 'generate:router'], targetDir);
 
-    console.log(pc.green('\n✓ Success! Created Pastoria project at:'));
-    console.log(pc.cyan(`  ${targetDir}\n`));
-    console.log('To get started, run:');
-    console.log(pc.cyan(`  cd ${projectName}`));
-    console.log(pc.cyan('  npm run dev'));
+    logger.info(pc.green('\n✓ Success! Created Pastoria project at:'));
+    logger.info(pc.cyan(`  ${targetDir}\n`));
+    logger.info('To get started, run:');
+    logger.info(pc.cyan(`  cd ${projectName}`));
+    logger.info(pc.cyan('  npm run dev'));
   } catch (error) {
-    console.error(pc.red('Error creating Pastoria project:'), error);
+    logger.error(pc.red('Error creating Pastoria project:'), error);
     process.exit(1);
   }
 }
@@ -111,7 +113,7 @@ async function updatePackageJson(targetDir: string) {
         if (catalog[name]) {
           deps[name] = catalog[name];
         } else {
-          console.warn(
+          logger.warn(
             pc.yellow(
               `Warning: ${name} references catalog but not found in catalog`,
             ),
@@ -148,12 +150,10 @@ function loadCatalog(): Record<string, string> {
       return workspace.catalog || {};
     }
 
-    console.warn(
-      pc.yellow('Warning: pnpm-workspace.yaml not found in package'),
-    );
+    logger.warn(pc.yellow('Warning: pnpm-workspace.yaml not found in package'));
     return {};
   } catch (error) {
-    console.warn(
+    logger.warn(
       pc.yellow('Warning: Could not load catalog from pnpm-workspace.yaml'),
     );
     return {};
@@ -273,6 +273,6 @@ function runCommand(
 }
 
 main().catch((error) => {
-  console.error(pc.red('Fatal error:'), error);
+  logger.error(pc.red('Fatal error:'), error);
   process.exit(1);
 });

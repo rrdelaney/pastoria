@@ -8,6 +8,7 @@ import {
   validate,
 } from 'graphql';
 import {PastoriaConfig} from 'pastoria-config';
+import {getLogger} from 'pastoria-logger';
 import {ComponentType, PropsWithChildren} from 'react';
 import {renderToPipeableStream} from 'react-dom/server';
 import {
@@ -30,6 +31,8 @@ import {
 } from '../relay_client_environment.js';
 import {graphiqlScript} from './graphiql.js';
 import {createServerEnvironment} from './relay_server_environment.js';
+
+const logger = getLogger('pastoria-runtime:server');
 
 type SrcOfModuleId = (id: string) => string | null;
 type AppComponent = ComponentType<PropsWithChildren<{}>>;
@@ -83,8 +86,7 @@ function createGraphqlHandler(
     try {
       parsedPersistedQueries[id] = parse(doc);
     } catch (e) {
-      console.error(`Could not parse persisted query: ${id}`);
-      console.error(e);
+      logger.error(`Could not parse persisted query: ${id}`, e);
     }
   }
 
@@ -280,7 +282,7 @@ async function loadQueries(entryPoint: AnyPreloadedEntryPoint) {
         ]);
       }
     } catch (e) {
-      console.error(e);
+      logger.error('Error loading query', e);
       throw e;
     }
   }

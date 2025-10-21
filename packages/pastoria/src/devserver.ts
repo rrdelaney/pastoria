@@ -2,10 +2,13 @@ import cookieParser from 'cookie-parser';
 import dotenv from 'dotenv';
 import express from 'express';
 import {readFile} from 'node:fs/promises';
+import {getLogger} from 'pastoria-logger';
 import pc from 'picocolors';
 import {loadConfig, PastoriaConfig} from 'pastoria-config';
 import {createServer as createViteServer, type Manifest} from 'vite';
 import {CLIENT_BUILD, createBuildConfig} from './build.js';
+
+const logger = getLogger('pastoria:dev');
 
 interface PersistedQueries {
   [hash: string]: string;
@@ -49,9 +52,9 @@ export async function startDevserver(opts: {port: string}) {
 
   app.listen(Number(opts.port), (err) => {
     if (err) {
-      console.error(err);
+      logger.error('Failed to start dev server', err);
     } else {
-      console.log(pc.cyan(`Listening on port ${opts.port}!`));
+      logger.info(pc.cyan(`Listening on port ${opts.port}!`));
     }
   });
 }

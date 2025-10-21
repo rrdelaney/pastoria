@@ -22,6 +22,7 @@
   "license": "MIT",
   "dependencies": {
     "degit": "^2.8.4",
+    "pastoria-logger": "workspace:*",
     "picocolors": "catalog:",
     "yaml": "^2.7.0"
   },

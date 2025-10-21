@@ -2,6 +2,7 @@ import react from '@vitejs/plugin-react';
 import tailwindcss from '@tailwindcss/vite';
 import {access} from 'node:fs/promises';
 import * as path from 'node:path';
+import {createViteLogger} from 'pastoria-logger';
 import {cjsInterop} from 'vite-plugin-cjs-interop';
 import {
   build,
@@ -134,6 +135,7 @@ export function createBuildConfig(
 ): InlineConfig {
   return {
     appType: 'custom' as const,
+    customLogger: createViteLogger({namespace: 'pastoria:vite'}),
     build: {
       ...buildEnv,
       assetsInlineLimit: 0,

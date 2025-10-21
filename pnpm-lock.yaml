@@ -241,6 +241,9 @@ importers:
       degit:
         specifier: ^2.8.4
         version: 2.8.4
+      pastoria-logger:
+        specifier: workspace:*
+        version: link:../pastoria-logger
       picocolors:
         specifier: 'catalog:'
         version: 1.1.1
@@ -284,6 +287,9 @@ importers:
       express:
         specifier: 'catalog:'
         version: 5.1.0
+      pastoria-logger:
+        specifier: workspace:*
+        version: link:../pastoria-logger
       picocolors:
         specifier: 'catalog:'
         version: 1.1.1
@@ -343,11 +349,30 @@ importers:
         specifier: 'catalog:'
         version: 5.9.3
 
+  packages/pastoria-logger:
+    dependencies:
+      picocolors:
+        specifier: 'catalog:'
+        version: 1.1.1
+    devDependencies:
+      '@types/node':
+        specifier: 'catalog:'
+        version: 22.18.8
+      typescript:
+        specifier: 'catalog:'
+        version: 5.9.3
+      vite:
+        specifier: 'catalog:'
+        version: 7.1.9(@types/node@22.18.8)(jiti@2.6.1)(lightningcss@1.30.1)(terser@5.44.0)(yaml@2.8.1)
+
   packages/pastoria-runtime:
     dependencies:
       dataloader:
         specifier: ^2.2.3
         version: 2.2.3
+      pastoria-logger:
+        specifier: workspace:*
+        version: link:../pastoria-logger
       radix3:
         specifier: ^1.1.2
         version: 1.1.2
@@ -418,6 +443,9 @@ importers:
       express:
         specifier: 'catalog:'
         version: 5.1.0
+      pastoria-logger:
+        specifier: workspace:*
+        version: link:../pastoria-logger
       picocolors:
         specifier: 'catalog:'
         version: 1.1.1

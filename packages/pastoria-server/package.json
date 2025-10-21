@@ -18,6 +18,7 @@
     "cookie-parser": "catalog:",
     "dotenv": "catalog:",
     "express": "catalog:",
+    "pastoria-logger": "workspace:*",
     "picocolors": "catalog:"
   },
   "devDependencies": {

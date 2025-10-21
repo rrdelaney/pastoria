@@ -27,8 +27,11 @@
 
 import {readFile} from 'node:fs/promises';
 import * as path from 'node:path';
+import {getLogger} from 'pastoria-logger';
 import pc from 'picocolors';
 import {Project, SourceFile, Symbol, SyntaxKind, ts, TypeFlags} from 'ts-morph';
+
+const logger = getLogger('pastoria:generate');
 
 async function loadRouterTemplates(project: Project, filename: string) {
   async function loadSourceFile(fileName: string, templateFileName: string) {
@@ -143,8 +146,7 @@ function collectPastoriaMetadata(project: Project): PastoriaMetadata {
           switch (tag.tagName.getText()) {
             case 'appRoot': {
               if (appRoot != null) {
-                console.warn(
-                  pc.yellow('Warning:'),
+                logger.warn(
                   'Multiple @appRoot tags found. Using the first one.',
                 );
               } else {
@@ -180,8 +182,7 @@ function collectPastoriaMetadata(project: Project): PastoriaMetadata {
 
               if (extendsPastoriaRootContext) {
                 if (gqlContext != null) {
-                  console.warn(
-                    pc.yellow('Warning:'),
+                  logger.warn(
                     'Multiple classes with @gqlContext extending PastoriaRootContext found. Using the first one.',
                   );
                 } else {
@@ -239,7 +240,7 @@ function zodSchemaOfType(tc: ts.TypeChecker, t: ts.Type): string {
 
     return `z.array(${argZodSchema})`;
   } else {
-    console.log('Could not handle type:', tc.typeToString(t));
+    logger.warn('Could not handle type:', tc.typeToString(t));
     return `z.any()`;
   }
 }
@@ -297,13 +298,8 @@ async function generateRouter(project: Project, metadata: PastoriaMetadata) {
       },
     });
 
-    console.log(
-      'Created route',
-      pc.cyan(routeName),
-      'for',
-      pc.green(symbol.getName()),
-      'exported from',
-      pc.yellow(filePath),
+    logger.info(
+      `Created route ${pc.cyan(routeName)} for ${pc.green(symbol.getName())} exported from ${pc.yellow(filePath)}`,
     );
   }
 
@@ -345,13 +341,8 @@ async function generateJsResource(
       },
     });
 
-    console.log(
-      'Created resource',
-      pc.cyan(resourceName),
-      'for',
-      pc.green(symbol.getName()),
-      'exported from',
-      pc.yellow(filePath),
+    logger.info(
+      `Created resource ${pc.cyan(resourceName)} for ${pc.green(symbol.getName())} exported from ${pc.yellow(filePath)}`,
     );
   }
 
@@ -391,11 +382,8 @@ export {${appRootSymbol.getName()} as App} from '${moduleSpecifier}';
 
   await appRootFile.save();
 
-  console.log(
-    'Created app root for',
-    pc.green(appRootSymbol.getName()),
-    'exported from',
-    pc.yellow(filePath),
+  logger.info(
+    `Created app root for ${pc.green(appRootSymbol.getName())} exported from ${pc.yellow(filePath)}`,
   );
 }
 
@@ -429,11 +417,8 @@ async function generateGraphqlContext(
 export {${contextSymbol.getName()} as Context} from '${moduleSpecifier}';
 `);
 
-    console.log(
-      'Created GraphQL context for',
-      pc.green(contextSymbol.getName()),
-      'exported from',
-      pc.yellow(filePath),
+    logger.info(
+      `Created GraphQL context for ${pc.green(contextSymbol.getName())} exported from ${pc.yellow(filePath)}`,
     );
   } else {
     contextFile.addStatements(`/*
@@ -449,9 +434,8 @@ import {PastoriaRootContext} from 'pastoria-runtime/server';
 export class Context extends PastoriaRootContext {}
 `);
 
-    console.log(
-      'No @gqlContext found, generating default',
-      pc.green('Context'),
+    logger.info(
+      `No @gqlContext found, generating default ${pc.green('Context')}`,
     );
   }
 

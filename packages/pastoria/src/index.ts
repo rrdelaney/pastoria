@@ -3,9 +3,12 @@
 import {program} from 'commander';
 import {readFile} from 'node:fs/promises';
 import * as path from 'node:path';
+import {getLogger} from 'pastoria-logger';
 import {createBuild} from './build.js';
 import {startDevserver} from './devserver.js';
 import {generatePastoriaArtifacts} from './generate.js';
+
+const logger = getLogger('pastoria');
 
 async function main() {
   const packageData = JSON.parse(
@@ -36,4 +39,4 @@ async function main() {
   program.parseAsync();
 }
 
-main().catch(console.error);
+main().catch((err) => logger.error('Fatal error', err));

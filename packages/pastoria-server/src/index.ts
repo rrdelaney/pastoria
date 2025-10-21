@@ -6,8 +6,11 @@ import express from 'express';
 import {readFile} from 'node:fs/promises';
 import * as path from 'node:path';
 import {loadConfig, PastoriaConfig} from 'pastoria-config';
+import {getLogger} from 'pastoria-logger';
 import pc from 'picocolors';
 import type {Manifest} from 'vite';
+
+const logger = getLogger('pastoria-server');
 
 interface PersistedQueries {
   [hash: string]: string;
@@ -56,11 +59,11 @@ async function createServer() {
 
   app.listen(8000, (err) => {
     if (err) {
-      console.error(err);
+      logger.error('Failed to start server', err);
     } else {
-      console.log(pc.cyan('Listening on port 8000!'));
+      logger.info(pc.cyan('Listening on port 8000!'));
     }
   });
 }
 
-createServer().catch(console.error);
+createServer().catch((err) => logger.error('Fatal error', err));
