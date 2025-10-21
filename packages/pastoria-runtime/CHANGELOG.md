@@ -1,5 +1,11 @@
 # pastoria-runtime
 
+## 1.0.8
+
+### Patch Changes
+
+- c854f2d: Preload nested entrypoints
+
 ## 1.0.7
 
 ### Patch Changes
