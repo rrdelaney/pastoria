@@ -1,20 +1,24 @@
 # Nested Entrypoints Example
 
-This example demonstrates how to use **nested entrypoints** in Pastoria, a pattern that allows you to split code and data loading across multiple components using React Relay's `EntryPoint` API.
+This example demonstrates how to use **nested entrypoints** in Pastoria, a
+pattern that allows you to split code and data loading across multiple
+components using React Relay's `EntryPoint` API.
 
 ## What are Nested Entrypoints?
 
 Nested entrypoints allow you to:
 
 - **Code split** components into separate bundles that load on demand
-- **Cascade data loading** where a parent component can trigger child component data fetching
+- **Cascade data loading** where a parent component can trigger child component
+  data fetching
 - **Coordinate loading states** using React Suspense boundaries
 - **Optimize performance** by only loading what's needed when it's needed
 
 In this example, the search page has two entrypoints:
 
 1. **Parent entrypoint** (`m#search`) - The search input component
-2. **Child/nested entrypoint** (`m#search_results`) - The search results component with its GraphQL query
+2. **Child/nested entrypoint** (`m#search_results`) - The search results
+   component with its GraphQL query
 
 ## File Structure
 
@@ -70,7 +74,8 @@ export const SearchResults: EntryPointComponent<
 
 ### 2. Configure the Nested Entrypoint
 
-In `src/search.entrypoint.tsx`, the route definition specifies how to load both entrypoints:
+In `src/search.entrypoint.tsx`, the route definition specifies how to load both
+entrypoints:
 
 ```tsx
 /**
@@ -113,13 +118,16 @@ export const entrypoint: EntryPoint<
 **Key points:**
 
 - The parent entrypoint (`m#search`) has no queries of its own (`queries: {}`)
-- It declares a nested entrypoint called `searchResults` in the `entryPoints` object
-- The nested entrypoint (`m#search_results`) defines its own query with variables derived from the route params
+- It declares a nested entrypoint called `searchResults` in the `entryPoints`
+  object
+- The nested entrypoint (`m#search_results`) defines its own query with
+  variables derived from the route params
 - Both components are code-split and loaded separately
 
 ### 3. Render with Suspense
 
-The parent component uses `EntryPointContainer` to render the nested entrypoint, wrapped in a `Suspense` boundary:
+The parent component uses `EntryPointContainer` to render the nested entrypoint,
+wrapped in a `Suspense` boundary:
 
 ```tsx
 <Suspense fallback="Loading...">
@@ -130,7 +138,8 @@ The parent component uses `EntryPointContainer` to render the nested entrypoint,
 </Suspense>
 ```
 
-This allows the search results to load independently while showing a loading state.
+This allows the search results to load independently while showing a loading
+state.
 
 ## Running the Example
 
@@ -151,7 +160,8 @@ pnpm generate:router
 pnpm dev
 ```
 
-Visit `http://localhost:3000` and try searching for cities like "San", "New", or "Los".
+Visit `http://localhost:3000` and try searching for cities like "San", "New", or
+"Los".
 
 ## How the Search Works
 
@@ -164,13 +174,17 @@ Visit `http://localhost:3000` and try searching for cities like "San", "New", or
 
 ## Benefits of This Pattern
 
-**Code Splitting**: The `SearchResults` component and its query are in a separate bundle that only loads when needed.
+**Code Splitting**: The `SearchResults` component and its query are in a
+separate bundle that only loads when needed.
 
-**Data Isolation**: Each entrypoint manages its own data requirements independently.
+**Data Isolation**: Each entrypoint manages its own data requirements
+independently.
 
-**Composability**: You can nest entrypoints arbitrarily deep to create complex data loading hierarchies.
+**Composability**: You can nest entrypoints arbitrarily deep to create complex
+data loading hierarchies.
 
-**Type Safety**: TypeScript ensures the parent correctly provides the nested entrypoint reference.
+**Type Safety**: TypeScript ensures the parent correctly provides the nested
+entrypoint reference.
 
 ## Build for Production
 
@@ -182,4 +196,5 @@ pnpm build
 pnpm start
 ```
 
-The built application will have separate chunks for each entrypoint, optimizing initial load time.
+The built application will have separate chunks for each entrypoint, optimizing
+initial load time.
