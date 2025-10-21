@@ -7,6 +7,7 @@ import {
   specifiedRules,
   validate,
 } from 'graphql';
+import {PastoriaConfig} from 'pastoria-config';
 import {ComponentType, PropsWithChildren} from 'react';
 import {renderToPipeableStream} from 'react-dom/server';
 import {
@@ -20,7 +21,6 @@ import {
 import serialize from 'serialize-javascript';
 import type {Manifest} from 'vite';
 import {z} from 'zod/v4-mini';
-import {PastoriaConfig} from 'pastoria-config';
 import {
   AnyPreloadedEntryPoint,
   AnyPreloadedQuery,
@@ -338,14 +338,8 @@ function bootstrapScripts(
     }
   }
 
-  if (process.env.NODE_ENV !== 'production') {
-    bootstrap.preloadStylesheets.push('/src/globals.css');
-    bootstrap.bootstrapModules.push(
-      '/@vite/client',
-      '/@id/virtual:pastoria-entry-client.tsx',
-    );
-  } else if (entryPoint != null) {
-    const rootModuleSrc = srcOfModuleId(entryPoint.rootModuleID);
+  function crawlEntryPoint(ep: AnyPreloadedEntryPoint) {
+    const rootModuleSrc = srcOfModuleId(ep.rootModuleID);
     if (rootModuleSrc == null) return bootstrap;
 
     const mainChunk = manifest?.[rootModuleSrc];
@@ -354,6 +348,26 @@ function bootstrapScripts(
     }
 
     crawlImports(rootModuleSrc);
+
+    for (const nestedEntryPoint of Object.values(ep.entryPoints ?? {})) {
+      crawlEntryPoint(nestedEntryPoint);
+    }
+  }
+
+  if (process.env.NODE_ENV !== 'production') {
+    bootstrap.preloadStylesheets.push('/src/globals.css');
+    bootstrap.bootstrapModules.push(
+      '/@vite/client',
+      '/@id/virtual:pastoria-entry-client.tsx',
+    );
+  } else if (entryPoint != null) {
+    crawlEntryPoint(entryPoint);
+  }
+
+  if (manifest?.['virtual:pastoria-entry-client.tsx']) {
+    bootstrap.bootstrapModules.push(
+      '/' + manifest['virtual:pastoria-entry-client.tsx'].file,
+    );
   }
 
   return bootstrap;
