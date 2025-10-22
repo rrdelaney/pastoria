@@ -3,10 +3,9 @@
 import {execSync, spawn} from 'child_process';
 import degit from 'degit';
 import {existsSync, readFileSync, writeFileSync} from 'fs';
-import {mkdir} from 'fs/promises';
-import {join, dirname} from 'path';
-import {fileURLToPath} from 'url';
+import {dirname, join} from 'path';
 import pc from 'picocolors';
+import {fileURLToPath} from 'url';
 import {parse as parseYaml} from 'yaml';
 
 const __dirname = dirname(fileURLToPath(import.meta.url));
