@@ -1,5 +1,11 @@
 # create-pastoria
 
+## 1.0.3
+
+### Patch Changes
+
+- Simplify project creation
+
 ## 1.0.2
 
 ### Patch Changes
