@@ -1,5 +1,14 @@
 # pastoria-server
 
+## 1.0.11
+
+### Patch Changes
+
+- 37afd6c: Add support for @serverRoute
+- Updated dependencies [37afd6c]
+- Updated dependencies [e5aad30]
+  - pastoria-runtime@1.0.9
+
 ## 1.0.10
 
 ### Patch Changes

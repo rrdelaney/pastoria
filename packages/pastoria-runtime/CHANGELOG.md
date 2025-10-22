@@ -1,5 +1,12 @@
 # pastoria-runtime
 
+## 1.0.9
+
+### Patch Changes
+
+- 37afd6c: Add support for @serverRoute
+- e5aad30: Improve handling of nested entrypoint code loading
+
 ## 1.0.8
 
 ### Patch Changes

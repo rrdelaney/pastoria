@@ -1,5 +1,12 @@
 # pastoria
 
+## 1.0.9
+
+### Patch Changes
+
+- 60ab948: Add support for routing shorthands
+- 37afd6c: Add support for @serverRoute
+
 ## 1.0.8
 
 ### Patch Changes
