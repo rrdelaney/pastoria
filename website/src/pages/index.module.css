@@ -10,10 +10,10 @@
   overflow: hidden;
 
   background: #6d9afb;
-  background: radial-gradient(
-    circle,
+  background: linear-gradient(
+    -60deg,
     rgba(109, 154, 251, 1) 0%,
-    rgba(7, 82, 245, 1) 37%,
+    rgba(7, 82, 245, 1) 15%,
     rgba(199, 55, 7, 1) 85%,
     rgba(153, 42, 5, 1) 100%
   );

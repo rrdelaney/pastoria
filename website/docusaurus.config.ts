@@ -23,15 +23,10 @@ const config: Config = {
   trailingSlash: false,
 
   // GitHub pages deployment config.
-  // If you aren't using GitHub pages, you don't need these.
   organizationName: 'rrdelaney', // Usually your GitHub org/user name.
   projectName: 'pastoria', // Usually your repo name.
-
   onBrokenLinks: 'throw',
 
-  // Even if you don't use internationalization, you can use this field to set
-  // useful metadata like html lang. For example, if your site is Chinese, you
-  // may want to replace "en" with "zh-Hans".
   i18n: {
     defaultLocale: 'en',
     locales: ['en'],
@@ -58,7 +53,6 @@ const config: Config = {
   ],
 
   themeConfig: {
-    // Replace with your project's social card
     image: 'img/docusaurus-social-card.jpg',
     colorMode: {
       respectPrefersColorScheme: true,
@@ -66,7 +60,7 @@ const config: Config = {
     navbar: {
       title: 'Pastoria.',
       logo: {
-        alt: 'My Site Logo',
+        alt: 'Pastoria Logo',
         src: 'img/logo.svg',
       },
       items: [

@@ -1,0 +1,41 @@
+.features {
+  padding: 4rem 0;
+}
+
+.feature {
+  margin-bottom: 4rem;
+}
+
+.feature:last-child {
+  margin-bottom: 0;
+}
+
+.featureDescription {
+  font-size: 1.1rem;
+  line-height: 1.6;
+  color: var(--ifm-color-emphasis-700);
+}
+
+.feature h3 {
+  font-size: 1.75rem;
+  margin-bottom: 1rem;
+}
+
+@media screen and (max-width: 996px) {
+  .features {
+    padding: 2rem 0;
+  }
+
+  .feature {
+    margin-bottom: 3rem;
+  }
+
+  .feature .col--6 {
+    max-width: 100%;
+    flex: 0 0 100%;
+  }
+
+  .feature .row {
+    flex-direction: column;
+  }
+}
