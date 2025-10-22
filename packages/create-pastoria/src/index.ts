@@ -49,27 +49,9 @@ async function main() {
     console.log(pc.blue('Creating .prettierignore...'));
     await createPrettierIgnore(targetDir);
 
-    // Update .gitignore
-    console.log(pc.blue('Updating .gitignore...'));
-    await updateGitIgnore(targetDir);
-
     // Install dependencies
     console.log(pc.blue('Installing dependencies...'));
     await installDependencies(targetDir);
-
-    // Create required directories for code generation
-    console.log(pc.blue('Creating required directories...'));
-    await createDirectories(targetDir);
-
-    // Run code generation
-    console.log(pc.blue('Generating GraphQL schema...'));
-    await runCommand('npm', ['run', 'generate:schema'], targetDir);
-
-    console.log(pc.blue('Generating Relay artifacts...'));
-    await runCommand('npm', ['run', 'generate:relay'], targetDir);
-
-    console.log(pc.blue('Generating router...'));
-    await runCommand('npm', ['run', 'generate:router'], targetDir);
 
     console.log(pc.green('\n✓ Success! Created Pastoria project at:'));
     console.log(pc.cyan(`  ${targetDir}\n`));
@@ -204,42 +186,6 @@ node_modules/
 `;
 
   writeFileSync(prettierIgnorePath, content);
-}
-
-async function createDirectories(targetDir: string) {
-  const directories = [
-    join(targetDir, '__generated__', 'schema'),
-    join(targetDir, '__generated__', 'queries'),
-    join(targetDir, '__generated__', 'router'),
-    join(targetDir, 'public'),
-  ];
-
-  for (const dir of directories) {
-    await mkdir(dir, {recursive: true});
-  }
-}
-
-async function updateGitIgnore(targetDir: string) {
-  const gitIgnorePath = join(targetDir, '.gitignore');
-  let gitIgnore = existsSync(gitIgnorePath)
-    ? readFileSync(gitIgnorePath, 'utf-8')
-    : '';
-
-  // Ensure __generated__ is in .gitignore
-  if (!gitIgnore.includes('__generated__')) {
-    gitIgnore += '\n# Generated files\n__generated__/\n';
-  }
-
-  // Ensure .env files are properly ignored (but allow .env.example)
-  if (!gitIgnore.includes('.env') || gitIgnore.includes('*.env*')) {
-    // Replace the overly broad *.env* pattern
-    gitIgnore = gitIgnore.replace(/\*\.env\*/g, '');
-    if (!gitIgnore.includes('.env')) {
-      gitIgnore += '\n# Environment files\n.env\n.env.local\n.env*.local\n';
-    }
-  }
-
-  writeFileSync(gitIgnorePath, gitIgnore);
 }
 
 async function installDependencies(targetDir: string) {
