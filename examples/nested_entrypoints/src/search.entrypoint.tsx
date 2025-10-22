@@ -1,4 +1,4 @@
-import search_SearchResultsQueryParameters from '#genfiles/queries/search_SearchResultsQuery$parameters';
+import searchResults_SearchResultsQueryParameters from '#genfiles/queries/searchResults_SearchResultsQuery$parameters';
 import {JSResource, ModuleType} from '#genfiles/router/js_resource';
 import {EntryPointParams} from '#genfiles/router/router';
 import {EntryPoint} from 'react-relay/hooks';
@@ -26,7 +26,7 @@ export const entrypoint: EntryPoint<
               return {
                 queries: {
                   citiesQueryRef: {
-                    parameters: search_SearchResultsQueryParameters,
+                    parameters: searchResults_SearchResultsQueryParameters,
                     variables: {query: q ?? ''},
                   },
                 },

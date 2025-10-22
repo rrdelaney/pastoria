@@ -1,6 +1,6 @@
 /**
- * @generated SignedSource<<1bd8161867cfd4ddd277fa60c52728ff>>
- * @relayHash 976a7f67a139b2c31e8e83558b5e3660
+ * @generated SignedSource<<1bc7c7bba55492832b900d23436a3935>>
+ * @relayHash d0d4c4f69a4432c5b2aaae71e8bf7726
  * @lightSyntaxTransform
  * @nogrep
  */
@@ -9,20 +9,20 @@
 /* eslint-disable */
 // @ts-nocheck
 
-// @relayRequestID 976a7f67a139b2c31e8e83558b5e3660
+// @relayRequestID d0d4c4f69a4432c5b2aaae71e8bf7726
 
 import { ConcreteRequest } from 'relay-runtime';
-export type search_SearchResultsQuery$variables = {
-  query: string;
+export type helloWorld_HelloCityResultsQuery$variables = {
+  q?: string | null | undefined;
 };
-export type search_SearchResultsQuery$data = {
+export type helloWorld_HelloCityResultsQuery$data = {
   readonly cities: ReadonlyArray<{
     readonly name: string;
   }>;
 };
-export type search_SearchResultsQuery = {
-  response: search_SearchResultsQuery$data;
-  variables: search_SearchResultsQuery$variables;
+export type helloWorld_HelloCityResultsQuery = {
+  response: helloWorld_HelloCityResultsQuery$data;
+  variables: helloWorld_HelloCityResultsQuery$variables;
 };
 
 const node: ConcreteRequest = (function(){
@@ -30,7 +30,7 @@ var v0 = [
   {
     "defaultValue": null,
     "kind": "LocalArgument",
-    "name": "query"
+    "name": "q"
   }
 ],
 v1 = [
@@ -40,7 +40,7 @@ v1 = [
       {
         "kind": "Variable",
         "name": "query",
-        "variableName": "query"
+        "variableName": "q"
       }
     ],
     "concreteType": "City",
@@ -66,7 +66,7 @@ return {
     "metadata": {
       "throwOnFieldError": true
     },
-    "name": "search_SearchResultsQuery",
+    "name": "helloWorld_HelloCityResultsQuery",
     "selections": (v1/*: any*/),
     "type": "Query",
     "abstractKey": null
@@ -75,20 +75,20 @@ return {
   "operation": {
     "argumentDefinitions": (v0/*: any*/),
     "kind": "Operation",
-    "name": "search_SearchResultsQuery",
+    "name": "helloWorld_HelloCityResultsQuery",
     "selections": (v1/*: any*/)
   },
   "params": {
-    "id": "976a7f67a139b2c31e8e83558b5e3660",
+    "id": "d0d4c4f69a4432c5b2aaae71e8bf7726",
     "metadata": {},
-    "name": "search_SearchResultsQuery",
+    "name": "helloWorld_HelloCityResultsQuery",
     "operationKind": "query",
     "text": null
   }
 };
 })();
 
-(node as any).hash = "439b17d006161a5e54d8f6f4b864c9e6";
+(node as any).hash = "f7126fe50498432a8f53417aec61d5ae";
 
 import { PreloadableQueryRegistry } from 'relay-runtime';
 PreloadableQueryRegistry.set(node.params.id, node);

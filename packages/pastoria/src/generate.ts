@@ -29,7 +29,17 @@
 import {readFile} from 'node:fs/promises';
 import * as path from 'node:path';
 import pc from 'picocolors';
-import {Project, SourceFile, Symbol, SyntaxKind, ts, TypeFlags} from 'ts-morph';
+import {
+  CodeBlockWriter,
+  IndentationText,
+  Project,
+  SourceFile,
+  Symbol,
+  SyntaxKind,
+  ts,
+  TypeFlags,
+  WriterFunction,
+} from 'ts-morph';
 
 async function loadRouterTemplates(project: Project, filename: string) {
   async function loadSourceFile(fileName: string, templateFileName: string) {
@@ -51,13 +61,13 @@ async function loadRouterTemplates(project: Project, filename: string) {
 }
 
 type RouterResource = {
-  resourceName: string;
   sourceFile: SourceFile;
   symbol: Symbol;
+  queries: Map<string, string>;
+  entryPoints: Map<string, string>;
 };
 
 type RouterRoute = {
-  routeName: string;
   sourceFile: SourceFile;
   symbol: Symbol;
   params: Map<string, ts.Type>;
@@ -69,21 +79,25 @@ type ExportedSymbol = {
 };
 
 interface PastoriaMetadata {
-  resources: RouterResource[];
-  routes: RouterRoute[];
+  resources: Map<string, RouterResource>;
+  routes: Map<string, RouterRoute>;
+  serverHandlers: Map<string, ExportedSymbol>;
   appRoot: ExportedSymbol | null;
   gqlContext: ExportedSymbol | null;
-  serverHandlers: Record<string, ExportedSymbol>;
 }
 
 // Regex to quickly check if a file contains any Pastoria JSDoc tags
 const PASTORIA_TAG_REGEX =
   /@(route|resource|appRoot|param|gqlContext|serverRoute)\b/;
 
+/**
+ *
+ * @query {abc} 123
+ */
 function collectPastoriaMetadata(project: Project): PastoriaMetadata {
-  const resources: RouterResource[] = [];
-  const routes: RouterRoute[] = [];
-  const serverHandlers: Record<string, ExportedSymbol> = {};
+  const resources = new Map<string, RouterResource>();
+  const routes = new Map<string, RouterRoute>();
+  const serverHandlers = new Map<string, ExportedSymbol>();
   let appRoot: ExportedSymbol | null = null;
   let gqlContext: ExportedSymbol | null = null;
 
@@ -100,8 +114,10 @@ function collectPastoriaMetadata(project: Project): PastoriaMetadata {
     }
 
     sourceFile.getExportSymbols().forEach((symbol) => {
-      let routerResource = null as RouterResource | null;
-      let routerRoute = null as RouterRoute | null;
+      let routerResource = null as [string, RouterResource] | null;
+      const resourceQueries = new Map<string, string>();
+      const resourceEntryPoints = new Map<string, string>();
+      let routerRoute = null as [string, RouterRoute] | null;
       const routeParams = new Map<string, ts.Type>();
 
       function visitJSDocTags(tag: ts.JSDoc | ts.JSDocTag) {
@@ -120,24 +136,46 @@ function collectPastoriaMetadata(project: Project): PastoriaMetadata {
         } else if (typeof tag.comment === 'string') {
           switch (tag.tagName.getText()) {
             case 'route': {
-              routerRoute = {
-                routeName: tag.comment,
-                sourceFile,
-                symbol,
-                params: routeParams,
-              };
+              routerRoute = [
+                tag.comment,
+                {sourceFile, symbol, params: routeParams},
+              ];
               break;
             }
             case 'resource': {
-              routerResource = {
-                resourceName: tag.comment,
-                sourceFile,
-                symbol,
-              };
+              routerResource = [
+                tag.comment,
+                {
+                  sourceFile,
+                  symbol,
+                  queries: resourceQueries,
+                  entryPoints: resourceEntryPoints,
+                },
+              ];
               break;
             }
             case 'serverRoute': {
-              serverHandlers[tag.comment] = {sourceFile, symbol};
+              serverHandlers.set(tag.comment, {sourceFile, symbol});
+              break;
+            }
+            case 'query': {
+              const match = tag.comment.match(
+                /^\s*\{\s*(?<query>\w+)\s*\}\s+(?<name>\w+)\s*$/,
+              )?.groups;
+
+              if (match && match.query && match.name) {
+                resourceQueries.set(match.name, match.query);
+              }
+              break;
+            }
+            case 'entrypoint': {
+              const match = tag.comment.match(
+                /^\s*\{\s*(?<resource>[\w#]+)\s*\}\s+(?<name>\w+)\s*$/,
+              )?.groups;
+
+              if (match && match.resource && match.name) {
+                resourceEntryPoints.set(match.name, match.resource);
+              }
               break;
             }
           }
@@ -205,8 +243,13 @@ function collectPastoriaMetadata(project: Project): PastoriaMetadata {
         .flatMap((decl) => ts.getJSDocCommentsAndTags(decl.compilerNode))
         .forEach(visitJSDocTags);
 
-      if (routerRoute != null) routes.push(routerRoute);
-      if (routerResource != null) resources.push(routerResource);
+      if (routerRoute != null) {
+        routes.set(routerRoute[0], routerRoute[1]);
+      }
+
+      if (routerResource != null) {
+        resources.set(routerResource[0], routerResource[1]);
+      }
     });
   }
 
@@ -247,6 +290,67 @@ function zodSchemaOfType(tc: ts.TypeChecker, t: ts.Type): string {
   }
 }
 
+function writeEntryPoint(
+  writer: CodeBlockWriter,
+  metadata: PastoriaMetadata,
+  consumedQueries: Set<string>,
+  resourceName: string,
+  resource: RouterResource,
+  parseVars = true,
+) {
+  writer.writeLine(`root: JSResource.fromModuleId('${resourceName}'),`);
+  writer
+    .write(`getPreloadProps(${parseVars ? '{params, schema}' : ''})`)
+    .block(() => {
+      if (parseVars) {
+        writer.writeLine('const variables = schema.parse(params);');
+      }
+
+      writer.write('return').block(() => {
+        writer
+          .write('queries:')
+          .block(() => {
+            for (const [queryRef, query] of resource.queries.entries()) {
+              consumedQueries.add(query);
+
+              writer
+                .write(`${queryRef}:`)
+                .block(() => {
+                  writer.writeLine(`parameters: ${query}Parameters,`);
+                  writer.writeLine(`variables`);
+                })
+                .write(',');
+            }
+          })
+          .writeLine(',');
+
+        writer.write('entryPoints:').block(() => {
+          for (const [
+            epRef,
+            subresourceName,
+          ] of resource.entryPoints.entries()) {
+            const subresource = metadata.resources.get(subresourceName);
+            if (subresource) {
+              writer.write(`${epRef}:`).block(() => {
+                writer.writeLine(`entryPointParams: {},`);
+                writer.write('entryPoint:').block(() => {
+                  writeEntryPoint(
+                    writer,
+                    metadata,
+                    consumedQueries,
+                    subresourceName,
+                    subresource,
+                    false,
+                  );
+                });
+              });
+            }
+          }
+        });
+      });
+    });
+}
+
 async function generateRouter(project: Project, metadata: PastoriaMetadata) {
   const routerTemplate = await loadRouterTemplates(project, 'router.tsx');
   const tc = project.getTypeChecker().compilerObject;
@@ -259,22 +363,71 @@ async function generateRouter(project: Project, metadata: PastoriaMetadata) {
   routerConf.getPropertyOrThrow('noop').remove();
 
   let entryPointImportIndex = 0;
-  for (const {routeName, sourceFile, symbol, params} of metadata.routes) {
-    const importAlias = `e${entryPointImportIndex++}`;
+  for (const [
+    routeName,
+    {sourceFile, symbol, params},
+  ] of metadata.routes.entries()) {
     const filePath = path.relative(process.cwd(), sourceFile.getFilePath());
-    const moduleSpecifier = routerTemplate.getRelativePathAsModuleSpecifierTo(
-      sourceFile.getFilePath(),
+    let entryPointExpression: string;
+
+    // Resource-routes are combined declarations of a resource and a route
+    // where we should generate the entrypoint for the route.
+    const isResourceRoute = Array.from(metadata.resources.entries()).find(
+      ([, {symbol: resourceSymbol}]) => symbol === resourceSymbol,
     );
 
-    routerTemplate.addImportDeclaration({
-      moduleSpecifier,
-      namedImports: [
-        {
-          name: symbol.getName(),
-          alias: importAlias,
+    if (isResourceRoute) {
+      const [resourceName, resource] = isResourceRoute;
+      const entryPointFunctionName = `entrypoint_${resourceName.replace(/\W/g, '__')}`;
+
+      routerTemplate.addImportDeclaration({
+        moduleSpecifier: './js_resource',
+        namedImports: ['JSResource', 'ModuleType'],
+      });
+
+      const consumedQueries = new Set<string>();
+      routerTemplate.addFunction({
+        name: entryPointFunctionName,
+        returnType: `EntryPoint<ModuleType<'${resourceName}'>, EntryPointParams<'${routeName}'>>`,
+        statements: (writer) => {
+          writer.write('return ').block(() => {
+            writeEntryPoint(
+              writer,
+              metadata,
+              consumedQueries,
+              resourceName,
+              resource,
+            );
+          });
         },
-      ],
-    });
+      });
+
+      for (const query of consumedQueries) {
+        routerTemplate.addImportDeclaration({
+          moduleSpecifier: `#genfiles/queries/${query}$parameters`,
+          defaultImport: `${query}Parameters`,
+        });
+      }
+
+      entryPointExpression = entryPointFunctionName + '()';
+    } else {
+      const importAlias = `e${entryPointImportIndex++}`;
+      const moduleSpecifier = routerTemplate.getRelativePathAsModuleSpecifierTo(
+        sourceFile.getFilePath(),
+      );
+
+      routerTemplate.addImportDeclaration({
+        moduleSpecifier,
+        namedImports: [
+          {
+            name: symbol.getName(),
+            alias: importAlias,
+          },
+        ],
+      });
+
+      entryPointExpression = importAlias;
+    }
 
     routerConf.addPropertyAssignment({
       name: `"${routeName}"`,
@@ -282,7 +435,7 @@ async function generateRouter(project: Project, metadata: PastoriaMetadata) {
         writer
           .write('{')
           .indent(() => {
-            writer.writeLine(`entrypoint: ${importAlias},`);
+            writer.writeLine(`entrypoint: ${entryPointExpression},`);
             if (params.size === 0) {
               writer.writeLine(`schema: z.object({})`);
             } else {
@@ -328,7 +481,10 @@ async function generateJsResource(
     .getExpressionIfKindOrThrow(SyntaxKind.ObjectLiteralExpression);
 
   resourceConf.getPropertyOrThrow('noop').remove();
-  for (const {resourceName, sourceFile, symbol} of metadata.resources) {
+  for (const [
+    resourceName,
+    {sourceFile, symbol},
+  ] of metadata.resources.entries()) {
     const filePath = path.relative(process.cwd(), sourceFile.getFilePath());
     const moduleSpecifier =
       jsResourceTemplate.getRelativePathAsModuleSpecifierTo(
@@ -465,7 +621,7 @@ async function generateServerHandler(
   project: Project,
   metadata: PastoriaMetadata,
 ) {
-  if (Object.keys(metadata.serverHandlers).length === 0) {
+  if (metadata.serverHandlers.size === 0) {
     await project
       .getSourceFile('__generated__/router/server_handler.ts')
       ?.deleteImmediately();
@@ -477,29 +633,30 @@ async function generateServerHandler(
 export const router = express.Router();
 `;
 
-  const serverHandlerSource = project.createSourceFile(
+  const serverHandlerTemplate = project.createSourceFile(
     '__generated__/router/server_handler.ts',
     sourceText,
     {overwrite: true},
   );
 
   let serverHandlerImportIndex = 0;
-  for (const [routeName, {symbol, sourceFile}] of Object.entries(
-    metadata.serverHandlers,
-  )) {
+  for (const [
+    routeName,
+    {symbol, sourceFile},
+  ] of metadata.serverHandlers.entries()) {
     const importAlias = `e${serverHandlerImportIndex++}`;
     const filePath = path.relative(process.cwd(), sourceFile.getFilePath());
     const moduleSpecifier =
-      serverHandlerSource.getRelativePathAsModuleSpecifierTo(
+      serverHandlerTemplate.getRelativePathAsModuleSpecifierTo(
         sourceFile.getFilePath(),
       );
 
-    serverHandlerSource.addImportDeclaration({
+    serverHandlerTemplate.addImportDeclaration({
       moduleSpecifier,
       namedImports: [{name: symbol.getName(), alias: importAlias}],
     });
 
-    serverHandlerSource.addStatements(
+    serverHandlerTemplate.addStatements(
       `router.use('${routeName}', ${importAlias})`,
     );
 
@@ -513,13 +670,16 @@ export const router = express.Router();
     );
   }
 
-  await serverHandlerSource.save();
+  await serverHandlerTemplate.save();
 }
 
 export async function generatePastoriaArtifacts() {
   const targetDir = process.cwd();
   const project = new Project({
     tsConfigFilePath: path.join(targetDir, 'tsconfig.json'),
+    manipulationSettings: {
+      indentationText: IndentationText.TwoSpaces,
+    },
   });
 
   const metadata = collectPastoriaMetadata(project);

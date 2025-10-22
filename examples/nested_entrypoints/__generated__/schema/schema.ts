@@ -4,6 +4,7 @@
  */
 import { defaultFieldResolver, GraphQLSchema, GraphQLDirective, DirectiveLocation, GraphQLList, GraphQLInt, GraphQLObjectType, GraphQLNonNull, GraphQLString } from "graphql";
 import { cities as queryCitiesResolver } from "./../../src/schema/cities";
+import { greet as queryGreetResolver, hello as queryHelloResolver } from "./../../src/schema/hello";
 async function assertNonNull<T>(value: T | Promise<T>): Promise<T> {
     const awaited = await value;
     if (awaited == null)
@@ -35,11 +36,32 @@ export function getSchema(): GraphQLSchema {
                     type: new GraphQLList(new GraphQLNonNull(CityType)),
                     args: {
                         query: {
-                            type: new GraphQLNonNull(GraphQLString)
+                            type: GraphQLString
                         }
                     },
                     resolve(_source, args) {
                         return assertNonNull(queryCitiesResolver(args.query));
+                    }
+                },
+                greet: {
+                    description: "Example query showing how to accept arguments.\nTry querying: { greet(name: \"World\") }",
+                    name: "greet",
+                    type: GraphQLString,
+                    args: {
+                        name: {
+                            type: new GraphQLNonNull(GraphQLString)
+                        }
+                    },
+                    resolve(_source, args, context) {
+                        return assertNonNull(queryGreetResolver(args.name, context));
+                    }
+                },
+                hello: {
+                    description: "A simple hello world query that returns a greeting message.",
+                    name: "hello",
+                    type: GraphQLString,
+                    resolve(_source, _args, context) {
+                        return assertNonNull(queryHelloResolver(context));
                     }
                 }
             };

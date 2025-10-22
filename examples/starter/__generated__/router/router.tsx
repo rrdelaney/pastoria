@@ -31,14 +31,22 @@ import {
   useEntryPointLoader,
 } from 'react-relay/hooks';
 import * as z from 'zod/v4-mini';
+import { JSResource, ModuleType } from "./js_resource";
+import helloWorld_HelloQueryParameters from "#genfiles/queries/helloWorld_HelloQuery$parameters";
 import { entrypoint as e0 } from "../../src/home.entrypoint";
 
 type RouterConf = typeof ROUTER_CONF;
 const ROUTER_CONF = {
-    "/": {
-            entrypoint: e0,
-            schema: z.object({})
-        } as const
+  "/hello/:name": {
+      entrypoint: entrypoint_m__hello(),
+      schema: z.object({
+        name: z.pipe(z.string(), z.transform(decodeURIComponent)),
+      })
+    } as const,
+  "/": {
+      entrypoint: e0,
+      schema: z.object({})
+    } as const
 } as const;
 
 export type RouteId = keyof RouterConf;
@@ -468,4 +476,21 @@ export function RouteLink<R extends RouteId>({
 
 export function listRoutes() {
   return Object.keys(ROUTER_CONF);
+}
+
+function entrypoint_m__hello(): EntryPoint<ModuleType<'m#hello'>, EntryPointParams<'/hello/:name'>> {
+  return {
+    root: JSResource.fromModuleId('m#hello'),
+    getPreloadProps({params, schema}) {
+      const variables = schema.parse(params);
+      return {
+        queries: {
+          nameQuery: {
+            parameters: helloWorld_HelloQueryParameters,
+            variables
+          }
+        }
+      }
+    }
+  }
 }

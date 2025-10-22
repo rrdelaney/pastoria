@@ -54,6 +54,10 @@ class City {
  *
  * @gqlQueryField
  */
-export function cities(query: string): City[] {
-  return CITY_NAMES.filter((c) => c.startsWith(query)).map((c) => new City(c));
+export function cities(query?: string | null): City[] {
+  const filteredCities = !query
+    ? CITY_NAMES
+    : CITY_NAMES.filter((c) => c.startsWith(query));
+
+  return filteredCities.map((c) => new City(c));
 }

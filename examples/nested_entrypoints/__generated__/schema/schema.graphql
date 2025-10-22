@@ -39,5 +39,12 @@ type City {
 
 type Query {
   """Searches for a city by name"""
-  cities(query: String!): [City!] @semanticNonNull
+  cities(query: String): [City!] @semanticNonNull
+  """
+  Example query showing how to accept arguments.
+  Try querying: { greet(name: "World") }
+  """
+  greet(name: String!): String @semanticNonNull
+  """A simple hello world query that returns a greeting message."""
+  hello: String @semanticNonNull
 }

@@ -7,14 +7,22 @@ import type {JSResourceReference} from 'react-relay/hooks';
 
 type ResourceConf = typeof RESOURCE_CONF;
 const RESOURCE_CONF = {
-    "m#search_results": {
-            src: "src/search_results.tsx",
-            loader: () => import("../../src/search_results").then(m => m.SearchResults)
-        },
-    "m#search": {
-            src: "src/search.tsx",
-            loader: () => import("../../src/search").then(m => m.SearchPage)
-        }
+  "m#hello": {
+      src: "src/hello_world.tsx",
+      loader: () => import("../../src/hello_world").then(m => m.HelloWorld)
+    },
+  "m#hello_results": {
+      src: "src/hello_world.tsx",
+      loader: () => import("../../src/hello_world").then(m => m.HelloWorldCityResults)
+    },
+  "m#search_results": {
+      src: "src/search_results.tsx",
+      loader: () => import("../../src/search_results").then(m => m.SearchResults)
+    },
+  "m#search": {
+      src: "src/search.tsx",
+      loader: () => import("../../src/search").then(m => m.SearchPage)
+    }
 } as const;
 
 type ModuleId = keyof ResourceConf;

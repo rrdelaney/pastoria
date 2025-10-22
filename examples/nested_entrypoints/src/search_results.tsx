@@ -1,16 +1,16 @@
-import {search_SearchResultsQuery} from '#genfiles/queries/search_SearchResultsQuery.graphql.js';
+import {searchResults_SearchResultsQuery} from '#genfiles/queries/searchResults_SearchResultsQuery.graphql.js';
 import {EntryPointComponent, graphql, usePreloadedQuery} from 'react-relay';
 
 /**
  * @resource m#search_results
  */
 export const SearchResults: EntryPointComponent<
-  {citiesQueryRef: search_SearchResultsQuery},
+  {citiesQueryRef: searchResults_SearchResultsQuery},
   {}
 > = ({queries}) => {
   const {cities} = usePreloadedQuery(
     graphql`
-      query search_SearchResultsQuery($query: String!)
+      query searchResults_SearchResultsQuery($query: String!)
       @preloadable
       @throwOnFieldError {
         cities(query: $query) {

@@ -1,1 +1,3 @@
-{}
+{
+  "a21287b6dcc6ef6400fe8857e1ed2a58": "query helloWorld_HelloQuery(\n  $name: String!\n) {\n  greet(name: $name)\n}\n"
+}
