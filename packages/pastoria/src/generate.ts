@@ -20,6 +20,7 @@
  * - Add @resource <resource-name> to exports for lazy loading
  * - Add @appRoot to a component to designate it as the application root wrapper
  * - Add @gqlContext to a class extending PastoriaRootContext to provide a custom GraphQL context
+ * - Add @serverRoute to functions to add an express handler
  *
  * The generator automatically creates Zod schemas for route parameters based on
  * TypeScript types, enabling runtime validation and type safety.
@@ -62,12 +63,7 @@ type RouterRoute = {
   params: Map<string, ts.Type>;
 };
 
-type AppRoot = {
-  sourceFile: SourceFile;
-  symbol: Symbol;
-};
-
-type GqlContext = {
+type ExportedSymbol = {
   sourceFile: SourceFile;
   symbol: Symbol;
 };
@@ -75,18 +71,21 @@ type GqlContext = {
 interface PastoriaMetadata {
   resources: RouterResource[];
   routes: RouterRoute[];
-  appRoot: AppRoot | null;
-  gqlContext: GqlContext | null;
+  appRoot: ExportedSymbol | null;
+  gqlContext: ExportedSymbol | null;
+  serverHandlers: Record<string, ExportedSymbol>;
 }
 
 // Regex to quickly check if a file contains any Pastoria JSDoc tags
-const PASTORIA_TAG_REGEX = /@(route|resource|appRoot|param|gqlContext)\b/;
+const PASTORIA_TAG_REGEX =
+  /@(route|resource|appRoot|param|gqlContext|serverRoute)\b/;
 
 function collectPastoriaMetadata(project: Project): PastoriaMetadata {
   const resources: RouterResource[] = [];
   const routes: RouterRoute[] = [];
-  let appRoot: AppRoot | null = null;
-  let gqlContext: GqlContext | null = null;
+  const serverHandlers: Record<string, ExportedSymbol> = {};
+  let appRoot: ExportedSymbol | null = null;
+  let gqlContext: ExportedSymbol | null = null;
 
   function visitRouterNodes(sourceFile: SourceFile) {
     // Skip generated files
@@ -137,9 +136,13 @@ function collectPastoriaMetadata(project: Project): PastoriaMetadata {
               };
               break;
             }
+            case 'serverRoute': {
+              serverHandlers[tag.comment] = {sourceFile, symbol};
+              break;
+            }
           }
         } else {
-          // Handle tags without comments (like @appRoot, @gqlContext)
+          // Handle tags without comments (like @ExportedSymbol, @gqlContext)
           switch (tag.tagName.getText()) {
             case 'appRoot': {
               if (appRoot != null) {
@@ -208,7 +211,7 @@ function collectPastoriaMetadata(project: Project): PastoriaMetadata {
   }
 
   project.getSourceFiles().forEach(visitRouterNodes);
-  return {resources, routes, appRoot, gqlContext};
+  return {resources, routes, appRoot, gqlContext, serverHandlers};
 }
 
 function zodSchemaOfType(tc: ts.TypeChecker, t: ts.Type): string {
@@ -360,9 +363,13 @@ async function generateJsResource(
 
 async function generateAppRoot(project: Project, metadata: PastoriaMetadata) {
   const targetDir = process.cwd();
-  const appRoot: AppRoot | null = metadata.appRoot;
+  const appRoot: ExportedSymbol | null = metadata.appRoot;
 
   if (appRoot == null) {
+    await project
+      .getSourceFile('__generated__/router/app_root.ts')
+      ?.deleteImmediately();
+
     return;
   }
 
@@ -372,9 +379,7 @@ async function generateAppRoot(project: Project, metadata: PastoriaMetadata) {
   const appRootFile = project.createSourceFile(
     '__generated__/router/app_root.ts',
     '',
-    {
-      overwrite: true,
-    },
+    {overwrite: true},
   );
 
   const moduleSpecifier = appRootFile.getRelativePathAsModuleSpecifierTo(
@@ -404,13 +409,11 @@ async function generateGraphqlContext(
   metadata: PastoriaMetadata,
 ) {
   const targetDir = process.cwd();
-  const gqlContext: GqlContext | null = metadata.gqlContext;
+  const gqlContext: ExportedSymbol | null = metadata.gqlContext;
   const contextFile = project.createSourceFile(
     '__generated__/router/context.ts',
     '',
-    {
-      overwrite: true,
-    },
+    {overwrite: true},
   );
 
   if (gqlContext != null) {
@@ -458,6 +461,61 @@ export class Context extends PastoriaRootContext {}
   await contextFile.save();
 }
 
+async function generateServerHandler(
+  project: Project,
+  metadata: PastoriaMetadata,
+) {
+  if (Object.keys(metadata.serverHandlers).length === 0) {
+    await project
+      .getSourceFile('__generated__/router/server_handler.ts')
+      ?.deleteImmediately();
+
+    return;
+  }
+
+  const sourceText = `import express from 'express';
+export const router = express.Router();
+`;
+
+  const serverHandlerSource = project.createSourceFile(
+    '__generated__/router/server_handler.ts',
+    sourceText,
+    {overwrite: true},
+  );
+
+  let serverHandlerImportIndex = 0;
+  for (const [routeName, {symbol, sourceFile}] of Object.entries(
+    metadata.serverHandlers,
+  )) {
+    const importAlias = `e${serverHandlerImportIndex++}`;
+    const filePath = path.relative(process.cwd(), sourceFile.getFilePath());
+    const moduleSpecifier =
+      serverHandlerSource.getRelativePathAsModuleSpecifierTo(
+        sourceFile.getFilePath(),
+      );
+
+    serverHandlerSource.addImportDeclaration({
+      moduleSpecifier,
+      namedImports: [{name: symbol.getName(), alias: importAlias}],
+    });
+
+    serverHandlerSource.addStatements(
+      `router.use('${routeName}', ${importAlias})`,
+    );
+
+    console.log(
+      'Created server handler',
+      pc.cyan(routeName),
+      'for',
+      pc.green(symbol.getName()),
+      'exported from',
+      pc.yellow(filePath),
+    );
+  }
+
+  await serverHandlerSource.save();
+}
+
 export async function generatePastoriaArtifacts() {
   const targetDir = process.cwd();
   const project = new Project({
@@ -470,4 +528,5 @@ export async function generatePastoriaArtifacts() {
   await generateGraphqlContext(project, metadata);
   await generateRouter(project, metadata);
   await generateJsResource(project, metadata);
+  await generateServerHandler(project, metadata);
 }

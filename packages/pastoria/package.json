@@ -21,7 +21,6 @@
     "commander": "catalog:",
     "cookie-parser": "catalog:",
     "dotenv": "catalog:",
-    "express": "catalog:",
     "picocolors": "catalog:",
     "tailwindcss": "^4.1.14",
     "ts-morph": "^26.0.0",
@@ -42,6 +41,7 @@
     "zod": "catalog:"
   },
   "peerDependencies": {
+    "express": "catalog:",
     "pastoria-config": "workspace:*",
     "tailwindcss": "catalog:"
   }

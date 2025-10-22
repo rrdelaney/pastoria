@@ -31,6 +31,7 @@
     "zod": "catalog:"
   },
   "devDependencies": {
+    "@types/express": "catalog:",
     "@types/node": "catalog:",
     "@types/react": "catalog:",
     "@types/react-dom": "catalog:",

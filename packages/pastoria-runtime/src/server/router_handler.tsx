@@ -253,8 +253,7 @@ export function createRouterHandler(
 
   return express
     .Router()
-    .use(express.json())
-    .use('/api/graphql', graphqlHandler)
+    .use('/api/graphql', express.json(), graphqlHandler)
     .get(routes, reactHandler);
 }
 

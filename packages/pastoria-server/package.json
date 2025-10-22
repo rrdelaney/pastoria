@@ -17,7 +17,6 @@
   "dependencies": {
     "cookie-parser": "catalog:",
     "dotenv": "catalog:",
-    "express": "catalog:",
     "picocolors": "catalog:"
   },
   "devDependencies": {
@@ -30,6 +29,7 @@
     "vite": "catalog:"
   },
   "peerDependencies": {
+    "express": "catalog:",
     "pastoria-config": "workspace:*",
     "pastoria-runtime": "workspace:*"
   }
