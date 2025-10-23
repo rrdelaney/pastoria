@@ -1,5 +1,12 @@
 # pastoria-server
 
+## 1.0.12
+
+### Patch Changes
+
+- Updated dependencies [e7e5519]
+  - pastoria-runtime@1.0.10
+
 ## 1.0.11
 
 ### Patch Changes

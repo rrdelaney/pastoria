@@ -1,5 +1,11 @@
 # pastoria-runtime
 
+## 1.0.10
+
+### Patch Changes
+
+- e7e5519: Detect queries and entrypoints from type annotations
+
 ## 1.0.9
 
 ### Patch Changes

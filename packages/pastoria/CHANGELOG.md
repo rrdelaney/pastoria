@@ -1,5 +1,14 @@
 # pastoria
 
+## 1.0.10
+
+### Patch Changes
+
+- 1ae49d3: Update router generator to automatically create an entrypoint and
+  resource
+- 4ed4588: Don't duplicate JSResource import when generating code
+- e7e5519: Detect queries and entrypoints from type annotations
+
 ## 1.0.9
 
 ### Patch Changes
