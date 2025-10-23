@@ -90,10 +90,6 @@ interface PastoriaMetadata {
 const PASTORIA_TAG_REGEX =
   /@(route|resource|appRoot|param|gqlContext|serverRoute)\b/;
 
-/**
- *
- * @query {abc} 123
- */
 function collectPastoriaMetadata(project: Project): PastoriaMetadata {
   const resources = new Map<string, RouterResource>();
   const routes = new Map<string, RouterRoute>();
@@ -115,8 +111,6 @@ function collectPastoriaMetadata(project: Project): PastoriaMetadata {
 
     sourceFile.getExportSymbols().forEach((symbol) => {
       let routerResource = null as [string, RouterResource] | null;
-      const resourceQueries = new Map<string, string>();
-      const resourceEntryPoints = new Map<string, string>();
       let routerRoute = null as [string, RouterRoute] | null;
       const routeParams = new Map<string, ts.Type>();
 
@@ -148,8 +142,8 @@ function collectPastoriaMetadata(project: Project): PastoriaMetadata {
                 {
                   sourceFile,
                   symbol,
-                  queries: resourceQueries,
-                  entryPoints: resourceEntryPoints,
+                  queries: new Map(),
+                  entryPoints: new Map(),
                 },
               ];
               break;
@@ -158,26 +152,26 @@ function collectPastoriaMetadata(project: Project): PastoriaMetadata {
               serverHandlers.set(tag.comment, {sourceFile, symbol});
               break;
             }
-            case 'query': {
-              const match = tag.comment.match(
-                /^\s*\{\s*(?<query>\w+)\s*\}\s+(?<name>\w+)\s*$/,
-              )?.groups;
+            // case 'query': {
+            //   const match = tag.comment.match(
+            //     /^\s*\{\s*(?<query>\w+)\s*\}\s+(?<name>\w+)\s*$/,
+            //   )?.groups;
 
-              if (match && match.query && match.name) {
-                resourceQueries.set(match.name, match.query);
-              }
-              break;
-            }
-            case 'entrypoint': {
-              const match = tag.comment.match(
-                /^\s*\{\s*(?<resource>[\w#]+)\s*\}\s+(?<name>\w+)\s*$/,
-              )?.groups;
+            //   if (match && match.query && match.name) {
+            //     resourceQueries.set(match.name, match.query);
+            //   }
+            //   break;
+            // }
+            // case 'entrypoint': {
+            //   const match = tag.comment.match(
+            //     /^\s*\{\s*(?<resource>[\w#]+)\s*\}\s+(?<name>\w+)\s*$/,
+            //   )?.groups;
 
-              if (match && match.resource && match.name) {
-                resourceEntryPoints.set(match.name, match.resource);
-              }
-              break;
-            }
+            //   if (match && match.resource && match.name) {
+            //     resourceEntryPoints.set(match.name, match.resource);
+            //   }
+            //   break;
+            // }
           }
         } else {
           // Handle tags without comments (like @ExportedSymbol, @gqlContext)
@@ -244,17 +238,82 @@ function collectPastoriaMetadata(project: Project): PastoriaMetadata {
         .forEach(visitJSDocTags);
 
       if (routerRoute != null) {
-        routes.set(routerRoute[0], routerRoute[1]);
+        const [routeName, routeSymbol] = routerRoute;
+        routes.set(routeName, routeSymbol);
       }
 
       if (routerResource != null) {
-        resources.set(routerResource[0], routerResource[1]);
+        const [resourceName, resourceSymbol] = routerResource;
+        const {entryPoints, queries} = getResourceQueriesAndEntryPoints(
+          resourceSymbol.symbol,
+        );
+
+        resourceSymbol.queries = queries;
+        resourceSymbol.entryPoints = entryPoints;
+        resources.set(resourceName, resourceSymbol);
       }
     });
   }
 
   project.getSourceFiles().forEach(visitRouterNodes);
   return {resources, routes, appRoot, gqlContext, serverHandlers};
+}
+
+function getResourceQueriesAndEntryPoints(symbol: Symbol): {
+  queries: Map<string, string>;
+  entryPoints: Map<string, string>;
+} {
+  const resource = {
+    queries: new Map<string, string>(),
+    entryPoints: new Map<string, string>(),
+  };
+
+  const decl = symbol.getValueDeclaration();
+  if (!decl) return resource;
+
+  const t = decl.getType();
+  const aliasSymbol = t.getAliasSymbol();
+
+  if (aliasSymbol?.getName() === 'EntryPointComponent') {
+    const [queries, entryPoints] = t.getAliasTypeArguments();
+
+    queries?.getProperties().forEach((prop) => {
+      const queryRef = prop.getName();
+      const queryName = prop
+        .getValueDeclaration()
+        ?.getType()
+        .getAliasSymbol()
+        ?.getName();
+
+      if (queryName) {
+        resource.queries.set(queryRef, queryName);
+      }
+    });
+
+    entryPoints?.getProperties().forEach((prop) => {
+      const epRef = prop.getName();
+      const resourceName = prop
+        .getValueDeclaration()
+        ?.asKind(SyntaxKind.PropertySignature)
+        ?.getTypeNode()
+        ?.asKind(SyntaxKind.TypeReference)
+        ?.getTypeArguments()
+        .at(0)
+        ?.asKind(SyntaxKind.TypeReference)
+        ?.getTypeArguments()
+        .at(0)
+        ?.asKind(SyntaxKind.LiteralType)
+        ?.getLiteral()
+        .asKind(SyntaxKind.StringLiteral)
+        ?.getLiteralText();
+
+      if (resourceName) {
+        resource.entryPoints.set(epRef, resourceName);
+      }
+    });
+  }
+
+  return resource;
 }
 
 function zodSchemaOfType(tc: ts.TypeChecker, t: ts.Type): string {

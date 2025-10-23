@@ -489,6 +489,10 @@ function entrypoint_m__hello(): EntryPoint<ModuleType<'m#hello'>, EntryPointPara
             parameters: helloWorld_HelloQueryParameters,
             variables
           }
+          ,
+        }
+        ,
+        entryPoints: {
         }
       }
     }

@@ -179,9 +179,11 @@ reference automatically:
  * @route /users/:userId
  * @resource m#user_profile
  * @param {string} userId
- * @query {UserProfileQuery} userQuery
  */
-export const UserProfilePage: EntryPointComponent = ({queries}) => {
+export const UserProfilePage: EntryPointComponent<
+  {userQuery: UserProfileQuery},
+  {}
+> = ({queries}) => {
   // Pastoria auto-generates: JSResource.fromModuleId('m#user_profile')
 };
 ```

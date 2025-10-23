@@ -35,10 +35,10 @@ import { entrypoint as e0 } from "../../src/home.entrypoint";
 
 type RouterConf = typeof ROUTER_CONF;
 const ROUTER_CONF = {
-    "/": {
-            entrypoint: e0,
-            schema: z.object({})
-        } as const
+  "/": {
+      entrypoint: e0,
+      schema: z.object({})
+    } as const
 } as const;
 
 export type RouteId = keyof RouterConf;

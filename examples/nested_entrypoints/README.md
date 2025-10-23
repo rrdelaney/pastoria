@@ -14,39 +14,49 @@ Nested entrypoints allow you to:
 - **Coordinate loading states** using React Suspense boundaries
 - **Optimize performance** by only loading what's needed when it's needed
 
-In this example, the search page has two entrypoints:
+In this example, the hello world page has two entrypoints:
 
-1. **Parent entrypoint** (`m#search`) - The search input component
-2. **Child/nested entrypoint** (`m#search_results`) - The search results
+1. **Parent entrypoint** (`m#hello`) - The greeting component with search input
+2. **Child/nested entrypoint** (`m#hello_results`) - The city search results
    component with its GraphQL query
 
 ## File Structure
 
 ```
 src/
-├── search.entrypoint.tsx   # Route definition with nested entrypoint config
-├── search.tsx              # Components with @resource annotations
+├── hello_world.tsx        # Components with @resource annotations
 ├── schema/
-│   ├── cities.ts          # GraphQL schema (Grats)
-│   └── context.ts         # GraphQL context factory
-└── app_root.tsx           # App wrapper with @appRoot
+│   ├── cities.ts         # GraphQL schema (Grats)
+│   └── context.ts        # GraphQL context factory
+└── app_root.tsx          # App wrapper with @appRoot
 ```
 
 ## How It Works
 
-### 1. Define Resources with `@resource`
+### 1. Define Resources with `@resource` and TypeScript Types
 
-In `src/search.tsx`, both components are marked as resources:
+In `src/hello_world.tsx`, both components are marked as resources. Pastoria
+automatically detects queries and nested entrypoints by analyzing the TypeScript
+types:
 
 ```tsx
 /**
- * @resource m#search
+ * @route /hello/:name
+ * @resource m#hello
+ * @param {string} name
+ * @param {string?} q
  */
-export const SearchPage: EntryPointComponent<
-  {},
-  {searchResults: EntryPoint<ModuleType<'m#search_results'>>}
-> = ({entryPoints}) => {
-  // ...
+export const HelloWorld: EntryPointComponent<
+  {nameQuery: helloWorld_HelloQuery},  // ← Query detected from type!
+  {searchResults: EntryPoint<ModuleType<'m#hello_results'>>}  // ← Nested entrypoint detected!
+> = ({queries, entryPoints}) => {
+  const {greet} = usePreloadedQuery(
+    graphql`
+      query helloWorld_HelloQuery($name: String!) { ... }
+    `,
+    queries.nameQuery,
+  );
+
   return (
     <EntryPointContainer
       entryPointReference={entryPoints.searchResults}
@@ -56,53 +66,62 @@ export const SearchPage: EntryPointComponent<
 };
 
 /**
- * @resource m#search_results
+ * @resource m#hello_results
  */
-export const SearchResults: EntryPointComponent<
-  {citiesQueryRef: search_SearchResultsQuery},
+export const HelloWorldCityResults: EntryPointComponent<
+  {citiesQuery: helloWorld_HelloCityResultsQuery},  // ← Query detected from type!
   {}
 > = ({queries}) => {
   const {cities} = usePreloadedQuery(
     graphql`
-      query search_SearchResultsQuery($query: String!) { ... }
+      query helloWorld_HelloCityResultsQuery($q: String) { ... }
     `,
-    queries.citiesQueryRef,
+    queries.citiesQuery,
   );
   // ...
 };
 ```
 
-### 2. Configure the Nested Entrypoint
+Pastoria extracts everything from your TypeScript types—no additional annotations needed!
 
-In `src/search.entrypoint.tsx`, the route definition specifies how to load both
-entrypoints:
+### 2. Automatic Entrypoint Generation
+
+When you run `pastoria gen`, it:
+
+1. Finds components with both `@route` and `@resource` annotations
+2. Analyzes the `EntryPointComponent` type parameters
+3. Detects `nameQuery` in the first type parameter → creates query preload
+4. Detects `searchResults` in the second type parameter → creates nested
+   entrypoint
+5. Extracts the module ID `'m#hello_results'` from the `ModuleType` generic
+6. Generates all the entrypoint boilerplate automatically
+
+**Generated code equivalent (you don't write this!):**
 
 ```tsx
-/**
- * @route /
- * @param {string?} q
- */
-export const entrypoint: EntryPoint<
-  ModuleType<'m#search'>,
-  EntryPointParams<'/'>
-> = {
-  root: JSResource.fromModuleId('m#search'),
+export const entrypoint = {
+  root: JSResource.fromModuleId('m#hello'),
   getPreloadProps({params, schema}) {
-    const {q} = schema.parse(params);
+    const {name, q} = schema.parse(params);
 
     return {
-      queries: {},
+      queries: {
+        nameQuery: {
+          parameters: helloWorld_HelloQueryParameters,
+          variables: {name},
+        },
+      },
       entryPoints: {
         searchResults: {
           entryPointParams: {},
           entryPoint: {
-            root: JSResource.fromModuleId('m#search_results'),
+            root: JSResource.fromModuleId('m#hello_results'),
             getPreloadProps({}) {
               return {
                 queries: {
-                  citiesQueryRef: {
-                    parameters: search_SearchResultsQueryParameters,
-                    variables: {query: q ?? ''},
+                  citiesQuery: {
+                    parameters: helloWorld_HelloCityResultsQueryParameters,
+                    variables: {q},
                   },
                 },
               };
@@ -117,12 +136,12 @@ export const entrypoint: EntryPoint<
 
 **Key points:**
 
-- The parent entrypoint (`m#search`) has no queries of its own (`queries: {}`)
-- It declares a nested entrypoint called `searchResults` in the `entryPoints`
-  object
-- The nested entrypoint (`m#search_results`) defines its own query with
-  variables derived from the route params
+- The parent entrypoint preloads its own `nameQuery`
+- It creates a nested entrypoint called `searchResults` that loads
+  `m#hello_results`
+- The nested entrypoint preloads `citiesQuery` with route params
 - Both components are code-split and loaded separately
+- All of this is generated from your TypeScript types!
 
 ### 3. Render with Suspense
 

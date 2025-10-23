@@ -5,7 +5,6 @@ import {EntryPointComponent, graphql, usePreloadedQuery} from 'react-relay';
  * @route /hello/:name
  * @resource m#hello
  * @param {string} name
- * @query {helloWorld_HelloQuery} nameQuery
  */
 export const HelloWorldPage: EntryPointComponent<
   {nameQuery: helloWorld_HelloQuery},

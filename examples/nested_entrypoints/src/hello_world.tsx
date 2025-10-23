@@ -16,8 +16,6 @@ import {
  * @resource m#hello
  * @param {string} name
  * @param {string?} q
- * @query {helloWorld_HelloQuery} nameQuery
- * @entrypoint {m#hello_results} searchResults
  */
 export const HelloWorld: EntryPointComponent<
   {nameQuery: helloWorld_HelloQuery},
@@ -54,7 +52,7 @@ export const HelloWorld: EntryPointComponent<
         value={search}
         onChange={(e) => setSearch(e.target.value)}
         placeholder={`${greet} Search for cities...`}
-        className="min-w-lg mb-24 rounded-lg border border-gray-400 p-4"
+        className="mb-24 min-w-lg rounded-lg border border-gray-400 p-4"
       />
 
       <Suspense fallback="Loading...">
@@ -69,7 +67,6 @@ export const HelloWorld: EntryPointComponent<
 
 /**
  * @resource m#hello_results
- * @query {helloWorld_HelloCityResultsQuery} citiesQuery
  */
 export const HelloWorldCityResults: EntryPointComponent<
   {citiesQuery: helloWorld_HelloCityResultsQuery},

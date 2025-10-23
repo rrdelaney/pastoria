@@ -1,5 +1,5 @@
 {
-  "name": "create-pastoria-nested-entrypoints",
+  "name": "pastoria-starter-nested-entrypoints",
   "version": "0.1.5",
   "private": true,
   "type": "module",

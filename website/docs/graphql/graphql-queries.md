@@ -24,7 +24,6 @@ import {EntryPointComponent, graphql, usePreloadedQuery} from 'react-relay';
  * @route /hello/:name
  * @resource m#hello
  * @param {string} name
- * @query {helloWorld_HelloQuery} nameQuery
  */
 export const HelloWorldPage: EntryPointComponent<
   {nameQuery: helloWorld_HelloQuery},
@@ -195,7 +194,8 @@ query UserPostsQuery($userId: ID!, $limit: Int) @preloadable {
 ```
 
 Variables are automatically passed from your route parameters when using
-resource-driven entrypoints with `@query` annotations.
+resource-driven entrypoints. Pastoria analyzes your `EntryPointComponent` types
+to detect queries and automatically maps route params to query variables.
 
 ## Relay Directives
 
@@ -299,14 +299,14 @@ This helps organize queries and avoid naming conflicts.
 
 ### Query with Route Parameters
 
-Use `@query` annotation to automatically pass route params:
+Declare queries in your `EntryPointComponent` types to automatically pass route
+params:
 
 ```tsx
 /**
  * @route /posts/:postId
  * @resource m#post_page
  * @param {string} postId
- * @query {PostPageQuery} postQuery
  */
 export const PostPage: EntryPointComponent<{postQuery: PostPageQuery}, {}> = ({
   queries,
@@ -328,6 +328,8 @@ export const PostPage: EntryPointComponent<{postQuery: PostPageQuery}, {}> = ({
 ```
 
 The `$postId` variable is automatically populated from the route parameter.
+Pastoria detects the `postQuery` property in your types and maps the `postId`
+route param to the `$postId` query variable.
 
 ### Optional Variables
 
