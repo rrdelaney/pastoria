@@ -3,7 +3,6 @@ import {EntryPointComponent, graphql, usePreloadedQuery} from 'react-relay';
 
 /**
  * @route /hello/:name
- * @resource m#hello
  * @param {string} name
  */
 export const HelloWorldPage: EntryPointComponent<

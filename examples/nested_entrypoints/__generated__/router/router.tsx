@@ -39,7 +39,7 @@ import { entrypoint as e0 } from "../../src/search.entrypoint";
 type RouterConf = typeof ROUTER_CONF;
 const ROUTER_CONF = {
   "/hello/:name": {
-      entrypoint: entrypoint_m__hello(),
+      entrypoint: entrypoint_routehelloname(),
       schema: z.object({
         name: z.pipe(z.string(), z.transform(decodeURIComponent)),
         q: z.pipe(z.nullish(z.pipe(z.string(), z.transform(decodeURIComponent))), z.transform(s => s == null ? undefined : s)),
@@ -482,9 +482,9 @@ export function listRoutes() {
   return Object.keys(ROUTER_CONF);
 }
 
-function entrypoint_m__hello(): EntryPoint<ModuleType<'m#hello'>, EntryPointParams<'/hello/:name'>> {
+function entrypoint_routehelloname(): EntryPoint<ModuleType<'route(/hello/:name)'>, EntryPointParams<'/hello/:name'>> {
   return {
-    root: JSResource.fromModuleId('m#hello'),
+    root: JSResource.fromModuleId('route(/hello/:name)'),
     getPreloadProps({params, schema}) {
       const variables = schema.parse(params);
       return {

@@ -7,7 +7,7 @@ import type {JSResourceReference} from 'react-relay/hooks';
 
 type ResourceConf = typeof RESOURCE_CONF;
 const RESOURCE_CONF = {
-  "m#hello": {
+  "route(/hello/:name)": {
       src: "src/hello_world.tsx",
       loader: () => import("../../src/hello_world").then(m => m.HelloWorld)
     },

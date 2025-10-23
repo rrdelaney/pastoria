@@ -13,7 +13,6 @@ import {
 
 /**
  * @route /hello/:name
- * @resource m#hello
  * @param {string} name
  * @param {string?} q
  */

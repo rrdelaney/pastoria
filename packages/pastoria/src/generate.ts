@@ -240,6 +240,18 @@ function collectPastoriaMetadata(project: Project): PastoriaMetadata {
       if (routerRoute != null) {
         const [routeName, routeSymbol] = routerRoute;
         routes.set(routeName, routeSymbol);
+
+        const {entryPoints, queries} = getResourceQueriesAndEntryPoints(
+          routeSymbol.symbol,
+        );
+
+        if (routerResource == null && (entryPoints.size || queries.size)) {
+          resources.set(`route(${routeName})`, {
+            ...routeSymbol,
+            entryPoints,
+            queries,
+          });
+        }
       }
 
       if (routerResource != null) {
@@ -438,7 +450,7 @@ async function generateRouter(project: Project, metadata: PastoriaMetadata) {
 
     if (isResourceRoute) {
       const [resourceName, resource] = isResourceRoute;
-      const entryPointFunctionName = `entrypoint_${resourceName.replace(/\W/g, '__')}`;
+      const entryPointFunctionName = `entrypoint_${resourceName.replace(/\W/g, '')}`;
 
       if (!didAddJsResourceImport) {
         didAddJsResourceImport = true;
