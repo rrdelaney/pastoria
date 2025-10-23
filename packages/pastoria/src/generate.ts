@@ -355,6 +355,7 @@ async function generateRouter(project: Project, metadata: PastoriaMetadata) {
   const routerTemplate = await loadRouterTemplates(project, 'router.tsx');
   const tc = project.getTypeChecker().compilerObject;
 
+  let didAddJsResourceImport = false;
   const routerConf = routerTemplate
     .getVariableDeclarationOrThrow('ROUTER_CONF')
     .getInitializerIfKindOrThrow(SyntaxKind.AsExpression)
@@ -380,10 +381,13 @@ async function generateRouter(project: Project, metadata: PastoriaMetadata) {
       const [resourceName, resource] = isResourceRoute;
       const entryPointFunctionName = `entrypoint_${resourceName.replace(/\W/g, '__')}`;
 
-      routerTemplate.addImportDeclaration({
-        moduleSpecifier: './js_resource',
-        namedImports: ['JSResource', 'ModuleType'],
-      });
+      if (!didAddJsResourceImport) {
+        didAddJsResourceImport = true;
+        routerTemplate.addImportDeclaration({
+          moduleSpecifier: './js_resource',
+          namedImports: ['JSResource', 'ModuleType'],
+        });
+      }
 
       const consumedQueries = new Set<string>();
       routerTemplate.addFunction({
