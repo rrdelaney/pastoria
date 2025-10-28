@@ -17,7 +17,6 @@
     "@parcel/watcher": "^2.5.1",
     "@tailwindcss/vite": "^4.1.15",
     "@vitejs/plugin-react": "^5.0.4",
-    "babel-plugin-react-compiler": "^1.0.0",
     "babel-plugin-relay": "^20.1.1",
     "commander": "catalog:",
     "cookie-parser": "catalog:",
@@ -44,10 +43,16 @@
     "zod": "catalog:"
   },
   "peerDependencies": {
+    "babel-plugin-react-compiler": "^1.0.0",
     "express": "catalog:",
     "grats": "catalog:",
     "pastoria-config": "workspace:*",
     "relay-compiler": "catalog:",
     "tailwindcss": "catalog:"
+  },
+  "peerDependenciesMeta": {
+    "babel-plugin-react-compiler": {
+      "optional": true
+    }
   }
 }

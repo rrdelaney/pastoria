@@ -29,6 +29,7 @@ catalog:
   zod: ^3.25.76
 
 onlyBuiltDependencies:
+  - '@parcel/watcher'
   - '@tailwindcss/oxide'
   - core-js
   - core-js-pure
