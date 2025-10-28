@@ -14,7 +14,8 @@
     "check:types": "tsc --noEmit"
   },
   "dependencies": {
-    "@tailwindcss/vite": "^4.1.14",
+    "@parcel/watcher": "^2.5.1",
+    "@tailwindcss/vite": "^4.1.15",
     "@vitejs/plugin-react": "^5.0.4",
     "babel-plugin-react-compiler": "^1.0.0",
     "babel-plugin-relay": "^20.1.1",
@@ -22,7 +23,7 @@
     "cookie-parser": "catalog:",
     "dotenv": "catalog:",
     "picocolors": "catalog:",
-    "tailwindcss": "^4.1.14",
+    "tailwindcss": "^4.1.15",
     "ts-morph": "^26.0.0",
     "vite": "catalog:",
     "vite-plugin-cjs-interop": "^2.3.0"
@@ -34,15 +35,19 @@
     "@types/react": "catalog:",
     "@types/react-dom": "catalog:",
     "@types/react-relay": "catalog:",
+    "@types/relay-compiler": "^14.0.4",
     "pastoria-config": "workspace:*",
     "pastoria-runtime": "workspace:*",
     "radix3": "^1.1.2",
+    "relay-compiler": "catalog:",
     "typescript": "catalog:",
     "zod": "catalog:"
   },
   "peerDependencies": {
     "express": "catalog:",
+    "grats": "catalog:",
     "pastoria-config": "workspace:*",
+    "relay-compiler": "catalog:",
     "tailwindcss": "catalog:"
   }
 }
