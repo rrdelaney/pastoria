@@ -1,5 +1,13 @@
 # pastoria-runtime
 
+## 1.0.12
+
+### Patch Changes
+
+- b139f3c: Bump patch versions
+- Updated dependencies [b139f3c]
+  - pastoria-config@1.0.1
+
 ## 1.0.11
 
 ### Patch Changes
