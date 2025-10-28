@@ -5,7 +5,6 @@ import {readFile} from 'node:fs/promises';
 import * as path from 'node:path';
 import {createBuild} from './build.js';
 import {startDevserver} from './devserver.js';
-import {generatePastoriaArtifacts} from './generate.js';
 
 async function main() {
   const packageData = JSON.parse(
@@ -18,19 +17,16 @@ async function main() {
     .version(packageData.version);
 
   program
-    .command('gen')
-    .description('Run Pastoria code generation')
-    .action(generatePastoriaArtifacts);
-
-  program
     .command('dev')
     .description('Start the pastoria devserver')
     .option('--port <port>', 'Port the devserver will listen on', '3000')
     .action(startDevserver);
 
   program
-    .command('build')
+    .command('make')
     .description('Creates a production build of the project')
+    .option('-B, --always-make', 'Always make, never cache')
+    .option('--release', 'Build for production')
     .action(createBuild);
 
   program.parseAsync();
