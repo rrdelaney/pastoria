@@ -1,5 +1,11 @@
 # pastoria-runtime
 
+## 1.0.11
+
+### Patch Changes
+
+- 92f30a2: Fix Graphiql in production being served over HTTPS
+
 ## 1.0.10
 
 ### Patch Changes
