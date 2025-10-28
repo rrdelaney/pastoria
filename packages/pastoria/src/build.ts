@@ -1,6 +1,6 @@
 import tailwindcss from '@tailwindcss/vite';
 import react from '@vitejs/plugin-react';
-import {access} from 'node:fs/promises';
+import {access, readFile, writeFile, mkdir} from 'node:fs/promises';
 import path from 'node:path';
 import {IndentationText, Project} from 'ts-morph';
 import {
@@ -11,17 +11,148 @@ import {
   type Plugin,
 } from 'vite';
 import {cjsInterop} from 'vite-plugin-cjs-interop';
-import relayBin from 'relay-compiler';
 import {extractSchemaAndDoc} from 'grats';
 import {
   generatePastoriaArtifacts,
   generatePastoriaExports,
   PastoriaMetadata,
+  PASTORIA_TAG_REGEX,
 } from './generate.js';
+import {getEventsSince, writeSnapshot} from '@parcel/watcher';
+import {spawn} from 'node:child_process';
 
 interface PastoriaCapabilities {
   hasAppRoot: boolean;
   hasServerHandler: boolean;
+}
+
+const SNAPSHOT_PATH = '.pastoriainfo';
+
+async function runCommand(command: string, args: string[]): Promise<void> {
+  return new Promise((resolve, reject) => {
+    const child = spawn(command, args, {
+      cwd: process.cwd(),
+      stdio: 'inherit', // Stream output to terminal
+      shell: true,
+    });
+
+    child.on('exit', (code) => {
+      if (code === 0) {
+        resolve();
+      } else {
+        reject(new Error(`Command failed with exit code ${code}`));
+      }
+    });
+
+    child.on('error', reject);
+  });
+}
+
+async function runGratsCompiler(): Promise<void> {
+  const gratsPath = path.join(process.cwd(), 'node_modules', '.bin', 'grats');
+  await runCommand(gratsPath, []);
+}
+
+async function runRelayCompiler(): Promise<void> {
+  const relayPath = path.join(
+    process.cwd(),
+    'node_modules',
+    '.bin',
+    'relay-compiler',
+  );
+  await runCommand(relayPath, []);
+}
+
+function fileMatchesPastoriaTags(filePath: string, content: string): boolean {
+  // Skip generated files
+  if (filePath.includes('__generated__')) {
+    return false;
+  }
+  return PASTORIA_TAG_REGEX.test(content);
+}
+
+function fileMatchesGratsTags(filePath: string, content: string): boolean {
+  // Skip generated files
+  if (filePath.includes('__generated__')) {
+    return false;
+  }
+  // Match any Grats JSDoc tag
+  return /@gql\w+/.test(content);
+}
+
+function fileMatchesRelayImports(filePath: string, content: string): boolean {
+  // Skip generated files
+  if (filePath.includes('__generated__')) {
+    return false;
+  }
+  return (
+    /import\s+.*\s+from\s+['"]react-relay['"]/.test(content) ||
+    /import\s+.*\s+from\s+['"]relay-runtime['"]/.test(content)
+  );
+}
+
+async function analyzeChangedFiles(
+  events: Array<{type: string; path: string}>,
+): Promise<{
+  needsPastoriaExports: boolean;
+  needsGratsCompiler: boolean;
+  needsRelayCompiler: boolean;
+  needsPastoriaArtifacts: boolean;
+}> {
+  let needsPastoriaExports = false;
+  let needsGratsCompiler = false;
+  let needsRelayCompiler = false;
+  let needsPastoriaArtifacts = false;
+
+  for (const event of events) {
+    const filePath = event.path;
+
+    // Skip non-TypeScript/TSX files
+    if (!filePath.match(/\.(ts|tsx)$/)) {
+      continue;
+    }
+
+    // For delete events, we can't read content, so assume it might affect all pipelines
+    if (event.type === 'delete') {
+      needsPastoriaExports = true;
+      needsGratsCompiler = true;
+      needsRelayCompiler = true;
+      needsPastoriaArtifacts = true;
+      continue;
+    }
+
+    // Read file content for create/update events
+    try {
+      const content = await readFile(filePath, 'utf-8');
+
+      if (fileMatchesPastoriaTags(filePath, content)) {
+        needsPastoriaExports = true;
+        needsPastoriaArtifacts = true;
+      }
+
+      if (fileMatchesGratsTags(filePath, content)) {
+        needsGratsCompiler = true;
+        needsRelayCompiler = true; // Relay depends on Grats schema
+      }
+
+      if (fileMatchesRelayImports(filePath, content)) {
+        needsRelayCompiler = true;
+      }
+    } catch {
+      // If we can't read the file, assume it might affect all pipelines
+      needsPastoriaExports = true;
+      needsGratsCompiler = true;
+      needsRelayCompiler = true;
+      needsPastoriaArtifacts = true;
+    }
+  }
+
+  return {
+    needsPastoriaExports,
+    needsGratsCompiler,
+    needsRelayCompiler,
+    needsPastoriaArtifacts,
+  };
 }
 
 function generateClientEntry({hasAppRoot}: PastoriaCapabilities): string {
@@ -212,9 +343,6 @@ async function createReleaseBuild() {
     ...createBuildConfig(SERVER_BUILD),
     configFile: false,
   });
-
-  // TODO: Generate JS artifact with manifest + persisted queries + pastoria config
-  // to avoid JSON import / read files.
 }
 
 export async function createBuild(opts: {
@@ -228,14 +356,62 @@ export async function createBuild(opts: {
     },
   });
 
-  // Generate artifacts here.
+  const cwd = process.cwd();
+  let needsPastoriaExports = opts.alwaysMake;
+  let needsGratsCompiler = opts.alwaysMake;
+  let needsRelayCompiler = opts.alwaysMake;
+  let needsPastoriaArtifacts = opts.alwaysMake;
+
+  // Use @parcel/watcher to get changes since last snapshot
+  if (!opts.alwaysMake) {
+    try {
+      // Get events since last snapshot
+      const events = await getEventsSince(cwd, SNAPSHOT_PATH);
+
+      if (events.length > 0) {
+        // Analyze which files changed and determine what needs to be rebuilt
+        const analysis = await analyzeChangedFiles(events);
+        needsPastoriaExports = analysis.needsPastoriaExports;
+        needsGratsCompiler = analysis.needsGratsCompiler;
+        needsRelayCompiler =
+          analysis.needsRelayCompiler || analysis.needsGratsCompiler;
+        needsPastoriaArtifacts =
+          analysis.needsPastoriaArtifacts || analysis.needsPastoriaExports;
+      }
+    } catch (err) {
+      // No snapshot exists yet, or error reading it - do a full build
+      needsPastoriaExports = true;
+      needsGratsCompiler = true;
+      needsRelayCompiler = true;
+      needsPastoriaArtifacts = true;
+    }
+  }
+
+  // Execute build pipeline conditionally
   let cachedMetadata: PastoriaMetadata | undefined = undefined;
-  cachedMetadata = await generatePastoriaExports(project);
 
-  // Grats compiler ??
-  // Relay compiler ??
+  if (needsPastoriaExports) {
+    console.log('Running Pastoria exports generation...');
+    cachedMetadata = await generatePastoriaExports(project);
+  }
 
-  await generatePastoriaArtifacts(project, cachedMetadata);
+  if (needsGratsCompiler) {
+    console.log('Running Grats compiler...');
+    await runGratsCompiler();
+  }
+
+  if (needsRelayCompiler) {
+    console.log('Running Relay compiler...');
+    await runRelayCompiler();
+  }
+
+  if (needsPastoriaArtifacts) {
+    console.log('Running Pastoria artifacts generation...');
+    await generatePastoriaArtifacts(project, cachedMetadata);
+  }
+
+  // Write snapshot for next incremental build
+  await writeSnapshot(cwd, SNAPSHOT_PATH);
 
   if (opts.release) {
     await createReleaseBuild();
