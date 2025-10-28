@@ -47,8 +47,8 @@ types:
  * @param {string?} q
  */
 export const HelloWorld: EntryPointComponent<
-  {nameQuery: helloWorld_HelloQuery},  // ← Query detected from type!
-  {searchResults: EntryPoint<ModuleType<'m#hello_results'>>}  // ← Nested entrypoint detected!
+  {nameQuery: helloWorld_HelloQuery}, // ← Query detected from type!
+  {searchResults: EntryPoint<ModuleType<'m#hello_results'>>} // ← Nested entrypoint detected!
 > = ({queries, entryPoints}) => {
   const {greet} = usePreloadedQuery(
     graphql`
@@ -69,7 +69,7 @@ export const HelloWorld: EntryPointComponent<
  * @resource m#hello_results
  */
 export const HelloWorldCityResults: EntryPointComponent<
-  {citiesQuery: helloWorld_HelloCityResultsQuery},  // ← Query detected from type!
+  {citiesQuery: helloWorld_HelloCityResultsQuery}, // ← Query detected from type!
   {}
 > = ({queries}) => {
   const {cities} = usePreloadedQuery(
@@ -82,7 +82,8 @@ export const HelloWorldCityResults: EntryPointComponent<
 };
 ```
 
-Pastoria extracts everything from your TypeScript types—no additional annotations needed!
+Pastoria extracts everything from your TypeScript types—no additional
+annotations needed!
 
 ### 2. Automatic Entrypoint Generation
 

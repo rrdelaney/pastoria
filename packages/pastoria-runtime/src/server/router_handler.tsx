@@ -94,8 +94,7 @@ function createGraphqlHandler(
       config.enableGraphiQLInProduction;
 
     if (req.method === 'GET' && allowGraphiQL) {
-      const graphqlHost = `${req.protocol}://${req.host}`;
-      return res.status(200).send(graphiqlScript(graphqlHost));
+      return res.status(200).send(graphiqlScript());
     } else if (req.method !== 'POST') {
       return res.sendStatus(404);
     }

@@ -1,6 +1,4 @@
-export function graphiqlScript(pastoriaHost: string) {
-  const apiUrl = new URL('/api/graphql', pastoriaHost);
-
+export function graphiqlScript() {
   return `<!doctype html>
 <html>
   <head>
@@ -60,7 +58,7 @@ export function graphiqlScript(pastoriaHost: string) {
       import 'graphiql/setup-workers/esm.sh';
 
       const fetcher = createGraphiQLFetcher({
-        url: '${apiUrl.href}',
+        url: '/api/graphql',
       });
 
       const plugins = [HISTORY_PLUGIN, explorerPlugin()];

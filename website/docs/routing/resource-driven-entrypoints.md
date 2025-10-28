@@ -92,13 +92,17 @@ You get all the benefits of manual entrypoints without writing the boilerplate!
 
 ## Type-Based Query and Entrypoint Detection
 
-Pastoria automatically detects queries and nested entrypoints by analyzing the TypeScript types in your `EntryPointComponent` declaration. You only need to properly type your component, and Pastoria handles the rest!
+Pastoria automatically detects queries and nested entrypoints by analyzing the
+TypeScript types in your `EntryPointComponent` declaration. You only need to
+properly type your component, and Pastoria handles the rest!
 
 **How it works:**
 
-- Pastoria examines the first type parameter (queries) of `EntryPointComponent<QueriesType, EntryPointsType>`
+- Pastoria examines the first type parameter (queries) of
+  `EntryPointComponent<QueriesType, EntryPointsType>`
 - For each property in `QueriesType`, it creates a preloaded query
-- For each property in `EntryPointsType`, it creates a nested entrypoint reference
+- For each property in `EntryPointsType`, it creates a nested entrypoint
+  reference
 - Route parameters are automatically mapped to query variables by matching names
 
 All you need is proper TypeScript types—no additional annotations required!
@@ -172,7 +176,8 @@ Pastoria generates:
 
 ## Queries
 
-To preload GraphQL queries, simply declare them in the first type parameter of your `EntryPointComponent`:
+To preload GraphQL queries, simply declare them in the first type parameter of
+your `EntryPointComponent`:
 
 ```tsx
 /**
@@ -181,7 +186,7 @@ To preload GraphQL queries, simply declare them in the first type parameter of y
  * @param {string} userId
  */
 export const UserProfilePage: EntryPointComponent<
-  {userQuery: UserProfileQuery},  // ← Pastoria detects this query!
+  {userQuery: UserProfileQuery}, // ← Pastoria detects this query!
   {}
 > = ({queries}) => {
   const data = usePreloadedQuery(
@@ -203,7 +208,8 @@ export const UserProfilePage: EntryPointComponent<
 **How automatic variable mapping works:**
 
 1. Pastoria finds the `userQuery` property in the queries type
-2. It looks up the `UserProfileQuery` type to find its variables (e.g., `$userId`)
+2. It looks up the `UserProfileQuery` type to find its variables (e.g.,
+   `$userId`)
 3. It matches route parameter names to query variable names
 4. Route parameter `userId` → Query variable `$userId` automatically!
 
@@ -221,7 +227,10 @@ export const DashboardPage: EntryPointComponent<
   // All three queries are preloaded automatically!
   const user = usePreloadedQuery(UserQueryDef, queries.userQuery);
   const stats = usePreloadedQuery(StatsQueryDef, queries.statsQuery);
-  const notifications = usePreloadedQuery(NotificationsQueryDef, queries.notificationsQuery);
+  const notifications = usePreloadedQuery(
+    NotificationsQueryDef,
+    queries.notificationsQuery,
+  );
 
   return <div>{/* Render dashboard */}</div>;
 };
@@ -229,7 +238,8 @@ export const DashboardPage: EntryPointComponent<
 
 ## Nested Entrypoints
 
-For parent-child UI patterns, declare nested entrypoints in the second type parameter:
+For parent-child UI patterns, declare nested entrypoints in the second type
+parameter:
 
 ```tsx
 import {helloWorld_HelloQuery} from '#genfiles/queries/helloWorld_HelloQuery.graphql.js';
@@ -252,7 +262,7 @@ import {
  */
 export const HelloWorld: EntryPointComponent<
   {nameQuery: helloWorld_HelloQuery},
-  {searchResults: EntryPoint<ModuleType<'m#hello_results'>>}  // ← Nested entrypoint!
+  {searchResults: EntryPoint<ModuleType<'m#hello_results'>>} // ← Nested entrypoint!
 > = ({queries, entryPoints}) => {
   const {greet} = usePreloadedQuery(
     graphql`
@@ -287,7 +297,7 @@ The nested component is a separate resource with its own queries:
  * @resource m#hello_results
  */
 export const HelloWorldCityResults: EntryPointComponent<
-  {citiesQuery: helloWorld_HelloCityResultsQuery},  // ← This query is auto-detected too!
+  {citiesQuery: helloWorld_HelloCityResultsQuery}, // ← This query is auto-detected too!
   {}
 > = ({queries}) => {
   const {cities} = usePreloadedQuery(
@@ -318,7 +328,8 @@ export const HelloWorldCityResults: EntryPointComponent<
 1. Pastoria examines the `EntryPointsType` (second type parameter)
 2. It finds `searchResults: EntryPoint<ModuleType<'m#hello_results'>>`
 3. It extracts the module ID `'m#hello_results'` and creates a nested entrypoint
-4. The nested resource's queries are automatically preloaded based on its own `EntryPointComponent` types
+4. The nested resource's queries are automatically preloaded based on its own
+   `EntryPointComponent` types
 5. Route parameters are passed down to nested entrypoints automatically
 
 **Benefits:**
@@ -552,7 +563,8 @@ TypeScript will catch:
 Resource-driven entrypoints provide:
 
 - ✅ Concise syntax with minimal JSDoc annotations
-- ✅ Automatic entrypoint generation via `pastoria gen` using TypeScript type analysis
+- ✅ Automatic entrypoint generation via `pastoria gen` using TypeScript type
+  analysis
 - ✅ Same SSR and preloading benefits as manual entrypoints
 - ✅ Less boilerplate for simple routes
 - ✅ Type-safe parameter validation
