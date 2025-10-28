@@ -7,8 +7,8 @@ catalog:
   '@types/cookie-parser': ^1.4.9
   '@types/express': ^5.0.3
   '@types/node': ^22.12.0
-  '@types/react': ^19.2.0
-  '@types/react-dom': ^19.2.0
+  '@types/react': ^19.2.2
+  '@types/react-dom': ^19.2.2
   '@types/react-relay': ^18.2.1
   '@types/relay-runtime': ^19.0.2
   commander: ^14.0.1
@@ -16,14 +16,16 @@ catalog:
   dotenv: ^16.6.1
   express: ^5.1.0
   graphql: 17.0.0-alpha.9
+  grats: ^0.0.33
   picocolors: ^1.1.1
   react: ^19.2.0
   react-dom: ^19.2.0
   react-relay: ^20.1.1
+  relay-compiler: ^20.1.1
   relay-runtime: ^20.1.1
   tailwindcss: ^4.1.14
-  typescript: ^5.9.2
-  vite: ^7.1.9
+  typescript: ^5.9.3
+  vite: ^7.1.11
   zod: ^3.25.76
 
 onlyBuiltDependencies:

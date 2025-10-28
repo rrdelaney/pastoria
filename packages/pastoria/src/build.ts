@@ -1,14 +1,23 @@
 import tailwindcss from '@tailwindcss/vite';
 import react from '@vitejs/plugin-react';
 import {access} from 'node:fs/promises';
-import * as path from 'node:path';
+import path from 'node:path';
+import {IndentationText, Project} from 'ts-morph';
 import {
   build,
   InlineConfig,
+  PluginOption,
   type BuildEnvironmentOptions,
   type Plugin,
 } from 'vite';
 import {cjsInterop} from 'vite-plugin-cjs-interop';
+import relayBin from 'relay-compiler';
+import {extractSchemaAndDoc} from 'grats';
+import {
+  generatePastoriaArtifacts,
+  generatePastoriaExports,
+  PastoriaMetadata,
+} from './generate.js';
 
 interface PastoriaCapabilities {
   hasAppRoot: boolean;
@@ -177,7 +186,7 @@ export function createBuildConfig(
     },
     plugins: [
       pastoriaEntryPlugin(),
-      tailwindcss(),
+      tailwindcss() as PluginOption,
       react({
         babel: {
           plugins: [['babel-plugin-react-compiler', {}], 'relay'],
@@ -193,14 +202,42 @@ export function createBuildConfig(
   };
 }
 
-export async function createBuild() {
-  const clientBuild = await build({
+async function createReleaseBuild() {
+  await build({
     ...createBuildConfig(CLIENT_BUILD),
     configFile: false,
   });
 
-  const serverBuild = await build({
+  await build({
     ...createBuildConfig(SERVER_BUILD),
     configFile: false,
   });
+
+  // TODO: Generate JS artifact with manifest + persisted queries + pastoria config
+  // to avoid JSON import / read files.
+}
+
+export async function createBuild(opts: {
+  alwaysMake: boolean;
+  release: boolean;
+}) {
+  const project = new Project({
+    tsConfigFilePath: path.join(process.cwd(), 'tsconfig.json'),
+    manipulationSettings: {
+      indentationText: IndentationText.TwoSpaces,
+    },
+  });
+
+  // Generate artifacts here.
+  let cachedMetadata: PastoriaMetadata | undefined = undefined;
+  cachedMetadata = await generatePastoriaExports(project);
+
+  // Grats compiler ??
+  // Relay compiler ??
+
+  await generatePastoriaArtifacts(project, cachedMetadata);
+
+  if (opts.release) {
+    await createReleaseBuild();
+  }
 }

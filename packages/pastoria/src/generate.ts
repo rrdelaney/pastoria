@@ -78,7 +78,7 @@ type ExportedSymbol = {
   symbol: Symbol;
 };
 
-interface PastoriaMetadata {
+export interface PastoriaMetadata {
   resources: Map<string, RouterResource>;
   routes: Map<string, RouterRoute>;
   serverHandlers: Map<string, ExportedSymbol>;
@@ -87,7 +87,7 @@ interface PastoriaMetadata {
 }
 
 // Regex to quickly check if a file contains any Pastoria JSDoc tags
-const PASTORIA_TAG_REGEX =
+export const PASTORIA_TAG_REGEX =
   /@(route|resource|appRoot|param|gqlContext|serverRoute)\b/;
 
 function collectPastoriaMetadata(project: Project): PastoriaMetadata {
@@ -748,19 +748,18 @@ export const router = express.Router();
   await serverHandlerTemplate.save();
 }
 
-export async function generatePastoriaArtifacts() {
-  const targetDir = process.cwd();
-  const project = new Project({
-    tsConfigFilePath: path.join(targetDir, 'tsconfig.json'),
-    manipulationSettings: {
-      indentationText: IndentationText.TwoSpaces,
-    },
-  });
-
+export async function generatePastoriaExports(project: Project) {
   const metadata = collectPastoriaMetadata(project);
 
   await generateAppRoot(project, metadata);
   await generateGraphqlContext(project, metadata);
+  return metadata;
+}
+
+export async function generatePastoriaArtifacts(
+  project: Project,
+  metadata = collectPastoriaMetadata(project),
+) {
   await generateRouter(project, metadata);
   await generateJsResource(project, metadata);
   await generateServerHandler(project, metadata);
