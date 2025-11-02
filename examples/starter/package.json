@@ -6,7 +6,7 @@
   "scripts": {
     "format": "prettier -w .",
     "make": "pastoria make",
-    "build": "pastoria make --release",
+    "build": "pastoria make --always-make --release",
     "dev": "pastoria dev",
     "start": "NODE_ENV=production pastoria-server"
   },
