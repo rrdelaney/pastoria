@@ -152,26 +152,6 @@ function collectPastoriaMetadata(project: Project): PastoriaMetadata {
               serverHandlers.set(tag.comment, {sourceFile, symbol});
               break;
             }
-            // case 'query': {
-            //   const match = tag.comment.match(
-            //     /^\s*\{\s*(?<query>\w+)\s*\}\s+(?<name>\w+)\s*$/,
-            //   )?.groups;
-
-            //   if (match && match.query && match.name) {
-            //     resourceQueries.set(match.name, match.query);
-            //   }
-            //   break;
-            // }
-            // case 'entrypoint': {
-            //   const match = tag.comment.match(
-            //     /^\s*\{\s*(?<resource>[\w#]+)\s*\}\s+(?<name>\w+)\s*$/,
-            //   )?.groups;
-
-            //   if (match && match.resource && match.name) {
-            //     resourceEntryPoints.set(match.name, match.resource);
-            //   }
-            //   break;
-            // }
           }
         } else {
           // Handle tags without comments (like @ExportedSymbol, @gqlContext)

@@ -1,6 +1,8 @@
+import ParcelWatcher, {getEventsSince, writeSnapshot} from '@parcel/watcher';
 import tailwindcss from '@tailwindcss/vite';
 import react from '@vitejs/plugin-react';
-import {access, readFile, writeFile, mkdir} from 'node:fs/promises';
+import {spawn} from 'node:child_process';
+import {access, readFile} from 'node:fs/promises';
 import path from 'node:path';
 import {IndentationText, Project} from 'ts-morph';
 import {
@@ -11,15 +13,12 @@ import {
   type Plugin,
 } from 'vite';
 import {cjsInterop} from 'vite-plugin-cjs-interop';
-import {extractSchemaAndDoc} from 'grats';
 import {
   generatePastoriaArtifacts,
   generatePastoriaExports,
-  PastoriaMetadata,
   PASTORIA_TAG_REGEX,
+  PastoriaMetadata,
 } from './generate.js';
-import {getEventsSince, writeSnapshot} from '@parcel/watcher';
-import {spawn} from 'node:child_process';
 
 interface PastoriaCapabilities {
   hasAppRoot: boolean;
@@ -241,6 +240,45 @@ export function createHandler(
 `;
 }
 
+async function executeBuildSteps(
+  project: Project,
+  needs: {
+    needsPastoriaExports: boolean;
+    needsGratsCompiler: boolean;
+    needsRelayCompiler: boolean;
+    needsPastoriaArtifacts: boolean;
+  },
+): Promise<boolean> {
+  let rebuiltAnything = false;
+  let cachedMetadata: PastoriaMetadata | undefined = undefined;
+
+  if (needs.needsPastoriaExports) {
+    console.log('Running Pastoria exports generation...');
+    cachedMetadata = await generatePastoriaExports(project);
+    rebuiltAnything = true;
+  }
+
+  if (needs.needsGratsCompiler) {
+    console.log('Running Grats compiler...');
+    await runGratsCompiler();
+    rebuiltAnything = true;
+  }
+
+  if (needs.needsRelayCompiler) {
+    console.log('Running Relay compiler...');
+    await runRelayCompiler();
+    rebuiltAnything = true;
+  }
+
+  if (needs.needsPastoriaArtifacts) {
+    console.log('Running Pastoria artifacts generation...');
+    await generatePastoriaArtifacts(project, cachedMetadata);
+    rebuiltAnything = true;
+  }
+
+  return rebuiltAnything;
+}
+
 async function determineCapabilities(): Promise<PastoriaCapabilities> {
   const capabilities: PastoriaCapabilities = {
     hasAppRoot: false,
@@ -345,10 +383,58 @@ async function createReleaseBuild() {
   });
 }
 
-export async function createBuild(opts: {
-  alwaysMake: boolean;
-  release: boolean;
-}) {
+function determineBuildStepsFromArgs(steps: string[]): {
+  needsPastoriaExports: boolean;
+  needsGratsCompiler: boolean;
+  needsRelayCompiler: boolean;
+  needsPastoriaArtifacts: boolean;
+} {
+  const validSteps = new Set(['schema', 'relay', 'router']);
+  const needs = {
+    needsPastoriaExports: false,
+    needsGratsCompiler: false,
+    needsRelayCompiler: false,
+    needsPastoriaArtifacts: false,
+  };
+
+  for (const step of steps) {
+    if (!validSteps.has(step)) {
+      throw new Error(
+        `Invalid build step: ${step}. Valid steps are: schema, relay, router`,
+      );
+    }
+
+    switch (step) {
+      case 'schema':
+        needs.needsGratsCompiler = true;
+        break;
+      case 'relay':
+        needs.needsRelayCompiler = true;
+        break;
+      case 'router':
+        needs.needsPastoriaExports = true;
+        needs.needsPastoriaArtifacts = true;
+        break;
+    }
+  }
+
+  return needs;
+}
+
+export async function createBuild(
+  steps: string[],
+  opts: {
+    alwaysMake: boolean;
+    release: boolean;
+    watch?: boolean;
+  },
+) {
+  if (opts.watch && opts.release) {
+    throw new Error(
+      'Cannot use --watch and --release together. Watch mode is for development only.',
+    );
+  }
+
   const project = new Project({
     tsConfigFilePath: path.join(process.cwd(), 'tsconfig.json'),
     manipulationSettings: {
@@ -362,9 +448,20 @@ export async function createBuild(opts: {
   let needsRelayCompiler = opts.alwaysMake;
   let needsPastoriaArtifacts = opts.alwaysMake;
 
+  // If specific steps are provided, override automatic inference
+  if (steps.length > 0) {
+    const stepsNeeds = determineBuildStepsFromArgs(steps);
+    needsPastoriaExports = stepsNeeds.needsPastoriaExports;
+    needsGratsCompiler = stepsNeeds.needsGratsCompiler;
+    needsRelayCompiler = stepsNeeds.needsRelayCompiler;
+    needsPastoriaArtifacts = stepsNeeds.needsPastoriaArtifacts;
+  }
   // Use @parcel/watcher to get changes since last snapshot
-  if (!opts.alwaysMake) {
+  else if (!opts.alwaysMake) {
     try {
+      // Check if snapshot exists - if not, do a full build
+      await access(SNAPSHOT_PATH);
+
       // Get events since last snapshot
       const events = await getEventsSince(cwd, SNAPSHOT_PATH);
 
@@ -388,32 +485,49 @@ export async function createBuild(opts: {
   }
 
   // Execute build pipeline conditionally
-  let cachedMetadata: PastoriaMetadata | undefined = undefined;
-
-  if (needsPastoriaExports) {
-    console.log('Running Pastoria exports generation...');
-    cachedMetadata = await generatePastoriaExports(project);
-  }
-
-  if (needsGratsCompiler) {
-    console.log('Running Grats compiler...');
-    await runGratsCompiler();
-  }
-
-  if (needsRelayCompiler) {
-    console.log('Running Relay compiler...');
-    await runRelayCompiler();
-  }
-
-  if (needsPastoriaArtifacts) {
-    console.log('Running Pastoria artifacts generation...');
-    await generatePastoriaArtifacts(project, cachedMetadata);
-  }
+  await executeBuildSteps(project, {
+    needsPastoriaExports,
+    needsGratsCompiler,
+    needsRelayCompiler,
+    needsPastoriaArtifacts,
+  });
 
   // Write snapshot for next incremental build
   await writeSnapshot(cwd, SNAPSHOT_PATH);
 
   if (opts.release) {
     await createReleaseBuild();
+  }
+
+  // Start watch mode if requested
+  if (opts.watch) {
+    console.log('Watching for changes...');
+
+    const subscription = await ParcelWatcher.subscribe(
+      cwd,
+      async (err, events) => {
+        if (err) {
+          console.error('Watch error:', err);
+          return;
+        }
+
+        // Analyze which files changed and determine what needs to be rebuilt
+        const analysis = await analyzeChangedFiles(events);
+
+        const rebuiltAnything = await executeBuildSteps(project, analysis);
+
+        if (rebuiltAnything) {
+          // Write snapshot after successful rebuild
+          await writeSnapshot(cwd, SNAPSHOT_PATH);
+          console.log('Rebuild complete. Watching for changes...');
+        }
+      },
+    );
+
+    // Keep the process running
+    process.on('SIGINT', async () => {
+      await subscription.unsubscribe();
+      process.exit(0);
+    });
   }
 }
