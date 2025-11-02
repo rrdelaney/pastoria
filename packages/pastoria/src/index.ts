@@ -25,8 +25,13 @@ async function main() {
   program
     .command('make')
     .description('Creates a production build of the project')
+    .argument(
+      '[steps...]',
+      'Specific build steps to run (schema, relay, router). If not provided, will infer from changed files.',
+    )
     .option('-B, --always-make', 'Always make, never cache')
     .option('--release', 'Build for production')
+    .option('-w, --watch', 'Watch for changes and rebuild')
     .action(createBuild);
 
   program.parseAsync();
