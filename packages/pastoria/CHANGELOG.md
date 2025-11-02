@@ -1,5 +1,11 @@
 # pastoria
 
+## 1.0.12
+
+### Patch Changes
+
+- 641b356: Add pastoria make command
+
 ## 1.0.11
 
 ### Patch Changes
