@@ -31,7 +31,7 @@ jobs:
         run: pnpm check:format
 
       - name: Build packages
-        run: pnpm --filter 'pastoria*' -r build
+        run: pnpm --filter './packages/*' -r build
 
       - name: Link local pastoria CLI
         run: pnpm install --frozen-lockfile
