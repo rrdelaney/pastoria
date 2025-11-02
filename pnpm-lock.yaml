@@ -147,6 +147,9 @@ importers:
       '@types/relay-runtime':
         specifier: 'catalog:'
         version: 19.0.3
+      babel-plugin-react-compiler:
+        specifier: ^1.0.0
+        version: 1.0.0
       pastoria:
         specifier: workspace:*
         version: link:../../packages/pastoria
@@ -226,6 +229,9 @@ importers:
       '@types/relay-runtime':
         specifier: 'catalog:'
         version: 19.0.3
+      babel-plugin-react-compiler:
+        specifier: ^1.0.0
+        version: 1.0.0
       pastoria:
         specifier: workspace:*
         version: link:../../packages/pastoria
@@ -305,6 +311,9 @@ importers:
       '@types/relay-runtime':
         specifier: 'catalog:'
         version: 19.0.3
+      babel-plugin-react-compiler:
+        specifier: ^1.0.0
+        version: 1.0.0
       pastoria:
         specifier: workspace:*
         version: link:../../packages/pastoria
