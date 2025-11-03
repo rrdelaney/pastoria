@@ -1,5 +1,12 @@
 # pastoria-runtime
 
+## 1.0.13
+
+### Patch Changes
+
+- 0ef0bdc: Automatically infer variable names and types from queries on
+  resource-routes if none provided
+
 ## 1.0.12
 
 ### Patch Changes

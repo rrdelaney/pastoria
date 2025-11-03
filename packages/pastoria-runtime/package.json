@@ -1,6 +1,6 @@
 {
   "name": "pastoria-runtime",
-  "version": "1.0.12",
+  "version": "1.0.13",
   "description": "Runtime utilities for Pastoria routing system",
   "type": "module",
   "main": "./dist/index.js",
