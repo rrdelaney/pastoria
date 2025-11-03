@@ -2,10 +2,11 @@ import cookieParser from 'cookie-parser';
 import dotenv from 'dotenv';
 import express from 'express';
 import {readFile} from 'node:fs/promises';
-import pc from 'picocolors';
 import {loadConfig, PastoriaConfig} from 'pastoria-config';
+import pc from 'picocolors';
 import {createServer as createViteServer, type Manifest} from 'vite';
-import {CLIENT_BUILD, createBuildConfig} from './build.js';
+import {logInfo} from './logger.js';
+import {CLIENT_BUILD, createBuildConfig} from './vite_plugin.js';
 
 interface PersistedQueries {
   [hash: string]: string;
@@ -51,7 +52,7 @@ export async function startDevserver(opts: {port: string}) {
     if (err) {
       console.error(err);
     } else {
-      console.log(pc.cyan(`Listening on port ${opts.port}!`));
+      logInfo(pc.cyan(`Listening on port ${opts.port}!`));
     }
   });
 }

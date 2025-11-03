@@ -21,6 +21,14 @@ export function createServerEnvironment(
       throw new Error(`Could not find source for query: ${request.id}`);
     }
 
+    // Remove all variables explicitly set to undefined to allow
+    // application of default query variables.
+    for (const key of Object.keys(variables)) {
+      if (variables[key] === undefined) {
+        delete variables[key];
+      }
+    }
+
     const results = await graphql({
       schema,
       source,

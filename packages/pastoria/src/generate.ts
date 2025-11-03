@@ -31,15 +31,14 @@ import * as path from 'node:path';
 import pc from 'picocolors';
 import {
   CodeBlockWriter,
-  IndentationText,
   Project,
   SourceFile,
   Symbol,
   SyntaxKind,
   ts,
   TypeFlags,
-  WriterFunction,
 } from 'ts-morph';
+import {logInfo, logWarn} from './logger.js';
 
 async function loadRouterTemplates(project: Project, filename: string) {
   async function loadSourceFile(fileName: string, templateFileName: string) {
@@ -89,6 +88,36 @@ export interface PastoriaMetadata {
 // Regex to quickly check if a file contains any Pastoria JSDoc tags
 export const PASTORIA_TAG_REGEX =
   /@(route|resource|appRoot|param|gqlContext|serverRoute)\b/;
+
+function collectQueryParameters(
+  project: Project,
+  queries: string[],
+): Map<string, ts.Type> {
+  const vars = new Map<string, ts.Type>();
+
+  for (const query of queries) {
+    const variablesType = project
+      .getSourceFile(`__generated__/queries/${query}.graphql.ts`)
+      ?.getExportedDeclarations()
+      .get(`${query}$variables`)
+      ?.at(0)
+      ?.getType();
+
+    if (variablesType == null) continue;
+
+    for (const property of variablesType.getProperties()) {
+      // TODO: Detect conflicting types among properties declared.
+      const propertyName = property.getName();
+      const propertyType = property.getValueDeclaration()?.getType();
+
+      if (propertyType) {
+        vars.set(propertyName, propertyType.compilerType);
+      }
+    }
+  }
+
+  return vars;
+}
 
 function collectPastoriaMetadata(project: Project): PastoriaMetadata {
   const resources = new Map<string, RouterResource>();
@@ -158,10 +187,7 @@ function collectPastoriaMetadata(project: Project): PastoriaMetadata {
           switch (tag.tagName.getText()) {
             case 'appRoot': {
               if (appRoot != null) {
-                console.warn(
-                  pc.yellow('Warning:'),
-                  'Multiple @appRoot tags found. Using the first one.',
-                );
+                logWarn('Multiple @appRoot tags found. Using the first one.');
               } else {
                 appRoot = {
                   sourceFile,
@@ -195,8 +221,7 @@ function collectPastoriaMetadata(project: Project): PastoriaMetadata {
 
               if (extendsPastoriaRootContext) {
                 if (gqlContext != null) {
-                  console.warn(
-                    pc.yellow('Warning:'),
+                  logWarn(
                     'Multiple classes with @gqlContext extending PastoriaRootContext found. Using the first one.',
                   );
                 } else {
@@ -308,35 +333,55 @@ function getResourceQueriesAndEntryPoints(symbol: Symbol): {
   return resource;
 }
 
-function zodSchemaOfType(tc: ts.TypeChecker, t: ts.Type): string {
-  if (t.getFlags() & TypeFlags.String) {
+function zodSchemaOfType(
+  sf: SourceFile,
+  tc: ts.TypeChecker,
+  t: ts.Type,
+): string {
+  if (t.aliasSymbol) {
+    const decl = t.aliasSymbol.declarations?.at(0);
+    if (decl == null) {
+      logWarn('Could not handle type:', tc.typeToString(t));
+      return `z.any()`;
+    } else {
+      const importPath = sf.getRelativePathAsModuleSpecifierTo(
+        decl.getSourceFile().fileName,
+      );
+
+      return `z.transform((s: string) => s as import('${importPath}').${t.aliasSymbol.getName()})`;
+    }
+  } else if (t.getFlags() & TypeFlags.String) {
     return `z.pipe(z.string(), z.transform(decodeURIComponent))`;
   } else if (t.getFlags() & TypeFlags.Number) {
     return `z.coerce.number<number>()`;
   } else if (t.getFlags() & TypeFlags.Null) {
     return `z.preprocess(s => s == null ? undefined : s, z.undefined())`;
   } else if (t.isUnion()) {
-    const isRepresentingOptional =
-      t.types.length === 2 &&
-      t.types.some((s) => s.getFlags() & TypeFlags.Null);
+    const nullishTypes: ts.Type[] = [];
+    const nonNullishTypes: ts.Type[] = [];
+    for (const s of t.types) {
+      const flags = s.getFlags();
+      if (flags & TypeFlags.Null || flags & TypeFlags.Undefined) {
+        nullishTypes.push(s);
+      } else {
+        nonNullishTypes.push(s);
+      }
+    }
 
-    if (isRepresentingOptional) {
-      const nonOptionalType = t.types.find(
-        (s) => !(s.getFlags() & TypeFlags.Null),
-      )!;
-
-      return `z.pipe(z.nullish(${zodSchemaOfType(tc, nonOptionalType)}), z.transform(s => s == null ? undefined : s))`;
+    if (nullishTypes.length > 0 && nonNullishTypes.length > 0) {
+      const nonOptionalType = t.getNonNullableType();
+      return `z.pipe(z.nullish(${zodSchemaOfType(sf, tc, nonOptionalType)}), z.transform(s => s == null ? undefined : s))`;
     } else {
-      return `z.union([${t.types.map((it) => zodSchemaOfType(tc, it)).join(', ')}])`;
+      return `z.union([${t.types.map((it) => zodSchemaOfType(sf, tc, it)).join(', ')}])`;
     }
   } else if (tc.isArrayLikeType(t)) {
     const typeArg = tc.getTypeArguments(t as ts.TypeReference)[0];
     const argZodSchema =
-      typeArg == null ? `z.any()` : zodSchemaOfType(tc, typeArg);
+      typeArg == null ? `z.any()` : zodSchemaOfType(sf, tc, typeArg);
 
     return `z.array(${argZodSchema})`;
   } else {
-    console.log('Could not handle type:', tc.typeToString(t));
+    logWarn('Could not handle type:', tc.typeToString(t));
     return `z.any()`;
   }
 }
@@ -415,7 +460,7 @@ async function generateRouter(project: Project, metadata: PastoriaMetadata) {
   routerConf.getPropertyOrThrow('noop').remove();
 
   let entryPointImportIndex = 0;
-  for (const [
+  for (let [
     routeName,
     {sourceFile, symbol, params},
   ] of metadata.routes.entries()) {
@@ -457,6 +502,10 @@ async function generateRouter(project: Project, metadata: PastoriaMetadata) {
         },
       });
 
+      if (params.size === 0 && consumedQueries.size > 0) {
+        params = collectQueryParameters(project, Array.from(consumedQueries));
+      }
+
       for (const query of consumedQueries) {
         routerTemplate.addImportDeclaration({
           moduleSpecifier: `#genfiles/queries/${query}$parameters`,
@@ -497,7 +546,7 @@ async function generateRouter(project: Project, metadata: PastoriaMetadata) {
               writer.writeLine(`schema: z.object({`);
               for (const [paramName, paramType] of Array.from(params)) {
                 writer.writeLine(
-                  `  ${paramName}: ${zodSchemaOfType(tc, paramType)},`,
+                  `  ${paramName}: ${zodSchemaOfType(routerTemplate, tc, paramType)},`,
                 );
               }
 
@@ -508,7 +557,7 @@ async function generateRouter(project: Project, metadata: PastoriaMetadata) {
       },
     });
 
-    console.log(
+    logInfo(
       'Created route',
       pc.cyan(routeName),
       'for',
@@ -559,7 +608,7 @@ async function generateJsResource(
       },
     });
 
-    console.log(
+    logInfo(
       'Created resource',
       pc.cyan(resourceName),
       'for',
@@ -607,7 +656,7 @@ export {${appRootSymbol.getName()} as App} from '${moduleSpecifier}';
 
   await appRootFile.save();
 
-  console.log(
+  logInfo(
     'Created app root for',
     pc.green(appRootSymbol.getName()),
     'exported from',
@@ -643,7 +692,7 @@ async function generateGraphqlContext(
 export {${contextSymbol.getName()} as Context} from '${moduleSpecifier}';
 `);
 
-    console.log(
+    logInfo(
       'Created GraphQL context for',
       pc.green(contextSymbol.getName()),
       'exported from',
@@ -663,10 +712,7 @@ import {PastoriaRootContext} from 'pastoria-runtime/server';
 export class Context extends PastoriaRootContext {}
 `);
 
-    console.log(
-      'No @gqlContext found, generating default',
-      pc.green('Context'),
-    );
+    logInfo('No @gqlContext found, generating default', pc.green('Context'));
   }
 
   await contextFile.save();
@@ -715,7 +761,7 @@ export const router = express.Router();
       `router.use('${routeName}', ${importAlias})`,
     );
 
-    console.log(
+    logInfo(
       'Created server handler',
       pc.cyan(routeName),
       'for',
@@ -743,4 +789,97 @@ export async function generatePastoriaArtifacts(
   await generateRouter(project, metadata);
   await generateJsResource(project, metadata);
   await generateServerHandler(project, metadata);
+}
+
+export interface PastoriaCapabilities {
+  hasAppRoot: boolean;
+  hasServerHandler: boolean;
+}
+
+export function generateClientEntry({
+  hasAppRoot,
+}: PastoriaCapabilities): string {
+  const appImport = hasAppRoot
+    ? `import {App} from '#genfiles/router/app_root';`
+    : '';
+  const appValue = hasAppRoot ? 'App' : 'null';
+
+  return `// Generated by Pastoria.
+import {createRouterApp} from '#genfiles/router/router';
+${appImport}
+import {hydrateRoot} from 'react-dom/client';
+
+async function main() {
+  const RouterApp = await createRouterApp();
+  hydrateRoot(document, <RouterApp App={${appValue}} />);
+}
+
+main();
+`;
+}
+
+export function generateServerEntry({
+  hasAppRoot,
+  hasServerHandler,
+}: PastoriaCapabilities): string {
+  const appImport = hasAppRoot
+    ? `import {App} from '#genfiles/router/app_root';`
+    : '';
+  const appValue = hasAppRoot ? 'App' : 'null';
+
+  const serverHandlerImport = hasServerHandler
+    ? `import {router as serverHandler} from '#genfiles/router/server_handler';`
+    : '';
+  const serverHandlerUse = hasServerHandler
+    ? '  router.use(serverHandler)'
+    : '';
+
+  return `// Generated by Pastoria.
+import {JSResource} from '#genfiles/router/js_resource';
+import {
+  listRoutes,
+  router__createAppFromEntryPoint,
+  router__loadEntryPoint,
+} from '#genfiles/router/router';
+import {getSchema} from '#genfiles/schema/schema';
+import {Context} from '#genfiles/router/context';
+${appImport}
+${serverHandlerImport}
+import express from 'express';
+import {GraphQLSchema, specifiedDirectives} from 'graphql';
+import {PastoriaConfig} from 'pastoria-config';
+import {createRouterHandler} from 'pastoria-runtime/server';
+import type {Manifest} from 'vite';
+
+const schemaConfig = getSchema().toConfig();
+const schema = new GraphQLSchema({
+  ...schemaConfig,
+  directives: [...specifiedDirectives, ...schemaConfig.directives],
+});
+
+export function createHandler(
+  persistedQueries: Record<string, string>,
+  config: Required<PastoriaConfig>,
+  manifest?: Manifest,
+) {
+  const routeHandler = createRouterHandler(
+    listRoutes(),
+    JSResource.srcOfModuleId,
+    router__loadEntryPoint,
+    router__createAppFromEntryPoint,
+    ${appValue},
+    schema,
+    (req) => Context.createFromRequest(req),
+    persistedQueries,
+    config,
+    manifest,
+  );
+
+  const router = express.Router();
+  router.use(routeHandler);
+  ${serverHandlerUse}
+
+  return router;
+}
+`;
 }

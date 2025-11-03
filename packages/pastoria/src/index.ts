@@ -30,7 +30,7 @@ async function main() {
       'Specific build steps to run (schema, relay, router). If not provided, will infer from changed files.',
     )
     .option('-B, --always-make', 'Always make, never cache')
-    .option('--release', 'Build for production')
+    .option('-R, --release', 'Build for production')
     .option('-w, --watch', 'Watch for changes and rebuild')
     .action(createBuild);
 

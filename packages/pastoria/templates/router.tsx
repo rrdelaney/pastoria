@@ -245,20 +245,7 @@ export function router__createAppFromEntryPoint(
 
     return (
       <RouterContext value={routerContextValue}>
-        {'fallback' in entryPoint.entryPoints ? (
-          <Suspense
-            fallback={
-              <EntryPointContainer
-                entryPointReference={entryPoint.entryPoints.fallback}
-                props={{}}
-              />
-            }
-          >
-            <EntryPointContainer entryPointReference={entryPoint} props={{}} />
-          </Suspense>
-        ) : (
-          <EntryPointContainer entryPointReference={entryPoint} props={{}} />
-        )}
+        <EntryPointContainer entryPointReference={entryPoint} props={{}} />
       </RouterContext>
     );
   }

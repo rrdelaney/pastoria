@@ -2,7 +2,7 @@
   "compilerOptions": {
     "target": "ES2022",
     "module": "nodenext",
-    "lib": ["ES2022", "DOM"],
+    "lib": ["ES2022", "DOM", "ESNext.Collection"],
     "moduleResolution": "nodenext",
     "outDir": "./dist",
     "rootDir": "./src",
