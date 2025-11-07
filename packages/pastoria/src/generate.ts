@@ -503,6 +503,8 @@ async function generateRouter(project: Project, metadata: PastoriaMetadata) {
       });
 
       if (params.size === 0 && consumedQueries.size > 0) {
+        console.log(routeName, consumedQueries);
+        // TODO(#42): Implement query parameter collection from nested entrypoints.
         params = collectQueryParameters(project, Array.from(consumedQueries));
       }
 
