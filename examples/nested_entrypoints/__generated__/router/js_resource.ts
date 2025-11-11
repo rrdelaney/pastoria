@@ -8,20 +8,20 @@ import type {JSResourceReference} from 'react-relay/hooks';
 type ResourceConf = typeof RESOURCE_CONF;
 const RESOURCE_CONF = {
   "route(/hello/:name)": {
-      src: "src/hello_world.tsx",
-      loader: () => import("../../src/hello_world").then(m => m.HelloWorld)
+      src: "src/inferred_resources.tsx",
+      loader: () => import("../../src/inferred_resources").then(m => m.HelloWorld)
     },
   "m#hello_results": {
-      src: "src/hello_world.tsx",
-      loader: () => import("../../src/hello_world").then(m => m.HelloWorldCityResults)
+      src: "src/inferred_resources.tsx",
+      loader: () => import("../../src/inferred_resources").then(m => m.HelloWorldCityResults)
     },
   "m#search_results": {
-      src: "src/search_results.tsx",
-      loader: () => import("../../src/search_results").then(m => m.SearchResults)
+      src: "src/manual_definition/search_results.tsx",
+      loader: () => import("../../src/manual_definition/search_results").then(m => m.SearchResults)
     },
   "m#search": {
-      src: "src/search.tsx",
-      loader: () => import("../../src/search").then(m => m.SearchPage)
+      src: "src/manual_definition/search.tsx",
+      loader: () => import("../../src/manual_definition/search").then(m => m.SearchPage)
     }
 } as const;
 

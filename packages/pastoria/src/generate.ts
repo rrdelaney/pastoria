@@ -309,23 +309,32 @@ function getResourceQueriesAndEntryPoints(symbol: Symbol): {
 
     entryPoints?.getProperties().forEach((prop) => {
       const epRef = prop.getName();
-      const resourceName = prop
+      const entryPointTypeRef = prop
         .getValueDeclaration()
         ?.asKind(SyntaxKind.PropertySignature)
         ?.getTypeNode()
-        ?.asKind(SyntaxKind.TypeReference)
-        ?.getTypeArguments()
-        .at(0)
-        ?.asKind(SyntaxKind.TypeReference)
-        ?.getTypeArguments()
-        .at(0)
-        ?.asKind(SyntaxKind.LiteralType)
-        ?.getLiteral()
-        .asKind(SyntaxKind.StringLiteral)
-        ?.getLiteralText();
+        ?.asKind(SyntaxKind.TypeReference);
 
-      if (resourceName) {
-        resource.entryPoints.set(epRef, resourceName);
+      const entryPointTypeName = entryPointTypeRef?.getTypeName().getText();
+      if (entryPointTypeName !== 'EntryPoint') {
+        // TODO: Warn about found types not named EntryPoint
+        return;
+      }
+
+      const entryPointInner = entryPointTypeRef?.getTypeArguments().at(0);
+      const moduleTypeRef = entryPointInner?.asKind(SyntaxKind.TypeReference);
+      if (moduleTypeRef != null) {
+        const resourceName = moduleTypeRef
+          ?.getTypeArguments()
+          .at(0)
+          ?.asKind(SyntaxKind.LiteralType)
+          ?.getLiteral()
+          .asKind(SyntaxKind.StringLiteral)
+          ?.getLiteralText();
+
+        if (resourceName) {
+          resource.entryPoints.set(epRef, resourceName);
+        }
       }
     });
   }
@@ -503,8 +512,6 @@ async function generateRouter(project: Project, metadata: PastoriaMetadata) {
       });
 
       if (params.size === 0 && consumedQueries.size > 0) {
-        console.log(routeName, consumedQueries);
-        // TODO(#42): Implement query parameter collection from nested entrypoints.
         params = collectQueryParameters(project, Array.from(consumedQueries));
       }
 

@@ -11,11 +11,7 @@ import {
   usePreloadedQuery,
 } from 'react-relay';
 
-/**
- * @route /hello/:name
- * @param {string} name
- * @param {string?} q
- */
+/** @route /hello/:name */
 export const HelloWorld: EntryPointComponent<
   {nameQuery: helloWorld_HelloQuery},
   {searchResults: EntryPoint<ModuleType<'m#hello_results'>>}
@@ -51,7 +47,7 @@ export const HelloWorld: EntryPointComponent<
         value={search}
         onChange={(e) => setSearch(e.target.value)}
         placeholder={`${greet} Search for cities...`}
-        className="min-w-lg mb-24 rounded-lg border border-gray-400 p-4"
+        className="mb-24 min-w-lg rounded-lg border border-gray-400 p-4"
       />
 
       <Suspense fallback="Loading...">
@@ -64,9 +60,7 @@ export const HelloWorld: EntryPointComponent<
   );
 };
 
-/**
- * @resource m#hello_results
- */
+/** @resource m#hello_results */
 export const HelloWorldCityResults: EntryPointComponent<
   {citiesQuery: helloWorld_HelloCityResultsQuery},
   {}

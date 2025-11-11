@@ -34,7 +34,7 @@ import * as z from 'zod/v4-mini';
 import { JSResource, ModuleType } from "./js_resource";
 import helloWorld_HelloQueryParameters from "#genfiles/queries/helloWorld_HelloQuery$parameters";
 import helloWorld_HelloCityResultsQueryParameters from "#genfiles/queries/helloWorld_HelloCityResultsQuery$parameters";
-import { entrypoint as e0 } from "../../src/search.entrypoint";
+import { entrypoint as e0 } from "../../src/manual_definition/search.entrypoint";
 
 type RouterConf = typeof ROUTER_CONF;
 const ROUTER_CONF = {
@@ -263,20 +263,7 @@ export function router__createAppFromEntryPoint(
 
     return (
       <RouterContext value={routerContextValue}>
-        {'fallback' in entryPoint.entryPoints ? (
-          <Suspense
-            fallback={
-              <EntryPointContainer
-                entryPointReference={entryPoint.entryPoints.fallback}
-                props={{}}
-              />
-            }
-          >
-            <EntryPointContainer entryPointReference={entryPoint} props={{}} />
-          </Suspense>
-        ) : (
-          <EntryPointContainer entryPointReference={entryPoint} props={{}} />
-        )}
+        <EntryPointContainer entryPointReference={entryPoint} props={{}} />
       </RouterContext>
     );
   }
