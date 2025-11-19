@@ -1,5 +1,11 @@
 # pastoria
 
+## 1.0.14
+
+### Patch Changes
+
+- a38076a: Trim down variables passed to entrypoints to only those needed
+
 ## 1.0.13
 
 ### Patch Changes
