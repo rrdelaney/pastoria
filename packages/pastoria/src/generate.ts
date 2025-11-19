@@ -438,22 +438,26 @@ function writeEntryPoint(
                 .block(() => {
                   writer.writeLine(`parameters: ${query}Parameters,`);
 
-                  if (parseVars) {
-                    // Top-level: use all variables from schema.parse
-                    writer.writeLine(`variables`);
-                  } else {
-                    // Nested: pick only the variables this query needs
-                    if (hasVariables) {
-                      const varNames = Array.from(queryVars.keys());
+                  if (hasVariables) {
+                    const varNames = Array.from(queryVars.keys());
+                    if (parseVars) {
+                      // Top-level: pick from the variables object
+                      writer.write(`variables: {`);
+                      writer.write(
+                        varNames.map((v) => `${v}: variables.${v}`).join(', '),
+                      );
+                      writer.write(`}`);
+                    } else {
+                      // Nested: use shorthand from destructured variables
                       writer.write(`variables: {`);
                       writer.write(varNames.map((v) => v).join(', '));
                       writer.write(`}`);
-                    } else {
-                      // Query has no variables, pass empty object
-                      writer.write(`variables: {}`);
                     }
-                    writer.newLine();
+                  } else {
+                    // Query has no variables, pass empty object
+                    writer.write(`variables: {}`);
                   }
+                  writer.newLine();
                 })
                 .write(',');
             }

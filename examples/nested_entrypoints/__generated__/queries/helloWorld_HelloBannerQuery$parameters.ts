@@ -11,18 +11,18 @@
 
 // @relayRequestID d03c19a9dab11b6c007a14da9688c904
 
-import {PreloadableConcreteRequest} from 'relay-runtime';
-import {helloWorld_HelloBannerQuery} from './helloWorld_HelloBannerQuery.graphql';
+import { PreloadableConcreteRequest } from 'relay-runtime';
+import { helloWorld_HelloBannerQuery } from './helloWorld_HelloBannerQuery.graphql';
 
 const node: PreloadableConcreteRequest<helloWorld_HelloBannerQuery> = {
-  kind: 'PreloadableConcreteRequest',
-  params: {
-    id: 'd03c19a9dab11b6c007a14da9688c904',
-    metadata: {},
-    name: 'helloWorld_HelloBannerQuery',
-    operationKind: 'query',
-    text: null,
-  },
+  "kind": "PreloadableConcreteRequest",
+  "params": {
+    "id": "d03c19a9dab11b6c007a14da9688c904",
+    "metadata": {},
+    "name": "helloWorld_HelloBannerQuery",
+    "operationKind": "query",
+    "text": null
+  }
 };
 
 export default node;
