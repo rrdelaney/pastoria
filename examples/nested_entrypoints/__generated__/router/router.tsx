@@ -31,33 +31,27 @@ import {
   useEntryPointLoader,
 } from 'react-relay/hooks';
 import * as z from 'zod/v4-mini';
-import {JSResource, ModuleType} from './js_resource';
-import helloWorld_HelloQueryParameters from '#genfiles/queries/helloWorld_HelloQuery$parameters';
-import helloWorld_HelloCityResultsQueryParameters from '#genfiles/queries/helloWorld_HelloCityResultsQuery$parameters';
-import helloWorld_HelloBannerQueryParameters from '#genfiles/queries/helloWorld_HelloBannerQuery$parameters';
-import {entrypoint as e0} from '../../src/manual_definition/search.entrypoint';
+import { JSResource, ModuleType } from "./js_resource";
+import helloWorld_HelloQueryParameters from "#genfiles/queries/helloWorld_HelloQuery$parameters";
+import helloWorld_HelloCityResultsQueryParameters from "#genfiles/queries/helloWorld_HelloCityResultsQuery$parameters";
+import helloWorld_HelloBannerQueryParameters from "#genfiles/queries/helloWorld_HelloBannerQuery$parameters";
+import { entrypoint as e0 } from "../../src/manual_definition/search.entrypoint";
 
 type RouterConf = typeof ROUTER_CONF;
 const ROUTER_CONF = {
-  '/hello/:name': {
-    entrypoint: entrypoint_routehelloname(),
-    schema: z.object({
-      name: z.pipe(z.string(), z.transform(decodeURIComponent)),
-      q: z.pipe(
-        z.nullish(z.pipe(z.string(), z.transform(decodeURIComponent))),
-        z.transform((s) => (s == null ? undefined : s)),
-      ),
-    }),
-  } as const,
-  '/': {
-    entrypoint: e0,
-    schema: z.object({
-      q: z.pipe(
-        z.nullish(z.pipe(z.string(), z.transform(decodeURIComponent))),
-        z.transform((s) => (s == null ? undefined : s)),
-      ),
-    }),
-  } as const,
+  "/hello/:name": {
+      entrypoint: entrypoint_routehelloname(),
+      schema: z.object({
+        name: z.pipe(z.string(), z.transform(decodeURIComponent)),
+        q: z.pipe(z.nullish(z.pipe(z.string(), z.transform(decodeURIComponent))), z.transform(s => s == null ? undefined : s)),
+      })
+    } as const,
+  "/": {
+      entrypoint: e0,
+      schema: z.object({
+        q: z.pipe(z.nullish(z.pipe(z.string(), z.transform(decodeURIComponent))), z.transform(s => s == null ? undefined : s)),
+      })
+    } as const
 } as const;
 
 export type RouteId = keyof RouterConf;
@@ -476,10 +470,7 @@ export function listRoutes() {
   return Object.keys(ROUTER_CONF);
 }
 
-function entrypoint_routehelloname(): EntryPoint<
-  ModuleType<'route(/hello/:name)'>,
-  EntryPointParams<'/hello/:name'>
-> {
+function entrypoint_routehelloname(): EntryPoint<ModuleType<'route(/hello/:name)'>, EntryPointParams<'/hello/:name'>> {
   return {
     root: JSResource.fromModuleId('route(/hello/:name)'),
     getPreloadProps({params, schema}) {
@@ -488,9 +479,11 @@ function entrypoint_routehelloname(): EntryPoint<
         queries: {
           nameQuery: {
             parameters: helloWorld_HelloQueryParameters,
-            variables,
-          },
-        },
+            variables: {name: variables.name}
+          }
+          ,
+        }
+        ,
         entryPoints: {
           searchResults: {
             entryPointParams: {},
@@ -502,14 +495,18 @@ function entrypoint_routehelloname(): EntryPoint<
                   queries: {
                     citiesQuery: {
                       parameters: helloWorld_HelloCityResultsQueryParameters,
-                      variables: {q},
-                    },
-                  },
-                  entryPoints: {},
-                };
-              },
-            },
-          },
+                      variables: {q}
+                    }
+                    ,
+                  }
+                  ,
+                  entryPoints: {
+                  }
+                }
+              }
+            }
+          }
+          ,
           helloBanner: {
             entryPointParams: {},
             entryPoint: {
@@ -519,16 +516,20 @@ function entrypoint_routehelloname(): EntryPoint<
                   queries: {
                     helloBannerRef: {
                       parameters: helloWorld_HelloBannerQueryParameters,
-                      variables: {},
-                    },
-                  },
-                  entryPoints: {},
-                };
-              },
-            },
-          },
-        },
-      };
-    },
-  };
+                      variables: {}
+                    }
+                    ,
+                  }
+                  ,
+                  entryPoints: {
+                  }
+                }
+              }
+            }
+          }
+          ,
+        }
+      }
+    }
+  }
 }
