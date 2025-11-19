@@ -11,7 +11,7 @@
 
 // @relayRequestID 6e4592e98191f38107831ae55433bee1
 
-import { ConcreteRequest } from 'relay-runtime';
+import {ConcreteRequest} from 'relay-runtime';
 export type searchResults_SearchResultsQuery$variables = {
   query: string;
 };
@@ -25,72 +25,72 @@ export type searchResults_SearchResultsQuery = {
   variables: searchResults_SearchResultsQuery$variables;
 };
 
-const node: ConcreteRequest = (function(){
-var v0 = [
-  {
-    "defaultValue": null,
-    "kind": "LocalArgument",
-    "name": "query"
-  }
-],
-v1 = [
-  {
-    "alias": null,
-    "args": [
+const node: ConcreteRequest = (function () {
+  var v0 = [
       {
-        "kind": "Variable",
-        "name": "query",
-        "variableName": "query"
-      }
+        defaultValue: null,
+        kind: 'LocalArgument',
+        name: 'query',
+      },
     ],
-    "concreteType": "City",
-    "kind": "LinkedField",
-    "name": "cities",
-    "plural": true,
-    "selections": [
+    v1 = [
       {
-        "alias": null,
-        "args": null,
-        "kind": "ScalarField",
-        "name": "name",
-        "storageKey": null
-      }
-    ],
-    "storageKey": null
-  }
-];
-return {
-  "fragment": {
-    "argumentDefinitions": (v0/*: any*/),
-    "kind": "Fragment",
-    "metadata": {
-      "throwOnFieldError": true
+        alias: null,
+        args: [
+          {
+            kind: 'Variable',
+            name: 'query',
+            variableName: 'query',
+          },
+        ],
+        concreteType: 'City',
+        kind: 'LinkedField',
+        name: 'cities',
+        plural: true,
+        selections: [
+          {
+            alias: null,
+            args: null,
+            kind: 'ScalarField',
+            name: 'name',
+            storageKey: null,
+          },
+        ],
+        storageKey: null,
+      },
+    ];
+  return {
+    fragment: {
+      argumentDefinitions: v0 /*: any*/,
+      kind: 'Fragment',
+      metadata: {
+        throwOnFieldError: true,
+      },
+      name: 'searchResults_SearchResultsQuery',
+      selections: v1 /*: any*/,
+      type: 'Query',
+      abstractKey: null,
     },
-    "name": "searchResults_SearchResultsQuery",
-    "selections": (v1/*: any*/),
-    "type": "Query",
-    "abstractKey": null
-  },
-  "kind": "Request",
-  "operation": {
-    "argumentDefinitions": (v0/*: any*/),
-    "kind": "Operation",
-    "name": "searchResults_SearchResultsQuery",
-    "selections": (v1/*: any*/)
-  },
-  "params": {
-    "id": "6e4592e98191f38107831ae55433bee1",
-    "metadata": {},
-    "name": "searchResults_SearchResultsQuery",
-    "operationKind": "query",
-    "text": null
-  }
-};
+    kind: 'Request',
+    operation: {
+      argumentDefinitions: v0 /*: any*/,
+      kind: 'Operation',
+      name: 'searchResults_SearchResultsQuery',
+      selections: v1 /*: any*/,
+    },
+    params: {
+      id: '6e4592e98191f38107831ae55433bee1',
+      metadata: {},
+      name: 'searchResults_SearchResultsQuery',
+      operationKind: 'query',
+      text: null,
+    },
+  };
 })();
 
-(node as any).hash = "9a8ffb6b99f0ba9032d9071aebdd8bc5";
+(node as any).hash = '9a8ffb6b99f0ba9032d9071aebdd8bc5';
 
-import { PreloadableQueryRegistry } from 'relay-runtime';
+import {PreloadableQueryRegistry} from 'relay-runtime';
 PreloadableQueryRegistry.set(node.params.id, node);
 
 export default node;
