@@ -1,3 +1,4 @@
+import {helloWorld_HelloBannerQuery} from '#genfiles/queries/helloWorld_HelloBannerQuery.graphql.js';
 import {helloWorld_HelloCityResultsQuery} from '#genfiles/queries/helloWorld_HelloCityResultsQuery.graphql.js';
 import {helloWorld_HelloQuery} from '#genfiles/queries/helloWorld_HelloQuery.graphql.js';
 import {ModuleType} from '#genfiles/router/js_resource.js';
@@ -14,7 +15,10 @@ import {
 /** @route /hello/:name */
 export const HelloWorld: EntryPointComponent<
   {nameQuery: helloWorld_HelloQuery},
-  {searchResults: EntryPoint<ModuleType<'m#hello_results'>>}
+  {
+    searchResults: EntryPoint<ModuleType<'m#hello_results'>>;
+    helloBanner: EntryPoint<ModuleType<'m#hello_banner'>>;
+  }
 > = ({queries, entryPoints}) => {
   const {greet} = usePreloadedQuery(
     graphql`
@@ -43,6 +47,11 @@ export const HelloWorld: EntryPointComponent<
 
   return (
     <div className="flex min-h-screen flex-col items-center justify-start pt-36">
+      <EntryPointContainer
+        entryPointReference={entryPoints.helloBanner}
+        props={{}}
+      />
+
       <input
         value={search}
         onChange={(e) => setSearch(e.target.value)}
@@ -85,4 +94,21 @@ export const HelloWorldCityResults: EntryPointComponent<
       ))}
     </div>
   );
+};
+
+/** @resource m#hello_banner */
+export const HelloBanner: EntryPointComponent<
+  {helloBannerRef: helloWorld_HelloBannerQuery},
+  {}
+> = ({queries}) => {
+  const {helloMessage} = usePreloadedQuery(
+    graphql`
+      query helloWorld_HelloBannerQuery @preloadable @throwOnFieldError {
+        helloMessage
+      }
+    `,
+    queries.helloBannerRef,
+  );
+
+  return <div className="mb-10">{helloMessage}</div>;
 };

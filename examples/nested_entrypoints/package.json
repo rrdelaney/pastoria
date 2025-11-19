@@ -8,7 +8,8 @@
     "make": "pastoria make",
     "build": "pastoria make --always-make --release",
     "dev": "pastoria dev",
-    "start": "NODE_ENV=production pastoria-server"
+    "start": "NODE_ENV=production pastoria-server",
+    "check": "tsc"
   },
   "imports": {
     "#src/*": "./src/*",

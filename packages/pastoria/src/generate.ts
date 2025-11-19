@@ -397,18 +397,29 @@ function zodSchemaOfType(
 
 function writeEntryPoint(
   writer: CodeBlockWriter,
+  project: Project,
   metadata: PastoriaMetadata,
   consumedQueries: Set<string>,
   resourceName: string,
   resource: RouterResource,
   parseVars = true,
+  neededVars?: Map<string, ts.Type>,
 ) {
   writer.writeLine(`root: JSResource.fromModuleId('${resourceName}'),`);
+
+  // If we're a nested entry point and we need variables, capture them from parent scope
+  const capturedVarNames =
+    neededVars && neededVars.size > 0 ? Array.from(neededVars.keys()) : [];
+
   writer
     .write(`getPreloadProps(${parseVars ? '{params, schema}' : ''})`)
     .block(() => {
       if (parseVars) {
         writer.writeLine('const variables = schema.parse(params);');
+      } else if (capturedVarNames.length > 0) {
+        // Destructure the variables we need from parent scope
+        writer.write(`const {${capturedVarNames.join(', ')}} = variables;`);
+        writer.newLine();
       }
 
       writer.write('return').block(() => {
@@ -418,11 +429,31 @@ function writeEntryPoint(
             for (const [queryRef, query] of resource.queries.entries()) {
               consumedQueries.add(query);
 
+              // Determine which variables this specific query needs
+              const queryVars = collectQueryParameters(project, [query]);
+              const hasVariables = queryVars.size > 0;
+
               writer
                 .write(`${queryRef}:`)
                 .block(() => {
                   writer.writeLine(`parameters: ${query}Parameters,`);
-                  writer.writeLine(`variables`);
+
+                  if (parseVars) {
+                    // Top-level: use all variables from schema.parse
+                    writer.writeLine(`variables`);
+                  } else {
+                    // Nested: pick only the variables this query needs
+                    if (hasVariables) {
+                      const varNames = Array.from(queryVars.keys());
+                      writer.write(`variables: {`);
+                      writer.write(varNames.map((v) => v).join(', '));
+                      writer.write(`}`);
+                    } else {
+                      // Query has no variables, pass empty object
+                      writer.write(`variables: {}`);
+                    }
+                    writer.newLine();
+                  }
                 })
                 .write(',');
             }
@@ -436,19 +467,28 @@ function writeEntryPoint(
           ] of resource.entryPoints.entries()) {
             const subresource = metadata.resources.get(subresourceName);
             if (subresource) {
-              writer.write(`${epRef}:`).block(() => {
-                writer.writeLine(`entryPointParams: {},`);
-                writer.write('entryPoint:').block(() => {
-                  writeEntryPoint(
-                    writer,
-                    metadata,
-                    consumedQueries,
-                    subresourceName,
-                    subresource,
-                    false,
-                  );
-                });
-              });
+              // Collect all queries in the subresource to determine needed variables
+              const subQueries = Array.from(subresource.queries.values());
+              const neededVars = collectQueryParameters(project, subQueries);
+
+              writer
+                .write(`${epRef}:`)
+                .block(() => {
+                  writer.writeLine(`entryPointParams: {},`);
+                  writer.write('entryPoint:').block(() => {
+                    writeEntryPoint(
+                      writer,
+                      project,
+                      metadata,
+                      consumedQueries,
+                      subresourceName,
+                      subresource,
+                      false,
+                      neededVars,
+                    );
+                  });
+                })
+                .writeLine(',');
             }
           }
         });
@@ -502,6 +542,7 @@ async function generateRouter(project: Project, metadata: PastoriaMetadata) {
           writer.write('return ').block(() => {
             writeEntryPoint(
               writer,
+              project,
               metadata,
               consumedQueries,
               resourceName,
