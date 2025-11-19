@@ -490,12 +490,11 @@ function entrypoint_routehelloname(): EntryPoint<ModuleType<'route(/hello/:name)
             entryPoint: {
               root: JSResource.fromModuleId('m#hello_results'),
               getPreloadProps() {
-                const {q} = variables;
                 return {
                   queries: {
                     citiesQuery: {
                       parameters: helloWorld_HelloCityResultsQueryParameters,
-                      variables: {q}
+                      variables: {q: variables.q}
                     }
                     ,
                   }
