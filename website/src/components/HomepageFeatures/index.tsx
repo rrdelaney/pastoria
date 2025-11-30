@@ -8,11 +8,12 @@ type FeatureItem = {
   title: string;
   description: ReactNode;
   code?: string;
+  lang?: string;
 };
 
 const features: FeatureItem[] = [
   {
-    title: 'Type-Safe Routing with JSDoc',
+    title: 'GraphQL-integrated Router',
     description: (
       <>
         Define routes using simple JSDoc annotations. Pastoria generates
@@ -20,27 +21,31 @@ const features: FeatureItem[] = [
         and type checking without manual configuration.
       </>
     ),
-    code: `/**
- * @route /users/:userId
- * @param userId string
- */
-export const entrypoint: EntryPoint = {
-  root: JSResource.fromModuleId('m#user_profile'),
-  getPreloadProps({params, schema}) {
-    const {userId} = schema.parse(params);
-    return {
-      queries: {
-        userQueryRef: {
-          parameters: UserProfileQueryParameters,
-          variables: {userId},
-        },
-      },
-    };
-  },
+    code: `/** @route /users/:userId */
+export const UserPage: EntryPointComponent<
+  { userQuery: UserQuery }, {}
+> = ({ queries }) => {
+  // Queries are loaded on the server during SSR,
+  // subsequent navigations suspend the page.
+  const { user } = usePreloadedQuery(graphql\`
+    query UserQuery($userId: String!) {
+      user(id: $userId) {
+        ...user_UserCard
+      }
+    }
+  \`, queries.userQuery);
+
+  // Type-safe data fetching using Relay.
+  return (
+    <>
+      Hello {user.name}!
+      <UserCard user={user} />
+    </>
+  );
 };`,
   },
   {
-    title: 'GraphQL with React Relay',
+    title: 'Type-safe Navigation and Routing',
     description: (
       <>
         Built on React Relay for efficient data fetching with automatic query
@@ -48,25 +53,24 @@ export const entrypoint: EntryPoint = {
         Queries are preloaded on the server and hydrated on the client.
       </>
     ),
-    code: `export const UserProfile: EntryPointComponent = ({queries}) => {
-  const data = usePreloadedQuery(
-    graphql\`
-      query UserProfileQuery($userId: ID!) @preloadable {
-        user(id: $userId) {
-          name
-          email
-          ...UserAvatar_user
-        }
-      }
-    \`,
-    queries.userQueryRef,
+    code: `function UserCard(props: { user: user_UserCard$key }) {
+  const user = useFragment(
+    graphql\`fragment user_UserCard on User {
+      id
+      name
+    }\`,
+    props.user
   );
 
-  return <UserCard user={data.user} />;
-};`,
+  return (
+    <RouteLink route="/users/:userId" params={{ userId: userId }}>
+      {user.name}
+    </RouteLink>
+  );
+}`,
   },
   {
-    title: 'SSR & Code Generation',
+    title: 'Unified Code Generation',
     description: (
       <>
         Server-side rendering out of the box with automatic code splitting and
@@ -75,21 +79,22 @@ export const entrypoint: EntryPoint = {
         replacement.
       </>
     ),
-    code: `# Generate type-safe router
-$ pastoria gen
+    lang: 'bash',
+    code: `# Generate GraphQL queries and router
+$ pastoria make
 
-# Start dev server with HMR
+# Start dev server backed by Vite
 $ pastoria dev
 
 # Build for production
-$ pastoria build
+$ pastoria make --release
 
 # Deploy with the standalone server
 $ pastoria-server`,
   },
 ];
 
-function Feature({title, description, code}: FeatureItem) {
+function Feature({title, description, code, lang}: FeatureItem) {
   return (
     <div className={clsx('col col--12', styles.feature)}>
       <div className="row">
@@ -99,7 +104,7 @@ function Feature({title, description, code}: FeatureItem) {
         </div>
         {code && (
           <div className="col col--6">
-            <CodeBlock language="tsx">{code}</CodeBlock>
+            <CodeBlock language={lang ?? 'tsx'}>{code}</CodeBlock>
           </div>
         )}
       </div>
