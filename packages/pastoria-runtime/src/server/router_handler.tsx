@@ -168,6 +168,10 @@ function createGraphqlHandler(
       abortSignal: controller.signal,
     });
 
+    graphqlResponse.errors?.forEach((err) => {
+      console.error(err);
+    });
+
     return res.status(200).send(graphqlResponse);
   };
 }
@@ -211,6 +215,9 @@ function createReactHandler(
       {
         bootstrapScriptContent,
         bootstrapModules,
+        onError(err, {componentStack}) {
+          console.error(`Error at: ${componentStack}:`, err);
+        },
         onShellReady() {
           res.setHeader('Content-Type', 'text/html');
           pipe(res);

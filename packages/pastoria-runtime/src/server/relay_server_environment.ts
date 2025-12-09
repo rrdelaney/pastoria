@@ -36,6 +36,10 @@ export function createServerEnvironment(
       variableValues: variables,
     });
 
+    results.errors?.forEach((err) => {
+      console.error(err);
+    });
+
     return results as any;
   });
 
