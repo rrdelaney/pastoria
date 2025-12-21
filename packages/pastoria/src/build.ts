@@ -61,7 +61,7 @@ async function runRelayCompiler(): Promise<void> {
     '.bin',
     'relay-compiler',
   );
-  await runCommand(relayPath, []);
+  await runCommand(relayPath, ['--repersist']);
 }
 
 function fileMatchesPastoriaTags(filePath: string, content: string): boolean {
