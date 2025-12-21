@@ -1,5 +1,11 @@
 # pastoria
 
+## 1.0.15
+
+### Patch Changes
+
+- 96bcdfd: Always run relay-compiler with repersist
+
 ## 1.0.14
 
 ### Patch Changes
