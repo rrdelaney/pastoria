@@ -1,5 +1,11 @@
 # pastoria
 
+## 1.1.0
+
+### Minor Changes
+
+- 17a69b8: Remove `pastoria make` command
+
 ## 1.0.15
 
 ### Patch Changes
