@@ -1,0 +1,41 @@
+# Generate schema, relay, and router code.
+[no-cd]
+default: router
+
+# Generate GraphQL schema using Grats
+[no-cd]
+[private]
+grats:
+    pnpm exec grats
+
+# Compile Relay queries with persisted queries
+[no-cd]
+[private]
+relay: grats
+    pnpm exec relay-compiler --repersist
+
+# Generate Pastoria router artifacts (app_root, context, router, resources, handlers)
+[no-cd]
+[private]
+router: relay
+    pnpm exec pastoria gen
+
+# Build client bundle
+[no-cd]
+_client: router
+    pnpm exec pastoria build client
+
+# Build server bundle
+[no-cd]
+_server: router
+    pnpm exec pastoria build server
+
+# Build both client and server for production
+[no-cd]
+[parallel]
+release: _client _server
+
+# Start development server
+[no-cd]
+dev:
+    pnpm exec pastoria dev

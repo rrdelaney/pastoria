@@ -9,6 +9,11 @@
   "bin": {
     "pastoria": "./dist/index.js"
   },
+  "files": [
+    "dist",
+    "templates",
+    "justfile"
+  ],
   "scripts": {
     "build": "tsc",
     "check:types": "tsc --noEmit"

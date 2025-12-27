@@ -105,26 +105,39 @@ Generated files (in user projects) are placed in `__generated__/router/`:
 
 Templates for generation are in `packages/pastoria/templates/`.
 
-### Build System (`packages/pastoria/src/build.ts`)
+### Build System
 
-The framework uses Vite with custom virtual entry points:
+The framework uses a combination of `just` (task runner) for build orchestration
+and Pastoria CLI commands for code generation and Vite builds.
 
-**Client Build** (`dist/client/` in user projects):
+**Build Pipeline** (orchestrated by `packages/pastoria/justfile`):
 
-- Entry: Virtual module `virtual:pastoria-entry-client.tsx`
-- Conditionally includes static import of app root from generated `app_root.ts`
-  (checked at build time)
-- Hydrates React app with router and optional app wrapper
+1. **Grats** (`just grats`): Generates GraphQL schema from JSDoc annotations
+2. **Relay** (`just relay`): Compiles Relay queries with persisted queries
+   (depends on Grats schema)
+3. **Router** (`just router`): Runs `pastoria gen` to generate type-safe router
+   artifacts (depends on Relay output for query variables)
+4. **Client/Server** (`just build`): Runs `pastoria build client` and
+   `pastoria build server` (depends on generated router)
 
-**Server Build** (`dist/server/` in user projects):
+**Pastoria CLI Commands**:
 
-- Entry: Virtual module `virtual:pastoria-entry-server.tsx`
-- Conditionally includes static import of app root from generated `app_root.ts`
-  (checked at build time)
-- Exports `createHandler()` which sets up Express routes, GraphQL endpoint, and
-  SSR
+- `pastoria dev`: Start development server with HMR
+- `pastoria gen`: Generate router artifacts (runs both exports and artifacts
+  generation)
+- `pastoria build <target>`: Build client or server bundle with Vite
 
-The `createBuildConfig()` function configures both builds with:
+**Vite Builds** (via `pastoria build`):
+
+- **Client Build** (`dist/client/`): Virtual module
+  `virtual:pastoria-entry-client.tsx`, conditionally includes app root, hydrates
+  React app
+- **Server Build** (`dist/server/`): Virtual module
+  `virtual:pastoria-entry-server.tsx`, exports `createHandler()` for Express
+  routes, GraphQL, and SSR
+
+The `createBuildConfig()` function (in `vite_plugin.ts`) configures both builds
+with:
 
 - Tailwind via `@tailwindcss/vite`
 - React with Relay babel plugin
@@ -162,6 +175,36 @@ The `pastoria dev` command:
 - Serves both static assets and SSR routes
 - Reads persisted queries JSON on each request
 
+### User Project Build Setup
+
+User projects using Pastoria need to:
+
+1. **Install `just`** (command runner):
+
+   ```bash
+   # macOS
+   brew install just
+
+   # Linux
+   cargo install just
+
+   # Windows
+   scoop install just
+   ```
+
+2. **Create `justfile`** in project root:
+
+   ```justfile
+   import './node_modules/pastoria/justfile'
+   ```
+
+3. **Run build commands** via `just`:
+   - `just grats` - Generate GraphQL schema
+   - `just relay` - Compile Relay queries
+   - `just router` - Generate router artifacts
+   - `just build` - Full production build (client + server)
+   - `just dev` or `pastoria dev` - Start dev server
+
 ### Framework User Project Conventions
 
 User projects are expected to have:
@@ -195,9 +238,13 @@ User projects are expected to have:
   command)
 - When modifying templates (`packages/pastoria/templates/`), the changes affect
   code generation for user projects
-- The virtual module system in `build.ts` generates entry points at build time
-  by checking for `app_root.ts` existence
+- When modifying the justfile (`packages/pastoria/justfile`), test changes in a
+  user project by importing it
+- The virtual module system in `vite_plugin.ts` generates entry points at build
+  time by checking for `app_root.ts` existence
 - Entry point generation uses static imports (not dynamic) - the code is
   generated differently based on file existence
 - Client and server builds must coordinate on serialization format for Relay
   operations
+- Build orchestration is handled by `just` - no smart incremental builds, all
+  steps run on each invocation

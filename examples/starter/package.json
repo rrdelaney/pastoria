@@ -5,8 +5,7 @@
   "type": "module",
   "scripts": {
     "format": "prettier -w .",
-    "make": "pastoria make",
-    "build": "pastoria make --always-make --release",
+    "build": "just build",
     "dev": "pastoria dev",
     "start": "NODE_ENV=production pastoria-server"
   },
