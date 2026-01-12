@@ -5,7 +5,8 @@
   "type": "module",
   "scripts": {
     "format": "prettier -w .",
-    "build": "just build",
+    "generate": "grats && relay-compiler && pastoria generate",
+    "build": "pnpm generate && pastoria build",
     "dev": "pastoria dev",
     "start": "NODE_ENV=production pastoria-server"
   },
