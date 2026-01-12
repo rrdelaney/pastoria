@@ -7,20 +7,19 @@
  * How it works:
  * 1. Scans all TypeScript files in the project for exported functions/classes
  * 2. Looks for JSDoc tags: @route, @resource, @appRoot, and @param
- * 3. Looks for exported classes that extend PastoriaRootContext for GraphQL context
- * 4. Generates files from templates:
+ * 3. Generates files from templates:
  *    - js_resource.ts: Resource configuration for lazy loading
  *    - router.tsx: Client-side router with type-safe routes
  *    - app_root.ts: Re-export of the app root component (if @appRoot is found)
- *    - context.ts: Re-export of user's context class, or generate a default one
+ *    - environment.ts: Re-export of the user's PastoriaEnvironment
  *
  * Usage:
  * - Add @route <route-name> to functions to create routes
  * - Add @param <name> <type> to document route parameters
  * - Add @resource <resource-name> to exports for lazy loading
  * - Add @appRoot to a component to designate it as the application root wrapper
- * - Add @gqlContext to a class extending PastoriaRootContext to provide a custom GraphQL context
  * - Add @serverRoute to functions to add an express handler
+ * - Create pastoria/environment.ts to configure schema and context
  *
  * The generator automatically creates Zod schemas for route parameters based on
  * TypeScript types, enabling runtime validation and type safety.
@@ -82,12 +81,11 @@ export interface PastoriaMetadata {
   routes: Map<string, RouterRoute>;
   serverHandlers: Map<string, ExportedSymbol>;
   appRoot: ExportedSymbol | null;
-  gqlContext: ExportedSymbol | null;
 }
 
 // Regex to quickly check if a file contains any Pastoria JSDoc tags
 export const PASTORIA_TAG_REGEX =
-  /@(route|resource|appRoot|param|gqlContext|serverRoute)\b/;
+  /@(route|resource|appRoot|param|serverRoute)\b/;
 
 function collectQueryParameters(
   project: Project,
@@ -124,7 +122,6 @@ function collectPastoriaMetadata(project: Project): PastoriaMetadata {
   const routes = new Map<string, RouterRoute>();
   const serverHandlers = new Map<string, ExportedSymbol>();
   let appRoot: ExportedSymbol | null = null;
-  let gqlContext: ExportedSymbol | null = null;
 
   function visitRouterNodes(sourceFile: SourceFile) {
     // Skip generated files
@@ -183,7 +180,7 @@ function collectPastoriaMetadata(project: Project): PastoriaMetadata {
             }
           }
         } else {
-          // Handle tags without comments (like @ExportedSymbol, @gqlContext)
+          // Handle tags without comments (like @appRoot)
           switch (tag.tagName.getText()) {
             case 'appRoot': {
               if (appRoot != null) {
@@ -193,43 +190,6 @@ function collectPastoriaMetadata(project: Project): PastoriaMetadata {
                   sourceFile,
                   symbol,
                 };
-              }
-              break;
-            }
-            case 'gqlContext': {
-              // Check if this class extends PastoriaRootContext
-              const declarations = symbol.getDeclarations();
-              let extendsPastoriaRootContext = false;
-
-              for (const decl of declarations) {
-                if (decl.isKind(SyntaxKind.ClassDeclaration)) {
-                  const classDecl = decl.asKindOrThrow(
-                    SyntaxKind.ClassDeclaration,
-                  );
-                  const extendsClause = classDecl.getExtends();
-                  if (extendsClause != null) {
-                    const baseClassName = extendsClause
-                      .getExpression()
-                      .getText();
-                    if (baseClassName === 'PastoriaRootContext') {
-                      extendsPastoriaRootContext = true;
-                      break;
-                    }
-                  }
-                }
-              }
-
-              if (extendsPastoriaRootContext) {
-                if (gqlContext != null) {
-                  logWarn(
-                    'Multiple classes with @gqlContext extending PastoriaRootContext found. Using the first one.',
-                  );
-                } else {
-                  gqlContext = {
-                    sourceFile,
-                    symbol,
-                  };
-                }
               }
               break;
             }
@@ -273,7 +233,7 @@ function collectPastoriaMetadata(project: Project): PastoriaMetadata {
   }
 
   project.getSourceFiles().forEach(visitRouterNodes);
-  return {resources, routes, appRoot, gqlContext, serverHandlers};
+  return {resources, routes, appRoot, serverHandlers};
 }
 
 function getResourceQueriesAndEntryPoints(symbol: Symbol): {
@@ -697,58 +657,29 @@ export {${appRootSymbol.getName()} as App} from '${moduleSpecifier}';
   );
 }
 
-async function generateGraphqlContext(
-  project: Project,
-  metadata: PastoriaMetadata,
-) {
-  const targetDir = process.cwd();
-  const gqlContext: ExportedSymbol | null = metadata.gqlContext;
-  const contextFile = project.createSourceFile(
-    '__generated__/router/context.ts',
+async function generateEnvironment(project: Project) {
+  const environmentFile = project.createSourceFile(
+    '__generated__/router/environment.ts',
     '',
     {overwrite: true},
   );
 
-  if (gqlContext != null) {
-    const contextSourceFile: SourceFile = gqlContext.sourceFile;
-    const contextSymbol: Symbol = gqlContext.symbol;
-    const filePath = path.relative(targetDir, contextSourceFile.getFilePath());
-    const moduleSpecifier = contextFile.getRelativePathAsModuleSpecifierTo(
-      contextSourceFile.getFilePath(),
-    );
-
-    contextFile.addStatements(`/*
+  environmentFile.addStatements(`/*
  * This file was generated by \`pastoria\`.
  * Do not modify this file directly.
  */
 
-export {${contextSymbol.getName()} as Context} from '${moduleSpecifier}';
+export {default as environment} from '../../pastoria/environment';
 `);
 
-    logInfo(
-      'Created GraphQL context for',
-      pc.green(contextSymbol.getName()),
-      'exported from',
-      pc.yellow(filePath),
-    );
-  } else {
-    contextFile.addStatements(`/*
- * This file was generated by \`pastoria\`.
- * Do not modify this file directly.
- */
+  await environmentFile.save();
 
-import {PastoriaRootContext} from 'pastoria-runtime/server';
+  // Also delete the old context.ts file if it exists
+  await project
+    .getSourceFile('__generated__/router/context.ts')
+    ?.deleteImmediately();
 
-/**
- * @gqlContext
- */
-export class Context extends PastoriaRootContext {}
-`);
-
-    logInfo('No @gqlContext found, generating default', pc.green('Context'));
-  }
-
-  await contextFile.save();
+  logInfo('Re-exported environment from', pc.yellow('pastoria/environment.ts'));
 }
 
 async function generateServerHandler(
@@ -811,7 +742,7 @@ export async function generatePastoriaExports(project: Project) {
   const metadata = collectPastoriaMetadata(project);
 
   await generateAppRoot(project, metadata);
-  await generateGraphqlContext(project, metadata);
+  await generateEnvironment(project);
   return metadata;
 }
 
@@ -874,8 +805,7 @@ import {
   router__createAppFromEntryPoint,
   router__loadEntryPoint,
 } from '#genfiles/router/router';
-import {getSchema} from '#genfiles/schema/schema';
-import {Context} from '#genfiles/router/context';
+import {environment} from '#genfiles/router/environment';
 ${appImport}
 ${serverHandlerImport}
 import express from 'express';
@@ -884,7 +814,7 @@ import {PastoriaConfig} from 'pastoria-config';
 import {createRouterHandler} from 'pastoria-runtime/server';
 import type {Manifest} from 'vite';
 
-const schemaConfig = getSchema().toConfig();
+const schemaConfig = environment.schema.toConfig();
 const schema = new GraphQLSchema({
   ...schemaConfig,
   directives: [...specifiedDirectives, ...schemaConfig.directives],
@@ -902,7 +832,7 @@ export function createHandler(
     router__createAppFromEntryPoint,
     ${appValue},
     schema,
-    (req) => Context.createFromRequest(req),
+    environment.createContext,
     persistedQueries,
     config,
     manifest,

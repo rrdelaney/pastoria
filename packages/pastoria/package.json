@@ -11,8 +11,7 @@
   },
   "files": [
     "dist",
-    "templates",
-    "justfile"
+    "templates"
   ],
   "scripts": {
     "build": "tsc",
@@ -26,6 +25,7 @@
     "commander": "catalog:",
     "cookie-parser": "catalog:",
     "dotenv": "catalog:",
+    "graphql": "catalog:",
     "picocolors": "catalog:",
     "tailwindcss": "^4.1.15",
     "ts-morph": "^26.0.0",

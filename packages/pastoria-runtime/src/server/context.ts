@@ -4,32 +4,30 @@ import DataLoader from 'dataloader';
 /**
  * Base class for Pastoria GraphQL contexts.
  *
- * To provide a custom context, export a class that extends PastoriaRootContext
- * and add the `@gqlContext` JSDoc tag:
+ * Extend this class to create a custom context for your GraphQL resolvers,
+ * then use it in your `pastoria/environment.ts` file:
  *
  * @example
  * ```typescript
- * /**
- *  * `@gqlContext`
- *  *\/
+ * // src/context.ts
  * export class Context extends PastoriaRootContext {
- *   // Add custom properties and methods
  *   get userId() {
  *     return this.req.session?.userId;
  *   }
  *
- *   // Override createFromRequest for async initialization
  *   static async createFromRequest(req: Request): Promise<Context> {
  *     const ctx = new this(req);
  *     // Perform async initialization (e.g., load user from database)
  *     return ctx;
  *   }
  * }
- * ```
  *
- * Pastoria will automatically discover your context class via the `@gqlContext` tag
- * and use it for GraphQL operations. If no custom context is found, a default
- * context will be generated.
+ * // pastoria/environment.ts
+ * export default new PastoriaEnvironment({
+ *   schema: getSchema(),
+ *   createContext: (req) => Context.createFromRequest(req),
+ * });
+ * ```
  */
 export class PastoriaRootContext {
   /** The Express request object */
