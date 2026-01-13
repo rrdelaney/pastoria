@@ -1,6 +1,6 @@
 /**
- * @generated SignedSource<<688500ab1d469e62a37d54b4f880a087>>
- * @relayHash a21287b6dcc6ef6400fe8857e1ed2a58
+ * @generated SignedSource<<0fd10f13f9920889baa0abe423570366>>
+ * @relayHash f4bed0ce754342516a491a8536b2a9f7
  * @lightSyntaxTransform
  * @nogrep
  */
@@ -9,18 +9,18 @@
 /* eslint-disable */
 // @ts-nocheck
 
-// @relayRequestID a21287b6dcc6ef6400fe8857e1ed2a58
+// @relayRequestID f4bed0ce754342516a491a8536b2a9f7
 
 import { ConcreteRequest } from 'relay-runtime';
-export type helloWorld_HelloQuery$variables = {
+export type page_GreetQuery$variables = {
   name: string;
 };
-export type helloWorld_HelloQuery$data = {
-  readonly greet: string;
+export type page_GreetQuery$data = {
+  readonly greet: string | null | undefined;
 };
-export type helloWorld_HelloQuery = {
-  response: helloWorld_HelloQuery$data;
-  variables: helloWorld_HelloQuery$variables;
+export type page_GreetQuery = {
+  response: page_GreetQuery$data;
+  variables: page_GreetQuery$variables;
 };
 
 const node: ConcreteRequest = (function(){
@@ -53,7 +53,7 @@ return {
     "metadata": {
       "throwOnFieldError": true
     },
-    "name": "helloWorld_HelloQuery",
+    "name": "page_GreetQuery",
     "selections": (v1/*: any*/),
     "type": "Query",
     "abstractKey": null
@@ -62,20 +62,20 @@ return {
   "operation": {
     "argumentDefinitions": (v0/*: any*/),
     "kind": "Operation",
-    "name": "helloWorld_HelloQuery",
+    "name": "page_GreetQuery",
     "selections": (v1/*: any*/)
   },
   "params": {
-    "id": "a21287b6dcc6ef6400fe8857e1ed2a58",
+    "id": "f4bed0ce754342516a491a8536b2a9f7",
     "metadata": {},
-    "name": "helloWorld_HelloQuery",
+    "name": "page_GreetQuery",
     "operationKind": "query",
     "text": null
   }
 };
 })();
 
-(node as any).hash = "007441579a01808cd643834407fdedc0";
+(node as any).hash = "a26df08116bf1842db5c00da147fcccc";
 
 import { PreloadableQueryRegistry } from 'relay-runtime';
 PreloadableQueryRegistry.set(node.params.id, node);

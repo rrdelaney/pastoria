@@ -1,3 +1,3 @@
 {
-  "a21287b6dcc6ef6400fe8857e1ed2a58": "query helloWorld_HelloQuery(\n  $name: String!\n) {\n  greet(name: $name)\n}\n"
+  "f4bed0ce754342516a491a8536b2a9f7": "query page_GreetQuery(\n  $name: String!\n) {\n  greet(name: $name)\n}\n"
 }

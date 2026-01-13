@@ -30,7 +30,7 @@ import * as z from 'zod/v4-mini';
 type RouterConf = typeof ROUTER_CONF;
 const ROUTER_CONF = {
   noop: {
-    entrypoint: null! as EntryPoint<any>,
+    entrypoint: null! as EntryPoint<any, any>,
     schema: z.object({}),
   },
 } as const;

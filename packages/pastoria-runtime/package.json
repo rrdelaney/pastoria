@@ -37,7 +37,6 @@
     "@types/serialize-javascript": "^5.0.4",
     "express": "catalog:",
     "graphql": "catalog:",
-    "pastoria-config": "workspace:*",
     "react-dom": "catalog:",
     "react-relay": "catalog:",
     "react": "catalog:",
@@ -49,7 +48,6 @@
   "peerDependencies": {
     "express": "catalog:",
     "graphql": "catalog:",
-    "pastoria-config": "workspace:*",
     "radix3": "^1.1.2",
     "react": "catalog:",
     "react-dom": "catalog:",

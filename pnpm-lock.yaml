@@ -430,9 +430,6 @@ importers:
       '@types/relay-compiler':
         specifier: ^14.0.4
         version: 14.0.4
-      pastoria-config:
-        specifier: workspace:*
-        version: link:../pastoria-config
       pastoria-runtime:
         specifier: workspace:*
         version: link:../pastoria-runtime
@@ -497,9 +494,6 @@ importers:
       graphql:
         specifier: 'catalog:'
         version: 17.0.0-alpha.9
-      pastoria-config:
-        specifier: workspace:*
-        version: link:../pastoria-config
       react:
         specifier: 'catalog:'
         version: 19.2.0
@@ -546,9 +540,6 @@ importers:
       '@types/node':
         specifier: 'catalog:'
         version: 22.18.12
-      pastoria-config:
-        specifier: workspace:*
-        version: link:../pastoria-config
       pastoria-runtime:
         specifier: workspace:*
         version: link:../pastoria-runtime

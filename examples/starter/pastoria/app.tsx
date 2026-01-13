@@ -1,11 +1,8 @@
 import type {PropsWithChildren} from 'react';
 
-import './globals.css';
+import '../src/globals.css';
 
-/**
- * @appRoot
- */
-export function AppRoot({children}: PropsWithChildren) {
+export default function App({children}: PropsWithChildren) {
   return (
     <html>
       <head>

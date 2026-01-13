@@ -1,14 +1,14 @@
+import type {ComponentType} from 'react';
 import type {JSResourceReference} from 'react-relay/hooks';
+import type {PageProps} from './types';
 
 type ResourceConf = typeof RESOURCE_CONF;
 const RESOURCE_CONF = {
-  noop: {src: '', loader: () => Promise.reject()},
+  noop: {src: '', loader: (): Promise<any> => Promise.reject()},
 } as const;
 
 type ModuleId = keyof ResourceConf;
-export type ModuleType<M extends ModuleId> = Awaited<
-  ReturnType<ResourceConf[M]['loader']>
->;
+export type ModuleType<M extends ModuleId> = Awaited<ReturnType<ResourceConf[M]['loader']>>;
 
 export class JSResource<M extends ModuleId>
   implements JSResourceReference<ModuleType<M>>

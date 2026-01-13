@@ -7,10 +7,7 @@ import * as path from 'node:path';
 import {IndentationText, Project} from 'ts-morph';
 import {build, createServer as createViteServer} from 'vite';
 import {startDevserver} from './devserver.js';
-import {
-  generatePastoriaArtifacts,
-  generatePastoriaExports,
-} from './generate.js';
+import {generatePastoriaArtifacts} from './generate.js';
 import {logInfo} from './logger.js';
 import {CLIENT_BUILD, createBuildConfig, SERVER_BUILD} from './vite_plugin.js';
 
@@ -30,11 +27,7 @@ async function runCodeGeneration() {
 
   logInfo('Generating Pastoria artifacts...');
 
-  // Generate exports and collect metadata
-  const metadata = await generatePastoriaExports(project);
-
-  // Generate artifacts using cached metadata
-  await generatePastoriaArtifacts(project, metadata);
+  await generatePastoriaArtifacts(project);
 
   logInfo('Code generation complete!');
 }
@@ -98,9 +91,12 @@ async function main() {
   program
     .command('generate')
     .description('Generate Pastoria routing and resources')
-    .action(async () => {
+    .option('--skip-schema', 'Skip schema generation (useful if using grats or other tools)')
+    .action(async (opts: {skipSchema?: boolean}) => {
       await runCodeGeneration();
-      await printGraphQLSchema();
+      if (!opts.skipSchema) {
+        await printGraphQLSchema();
+      }
     });
 
   program
