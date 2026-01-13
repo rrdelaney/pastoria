@@ -1,26 +1,16 @@
-import {ModuleType} from '#genfiles/router/js_resource.js';
+import type {PageProps} from '#genfiles/router/types';
 import {useNavigation, useRouteParams} from '#genfiles/router/router.jsx';
 import {Suspense, useEffect, useState} from 'react';
-import {
-  EntryPoint,
-  EntryPointComponent,
-  EntryPointContainer,
-} from 'react-relay';
+import {EntryPointContainer} from 'react-relay';
 
-/**
- * @resource m#search
- */
-export const SearchPage: EntryPointComponent<
-  {},
-  {searchResults: EntryPoint<ModuleType<'m#search_results'>>}
-> = ({entryPoints}) => {
-  const {q} = useRouteParams('/');
-  const [search, setSearch] = useState(q);
+export default function SearchPage({entryPoints}: PageProps<'/'>) {
+  const {query} = useRouteParams('/');
+  const [search, setSearch] = useState(query ?? '');
 
   const {replaceRoute} = useNavigation();
   useEffect(() => {
     const timeoutId = setTimeout(() => {
-      replaceRoute('/', {q: search});
+      replaceRoute('/', {query: search});
     }, 500);
 
     return () => {
@@ -39,10 +29,10 @@ export const SearchPage: EntryPointComponent<
 
       <Suspense fallback="Loading...">
         <EntryPointContainer
-          entryPointReference={entryPoints.searchResults}
+          entryPointReference={entryPoints.search_results}
           props={{}}
         />
       </Suspense>
     </div>
   );
-};
+}

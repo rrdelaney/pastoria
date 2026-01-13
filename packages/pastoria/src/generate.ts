@@ -203,10 +203,31 @@ function zodSchemaOfType(
 // ============================================================================
 
 /**
+ * Collects all query names from a page and its nested entry points.
+ */
+function collectAllQueries(page: FilesystemPage): Set<string> {
+  const queries = new Set<string>();
+
+  // Add main page queries
+  for (const queryName of page.queries.values()) {
+    queries.add(queryName);
+  }
+
+  // Add nested entry point queries
+  for (const nestedPage of page.nestedEntryPoints.values()) {
+    for (const queryName of nestedPage.queries.values()) {
+      queries.add(queryName);
+    }
+  }
+
+  return queries;
+}
+
+/**
  * Writes an entry point definition for a filesystem-based page.
  *
  * Generates a getPreloadProps function that:
- * 1. Parses route parameters using the Zod schema
+ * 1. Parses route parameters using the captured Zod schema
  * 2. Sets up query preloading with the parsed variables
  * 3. Includes any nested entry points
  */
@@ -215,25 +236,24 @@ function writeFilesystemEntryPoint(
   project: Project,
   page: FilesystemPage,
   resourceName: string,
-  consumedQueries: Set<string>,
+  schemaExpression: string,
 ) {
-  // Write the root JSResource reference
-  writer.writeLine(`root: JSResource.fromModuleId('${resourceName}'),`);
+  // Capture the schema in the closure
+  writer.writeLine(`const schema = ${schemaExpression};`);
+  writer.blankLine();
 
-  // Write getPreloadProps function
+  // Write getPreloadProps as a named function
   const hasQueries = page.queries.size > 0;
   const hasNestedEntryPoints = page.nestedEntryPoints.size > 0;
 
-  writer.write('getPreloadProps({params, schema})').block(() => {
-    // Parse params using the schema
+  writer.write('function getPreloadProps({params}: {params: Record<string, any>})').block(() => {
+    // Parse params using the captured schema
     writer.writeLine('const variables = schema.parse(params);');
 
     writer.write('return').block(() => {
       // Write queries object
       writer.write('queries:').block(() => {
         for (const [queryRef, queryName] of page.queries.entries()) {
-          consumedQueries.add(queryName);
-
           // Collect variables needed by this specific query
           const queryVars = collectQueryParameters(project, [queryName]);
           const hasVariables = queryVars.size > 0;
@@ -278,13 +298,29 @@ function writeFilesystemEntryPoint(
                         nestedQueryRef,
                         nestedQueryName,
                       ] of nestedPage.queries.entries()) {
-                        consumedQueries.add(nestedQueryName);
+                        // Collect variables needed by this nested query
+                        const nestedQueryVars = collectQueryParameters(project, [
+                          nestedQueryName,
+                        ]);
+                        const hasNestedVariables = nestedQueryVars.size > 0;
 
                         writer.write(`${nestedQueryRef}:`).block(() => {
                           writer.writeLine(
                             `parameters: ${nestedQueryName}Parameters,`,
                           );
-                          writer.write('variables: {}');
+
+                          if (hasNestedVariables) {
+                            const varNames = Array.from(nestedQueryVars.keys());
+                            writer.write('variables: {');
+                            writer.write(
+                              varNames
+                                .map((v) => `${v}: variables.${v}`)
+                                .join(', '),
+                            );
+                            writer.write('}');
+                          } else {
+                            writer.write('variables: {}');
+                          }
                           writer.newLine();
                         });
                         writer.write(',');
@@ -332,7 +368,8 @@ async function generateRouter(
 
   // Only remove the noop placeholder if there are actual routes
   // (keeping it prevents type errors when the config is empty)
-  const hasRoutes = fsMetadata.pages.size > 0 || fsMetadata.entryPoints.size > 0;
+  const hasRoutes =
+    fsMetadata.pages.size > 0 || fsMetadata.entryPoints.size > 0;
   if (hasRoutes) {
     routerConf.getPropertyOrThrow('noop').remove();
   }
@@ -355,24 +392,7 @@ async function generateRouter(
     const safeResourceName = resourceName.replace(/[^a-zA-Z0-9]/g, '_');
 
     // Collect all queries consumed by this page and its nested entry points
-    const consumedQueries = new Set<string>();
-
-    // Generate the entry point function
-    routerTemplate.addFunction({
-      name: `entrypoint_${safeResourceName}`,
-      returnType: `EntryPoint<ModuleType<'${resourceName}'>, EntryPointParams<'${routerPath}'>>`,
-      statements: (writer) => {
-        writer.write('return ').block(() => {
-          writeFilesystemEntryPoint(
-            writer,
-            project,
-            page,
-            resourceName,
-            consumedQueries,
-          );
-        });
-      },
-    });
+    const consumedQueries = collectAllQueries(page);
 
     // Add imports for query parameters
     for (const queryName of consumedQueries) {
@@ -404,24 +424,46 @@ async function generateRouter(
       }
     }
 
+    // Build schema expression string for the entry point to capture
+    let schemaExpression: string;
+    if (params.size === 0) {
+      schemaExpression = 'z.object({})';
+    } else {
+      const schemaFields = Array.from(params.entries())
+        .map(
+          ([paramName, paramType]) =>
+            `${paramName}: ${zodSchemaOfType(routerTemplate, tc, paramType)}`,
+        )
+        .join(', ');
+      schemaExpression = `z.object({ ${schemaFields} })`;
+    }
+
+    // Generate the entry point function (captures schema in closure)
+    routerTemplate.addFunction({
+      name: `entrypoint_${safeResourceName}`,
+      returnType: `EntryPoint<ModuleType<'${resourceName}'>, EntryPointParams<'${routerPath}'>>`,
+      statements: (writer) => {
+        writeFilesystemEntryPoint(
+          writer,
+          project,
+          page,
+          resourceName,
+          schemaExpression,
+        );
+        writer.write('return ').block(() => {
+          writer.writeLine(`root: JSResource.fromModuleId('${resourceName}'),`);
+          writer.writeLine('getPreloadProps,');
+        });
+      },
+    });
+
     // Add route configuration (uses :param format for radix3 router)
     routerConf.addPropertyAssignment({
       name: `"${routerPath}"`,
       initializer: (writer) => {
         writer.write('{').indent(() => {
           writer.writeLine(`entrypoint: entrypoint_${safeResourceName}(),`);
-
-          if (params.size === 0) {
-            writer.writeLine('schema: z.object({})');
-          } else {
-            writer.writeLine('schema: z.object({');
-            for (const [paramName, paramType] of params) {
-              writer.writeLine(
-                `  ${paramName}: ${zodSchemaOfType(routerTemplate, tc, paramType)},`,
-              );
-            }
-            writer.writeLine('})');
-          }
+          writer.writeLine(`schema: ${schemaExpression}`);
         });
         writer.write('} as const');
       },
@@ -551,15 +593,15 @@ async function generateJsResource(
           path.join(process.cwd(), nestedPage.filePath),
         );
 
-      // For nested entry points, we use 'any' as the type since they don't have
-      // a route path in PageProps
+      // Nested entry points use flattened keys like '/#search_results'
+      const nestedRouteKey = `${routePath}#${epName}`;
       resourceConf.addPropertyAssignment({
         name: `"${nestedResourceName}"`,
         initializer: (writer) => {
           writer.block(() => {
             writer.writeLine(`src: "${nestedPage.filePath}",`);
             writer.writeLine(
-              `loader: (): Promise<ComponentType<any>> => import("${nestedModuleSpecifier}").then(m => m.default)`,
+              `loader: (): Promise<ComponentType<PageProps<'${nestedRouteKey}'>>> => import("${nestedModuleSpecifier}").then(m => m.default)`,
             );
           });
         },
@@ -663,35 +705,95 @@ async function generateTypes(project: Project, fsMetadata: FilesystemMetadata) {
   // Collect all query types to import
   const queryImports = new Set<string>();
 
-  // Build route types with raw query types (EntryPointProps will transform them)
-  const routeTypes: string[] = [];
+  // Helper to build queries type string
+  function buildQueriesType(queries: Map<string, string>): string {
+    if (queries.size === 0) return '{}';
+    return `{ ${Array.from(queries.entries())
+      .map(([ref, queryTypeName]) => {
+        queryImports.add(queryTypeName);
+        return `${ref}: ${queryTypeName}`;
+      })
+      .join('; ')} }`;
+  }
 
+  // Helper to convert route path to a valid TypeScript identifier
+  function routeToTypeName(routePath: string, nestedName?: string): string {
+    // Convert /hello/[name] to Hello$name, / to Root
+    const pathPart =
+      routePath === '/'
+        ? 'Root'
+        : routePath
+            .slice(1) // remove leading /
+            .split('/')
+            .map((segment) => {
+              if (segment.startsWith('[') && segment.endsWith(']')) {
+                // Dynamic segment: [name] -> $name
+                return '$' + segment.slice(1, -1);
+              }
+              // Static segment: hello -> Hello (capitalize first letter)
+              return segment.charAt(0).toUpperCase() + segment.slice(1);
+            })
+            .join('');
+
+    if (nestedName) {
+      // Nested entry point: append _nestedName
+      return `Route${pathPart}_${nestedName}`;
+    }
+    return `Route${pathPart}`;
+  }
+
+  // Phase 1: Generate type aliases for nested entry points (leaf nodes - no dependencies)
+  const nestedTypeAliases: string[] = [];
   for (const [routePath, page] of fsMetadata.pages.entries()) {
-    // Collect query type names
-    for (const queryTypeName of page.queries.values()) {
-      queryImports.add(queryTypeName);
+    for (const [epName, nestedPage] of page.nestedEntryPoints.entries()) {
+      const typeName = routeToTypeName(routePath, epName);
+      const queriesType = buildQueriesType(nestedPage.queries);
+      nestedTypeAliases.push(
+        `type ${typeName} = { queries: ${queriesType}; entryPoints: {} };`,
+      );
+    }
+  }
+
+  // Phase 2: Generate type aliases for main pages (can reference nested types)
+  const mainTypeAliases: string[] = [];
+  for (const [routePath, page] of fsMetadata.pages.entries()) {
+    const typeName = routeToTypeName(routePath);
+    const queriesType = buildQueriesType(page.queries);
+
+    let entryPointsType = '{}';
+    if (page.nestedEntryPoints.size > 0) {
+      const epTypes = Array.from(page.nestedEntryPoints.keys())
+        .map((epName) => {
+          const nestedTypeName = routeToTypeName(routePath, epName);
+          return `${epName}: EntryPoint<EntryPointComponent<${nestedTypeName}['queries'], ${nestedTypeName}['entryPoints'], {}, {}>, {}>`;
+        })
+        .join('; ');
+      entryPointsType = `{ ${epTypes} }`;
     }
 
-    // Build queries type with raw query types (not wrapped in PreloadedQuery)
-    // EntryPointProps will handle the transformation
-    const queriesType =
-      page.queries.size > 0
-        ? `{ ${Array.from(page.queries.entries())
-            .map(([ref, queryTypeName]) => `${ref}: ${queryTypeName}`)
-            .join('; ')} }`
-        : '{}';
-
-    // Build entry points type (empty object for now)
-    const entryPointsType = '{}';
-
-    routeTypes.push(
-      `  '${routePath}': { queries: ${queriesType}; entryPoints: ${entryPointsType} }`,
+    mainTypeAliases.push(
+      `type ${typeName} = { queries: ${queriesType}; entryPoints: ${entryPointsType} };`,
     );
+  }
+
+  // Phase 3: Build PageQueryMap entries referencing the type aliases
+  const routeTypes: string[] = [];
+  for (const [routePath, page] of fsMetadata.pages.entries()) {
+    const typeName = routeToTypeName(routePath);
+    routeTypes.push(`  '${routePath}': ${typeName}`);
+
+    for (const epName of page.nestedEntryPoints.keys()) {
+      const nestedTypeName = routeToTypeName(routePath, epName);
+      routeTypes.push(`  '${routePath}#${epName}': ${nestedTypeName}`);
+    }
   }
 
   // Generate import statements for query types
   const queryImportStatements = Array.from(queryImports)
-    .map((queryTypeName) => `import type {${queryTypeName}} from '#genfiles/queries/${queryTypeName}.graphql';`)
+    .map(
+      (queryTypeName) =>
+        `import type {${queryTypeName}} from '#genfiles/queries/${queryTypeName}.graphql';`,
+    )
     .join('\n');
 
   typesFile.addStatements(`/*
@@ -701,12 +803,18 @@ async function generateTypes(project: Project, fsMetadata: FilesystemMetadata) {
  * Type definitions for filesystem-based routing.
  */
 
-import type {EntryPointProps} from 'react-relay/hooks';
+import type {EntryPoint, EntryPointComponent, EntryPointProps} from 'react-relay/hooks';
 ${queryImportStatements ? '\n' + queryImportStatements : ''}
 
+// Route type aliases - nested entry points (leaf nodes)
+${nestedTypeAliases.join('\n')}
+
+// Route type aliases - main pages
+${mainTypeAliases.join('\n')}
+
 /**
- * Map of route paths to their raw query and entry point types.
- * These are the type parameters passed to EntryPointProps.
+ * Map of route paths to their query types.
+ * Nested entry points use the format: '/route#entryPointName'
  */
 export interface PageQueryMap {
 ${routeTypes.join(';\n')}${routeTypes.length > 0 ? ';' : ''}
@@ -718,9 +826,14 @@ ${routeTypes.join(';\n')}${routeTypes.length > 0 ? ';' : ''}
  *
  * @example
  * \`\`\`typescript
+ * // Main page
  * export default function BlogPosts({ queries }: PageProps<'/posts'>) {
  *   const data = usePreloadedQuery(query, queries.posts);
- *   // ...
+ * }
+ *
+ * // Nested entry point
+ * export default function Sidebar({ queries }: PageProps<'/posts#sidebar'>) {
+ *   const data = usePreloadedQuery(query, queries.sidebarData);
  * }
  * \`\`\`
  */
@@ -764,14 +877,6 @@ export async function generatePastoriaArtifacts(project: Project) {
   return fsMetadata;
 }
 
-/**
- * Legacy export for backward compatibility.
- * Now just calls generatePastoriaArtifacts.
- */
-export async function generatePastoriaExports(project: Project) {
-  return generatePastoriaArtifacts(project);
-}
-
 // ============================================================================
 // Capabilities Detection
 // ============================================================================
@@ -810,9 +915,7 @@ export async function detectCapabilities(): Promise<PastoriaCapabilities> {
 export function generateClientEntry({
   hasAppRoot,
 }: PastoriaCapabilities): string {
-  const appImport = hasAppRoot
-    ? `import App from './pastoria/app';`
-    : '';
+  const appImport = hasAppRoot ? `import App from './pastoria/app';` : '';
   const appValue = hasAppRoot ? 'App' : 'null';
 
   return `// Generated by Pastoria.
@@ -836,9 +939,7 @@ export function generateServerEntry({
   hasAppRoot,
   hasServerHandler,
 }: PastoriaCapabilities): string {
-  const appImport = hasAppRoot
-    ? `import App from './pastoria/app';`
-    : '';
+  const appImport = hasAppRoot ? `import App from './pastoria/app';` : '';
   const appValue = hasAppRoot ? 'App' : 'null';
 
   const serverHandlerImport = hasServerHandler

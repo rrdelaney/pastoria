@@ -1,6 +1,6 @@
 import {PastoriaEnvironment} from 'pastoria-runtime/server';
 import {getSchema} from '#genfiles/schema/schema';
-import {Context} from '#src/schema/context';
+import {Context} from '../schema/context';
 
 export default new PastoriaEnvironment({
   schema: getSchema(),

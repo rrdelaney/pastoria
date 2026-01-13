@@ -1,17 +1,13 @@
 import type {PropsWithChildren} from 'react';
+import '../globals.css';
 
-import './globals.css';
-
-/**
- * @appRoot
- */
-export function AppRoot({children}: PropsWithChildren) {
+export default function App({children}: PropsWithChildren) {
   return (
     <html>
       <head>
         <meta charSet="utf-8" />
         <meta name="viewport" content="width=device-width, initial-scale=1" />
-        <title>Pastoria Starter</title>
+        <title>Pastoria Nested Entrypoints</title>
       </head>
       <body>{children}</body>
     </html>

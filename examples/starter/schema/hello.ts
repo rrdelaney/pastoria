@@ -1,4 +1,3 @@
-import express from 'express';
 import {Context} from './context.js';
 
 /**
@@ -18,12 +17,4 @@ export function hello(ctx: Context): string {
  */
 export function greet(name: string, ctx: Context): string {
   return `Hello, ${name}! Welcome to Pastoria.`;
-}
-
-/**
- * @serverRoute /hello
- */
-export function handleHello(req: express.Request, res: express.Response) {
-  console.log(req.url);
-  res.status(200).send('Hello!');
 }

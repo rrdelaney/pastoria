@@ -42,9 +42,7 @@ const ROUTER_CONF = {
     } as const,
   "/hello/:name": {
       entrypoint: entrypoint_fs_page__hello__name__(),
-      schema: z.object({
-        name: z.pipe(z.string(), z.transform(decodeURIComponent)),
-      })
+      schema: z.object({ name: z.pipe(z.string(), z.transform(decodeURIComponent)) })
     } as const
 } as const;
 
@@ -53,7 +51,6 @@ export type NavigationDirection = string | URL | ((nextUrl: URL) => void);
 
 export interface EntryPointParams<R extends RouteId> {
   params: Record<string, any>;
-  schema: RouterConf[R]['schema'];
 }
 
 const ROUTER = createRouter<RouterConf[keyof RouterConf]>({
@@ -157,7 +154,6 @@ export async function router__loadEntryPoint(
   await initialRoute.entrypoint?.root.load();
   return loadEntryPoint(provider, initialRoute.entrypoint, {
     params: initialLocation.params(),
-    schema: initialRoute.schema,
   });
 }
 
@@ -243,11 +239,10 @@ export function router__createAppFromEntryPoint(
     );
 
     useEffect(() => {
-      const schema = location.route()?.schema;
-      if (schema) {
+      const route = location.route();
+      if (route) {
         loadEntryPointRef({
           params: location.params(),
-          schema,
         });
       }
       // eslint-disable-next-line react-hooks/exhaustive-deps
@@ -465,36 +460,42 @@ export function listRoutes() {
 }
 
 function entrypoint_fs_page___(): EntryPoint<ModuleType<'fs:page(/)'>, EntryPointParams<'/'>> {
+  const schema = z.object({});
+
+  function getPreloadProps({params}: {params: Record<string, any>}) {
+    const variables = schema.parse(params);
+    return {
+      queries: {
+      }
+      ,
+      entryPoints: undefined
+    }
+  }
   return {
     root: JSResource.fromModuleId('fs:page(/)'),
-    getPreloadProps({params, schema}) {
-      const variables = schema.parse(params);
-      return {
-        queries: {
-        }
-        ,
-        entryPoints: undefined
-      }
-    }
+    getPreloadProps,
   }
 }
 
 function entrypoint_fs_page__hello__name__(): EntryPoint<ModuleType<'fs:page(/hello/[name])'>, EntryPointParams<'/hello/:name'>> {
-  return {
-    root: JSResource.fromModuleId('fs:page(/hello/[name])'),
-    getPreloadProps({params, schema}) {
-      const variables = schema.parse(params);
-      return {
-        queries: {
-          nameQuery: {
-            parameters: page_GreetQueryParameters,
-            variables: {name: variables.name}
-          }
-          ,
+  const schema = z.object({ name: z.pipe(z.string(), z.transform(decodeURIComponent)) });
+
+  function getPreloadProps({params}: {params: Record<string, any>}) {
+    const variables = schema.parse(params);
+    return {
+      queries: {
+        nameQuery: {
+          parameters: page_GreetQueryParameters,
+          variables: {name: variables.name}
         }
         ,
-        entryPoints: undefined
       }
+      ,
+      entryPoints: undefined
     }
+  }
+  return {
+    root: JSResource.fromModuleId('fs:page(/hello/[name])'),
+    getPreloadProps,
   }
 }

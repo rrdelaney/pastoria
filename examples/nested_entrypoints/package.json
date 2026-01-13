@@ -12,7 +12,6 @@
     "check": "tsc"
   },
   "imports": {
-    "#src/*": "./src/*",
     "#genfiles/*": "./__generated__/*"
   },
   "dependencies": {

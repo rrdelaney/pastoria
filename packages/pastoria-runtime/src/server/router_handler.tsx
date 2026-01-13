@@ -148,7 +148,12 @@ function createGraphqlHandler(
       }
     }
 
-    const validationErrors = validate(environment.schema, requestDocument, specifiedRules);
+    const validationErrors = validate(
+      environment.schema,
+      requestDocument,
+      specifiedRules,
+    );
+
     if (validationErrors.length) {
       return res
         .status(200)
@@ -347,11 +352,12 @@ function bootstrapScripts(
   }
 
   if (process.env.NODE_ENV !== 'production') {
-    bootstrap.preloadStylesheets.push('/src/globals.css');
     bootstrap.bootstrapModules.push(
       '/@vite/client',
       '/@id/virtual:pastoria-entry-client.tsx',
     );
+    // TODO: Dynamically detect CSS files from Vite's module graph instead of hardcoding
+    bootstrap.preloadStylesheets.push('/globals.css');
   } else if (entryPoint != null) {
     crawlEntryPoint(entryPoint);
   }

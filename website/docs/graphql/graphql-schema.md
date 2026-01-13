@@ -117,42 +117,6 @@ type Query {
 - Optional parameters (`query?: string`) become nullable GraphQL arguments
 - Arrays automatically map to GraphQL lists
 
-## Context
-
-Every Pastoria app needs a GraphQL context class. This is where you define data
-available to all resolvers (like database connections, auth info, etc.).
-
-**Example from `examples/starter/src/schema/context.ts`:**
-
-```ts
-import {PastoriaRootContext} from 'pastoria-runtime/server';
-
-/**
- * @gqlContext
- */
-export class Context extends PastoriaRootContext {}
-```
-
-Your context must:
-
-- Extend `PastoriaRootContext` from `pastoria-runtime/server`
-- Be annotated with `@gqlContext`
-- Be exported from `src/lib/server/context.ts` (convention)
-
-You can add custom properties to your context:
-
-```ts
-/**
- * @gqlContext
- */
-export class Context extends PastoriaRootContext {
-  get userId(): string | null {
-    // Return authenticated user ID from session
-    return this.req.session?.userId ?? null;
-  }
-}
-```
-
 ## Type Mapping
 
 Grats automatically maps TypeScript types to GraphQL types:

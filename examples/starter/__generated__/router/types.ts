@@ -5,17 +5,24 @@
  * Type definitions for filesystem-based routing.
  */
 
-import type {EntryPointProps} from 'react-relay/hooks';
+import type {EntryPoint, EntryPointComponent, EntryPointProps} from 'react-relay/hooks';
 
 import type {page_GreetQuery} from '#genfiles/queries/page_GreetQuery.graphql';
 
+// Route type aliases - nested entry points (leaf nodes)
+
+
+// Route type aliases - main pages
+type RouteRoot = { queries: {}; entryPoints: {} };
+type RouteHello$name = { queries: { nameQuery: page_GreetQuery }; entryPoints: {} };
+
 /**
- * Map of route paths to their raw query and entry point types.
- * These are the type parameters passed to EntryPointProps.
+ * Map of route paths to their query types.
+ * Nested entry points use the format: '/route#entryPointName'
  */
 export interface PageQueryMap {
-  '/': { queries: {}; entryPoints: {} };
-  '/hello/[name]': { queries: { nameQuery: page_GreetQuery }; entryPoints: {} };
+  '/': RouteRoot;
+  '/hello/[name]': RouteHello$name;
 }
 
 /**
@@ -24,9 +31,14 @@ export interface PageQueryMap {
  *
  * @example
  * ```typescript
+ * // Main page
  * export default function BlogPosts({ queries }: PageProps<'/posts'>) {
  *   const data = usePreloadedQuery(query, queries.posts);
- *   // ...
+ * }
+ *
+ * // Nested entry point
+ * export default function Sidebar({ queries }: PageProps<'/posts#sidebar'>) {
+ *   const data = usePreloadedQuery(query, queries.sidebarData);
  * }
  * ```
  */

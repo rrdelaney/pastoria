@@ -1,6 +1,6 @@
 import type {PropsWithChildren} from 'react';
 
-import '../src/globals.css';
+import '../globals.css';
 
 export default function App({children}: PropsWithChildren) {
   return (

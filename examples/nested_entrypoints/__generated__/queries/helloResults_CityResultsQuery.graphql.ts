@@ -1,6 +1,6 @@
 /**
- * @generated SignedSource<<1bc7c7bba55492832b900d23436a3935>>
- * @relayHash d0d4c4f69a4432c5b2aaae71e8bf7726
+ * @generated SignedSource<<573e1ea6d330eeea5f57a2ecb591f1f2>>
+ * @relayHash 247b4b9e8b2b50c2e9fa0e24efa219ae
  * @lightSyntaxTransform
  * @nogrep
  */
@@ -9,20 +9,20 @@
 /* eslint-disable */
 // @ts-nocheck
 
-// @relayRequestID d0d4c4f69a4432c5b2aaae71e8bf7726
+// @relayRequestID 247b4b9e8b2b50c2e9fa0e24efa219ae
 
 import { ConcreteRequest } from 'relay-runtime';
-export type helloWorld_HelloCityResultsQuery$variables = {
+export type helloResults_CityResultsQuery$variables = {
   q?: string | null | undefined;
 };
-export type helloWorld_HelloCityResultsQuery$data = {
+export type helloResults_CityResultsQuery$data = {
   readonly cities: ReadonlyArray<{
-    readonly name: string;
-  }>;
+    readonly name: string | null | undefined;
+  }> | null | undefined;
 };
-export type helloWorld_HelloCityResultsQuery = {
-  response: helloWorld_HelloCityResultsQuery$data;
-  variables: helloWorld_HelloCityResultsQuery$variables;
+export type helloResults_CityResultsQuery = {
+  response: helloResults_CityResultsQuery$data;
+  variables: helloResults_CityResultsQuery$variables;
 };
 
 const node: ConcreteRequest = (function(){
@@ -66,7 +66,7 @@ return {
     "metadata": {
       "throwOnFieldError": true
     },
-    "name": "helloWorld_HelloCityResultsQuery",
+    "name": "helloResults_CityResultsQuery",
     "selections": (v1/*: any*/),
     "type": "Query",
     "abstractKey": null
@@ -75,20 +75,20 @@ return {
   "operation": {
     "argumentDefinitions": (v0/*: any*/),
     "kind": "Operation",
-    "name": "helloWorld_HelloCityResultsQuery",
+    "name": "helloResults_CityResultsQuery",
     "selections": (v1/*: any*/)
   },
   "params": {
-    "id": "d0d4c4f69a4432c5b2aaae71e8bf7726",
+    "id": "247b4b9e8b2b50c2e9fa0e24efa219ae",
     "metadata": {},
-    "name": "helloWorld_HelloCityResultsQuery",
+    "name": "helloResults_CityResultsQuery",
     "operationKind": "query",
     "text": null
   }
 };
 })();
 
-(node as any).hash = "f7126fe50498432a8f53417aec61d5ae";
+(node as any).hash = "fd799769fa3d4da485b718bd097a74b8";
 
 import { PreloadableQueryRegistry } from 'relay-runtime';
 PreloadableQueryRegistry.set(node.params.id, node);

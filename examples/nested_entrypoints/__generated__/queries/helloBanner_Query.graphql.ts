@@ -1,6 +1,6 @@
 /**
- * @generated SignedSource<<1d648e55ef7ffef8f643cf6bad3c2fad>>
- * @relayHash d03c19a9dab11b6c007a14da9688c904
+ * @generated SignedSource<<d3fdeba81bac3084ffbd447a8a046f01>>
+ * @relayHash ecab468d08eff088a39b7c3055094b7c
  * @lightSyntaxTransform
  * @nogrep
  */
@@ -9,16 +9,16 @@
 /* eslint-disable */
 // @ts-nocheck
 
-// @relayRequestID d03c19a9dab11b6c007a14da9688c904
+// @relayRequestID ecab468d08eff088a39b7c3055094b7c
 
 import { ConcreteRequest } from 'relay-runtime';
-export type helloWorld_HelloBannerQuery$variables = Record<PropertyKey, never>;
-export type helloWorld_HelloBannerQuery$data = {
-  readonly helloMessage: string;
+export type helloBanner_Query$variables = Record<PropertyKey, never>;
+export type helloBanner_Query$data = {
+  readonly helloMessage: string | null | undefined;
 };
-export type helloWorld_HelloBannerQuery = {
-  response: helloWorld_HelloBannerQuery$data;
-  variables: helloWorld_HelloBannerQuery$variables;
+export type helloBanner_Query = {
+  response: helloBanner_Query$data;
+  variables: helloBanner_Query$variables;
 };
 
 const node: ConcreteRequest = (function(){
@@ -38,7 +38,7 @@ return {
     "metadata": {
       "throwOnFieldError": true
     },
-    "name": "helloWorld_HelloBannerQuery",
+    "name": "helloBanner_Query",
     "selections": (v0/*: any*/),
     "type": "Query",
     "abstractKey": null
@@ -47,20 +47,20 @@ return {
   "operation": {
     "argumentDefinitions": [],
     "kind": "Operation",
-    "name": "helloWorld_HelloBannerQuery",
+    "name": "helloBanner_Query",
     "selections": (v0/*: any*/)
   },
   "params": {
-    "id": "d03c19a9dab11b6c007a14da9688c904",
+    "id": "ecab468d08eff088a39b7c3055094b7c",
     "metadata": {},
-    "name": "helloWorld_HelloBannerQuery",
+    "name": "helloBanner_Query",
     "operationKind": "query",
     "text": null
   }
 };
 })();
 
-(node as any).hash = "233a6782a639d8a526aaf209bcce30e0";
+(node as any).hash = "fb2d47bf9b3a262a2670407f26962063";
 
 import { PreloadableQueryRegistry } from 'relay-runtime';
 PreloadableQueryRegistry.set(node.params.id, node);

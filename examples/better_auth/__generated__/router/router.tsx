@@ -46,7 +46,6 @@ export type NavigationDirection = string | URL | ((nextUrl: URL) => void);
 
 export interface EntryPointParams<R extends RouteId> {
   params: Record<string, any>;
-  schema: RouterConf[R]['schema'];
 }
 
 const ROUTER = createRouter<RouterConf[keyof RouterConf]>({
@@ -150,7 +149,6 @@ export async function router__loadEntryPoint(
   await initialRoute.entrypoint?.root.load();
   return loadEntryPoint(provider, initialRoute.entrypoint, {
     params: initialLocation.params(),
-    schema: initialRoute.schema,
   });
 }
 
@@ -236,11 +234,10 @@ export function router__createAppFromEntryPoint(
     );
 
     useEffect(() => {
-      const schema = location.route()?.schema;
-      if (schema) {
+      const route = location.route();
+      if (route) {
         loadEntryPointRef({
           params: location.params(),
-          schema,
         });
       }
       // eslint-disable-next-line react-hooks/exhaustive-deps
@@ -458,16 +455,19 @@ export function listRoutes() {
 }
 
 function entrypoint_fs_page___(): EntryPoint<ModuleType<'fs:page(/)'>, EntryPointParams<'/'>> {
+  const schema = z.object({});
+
+  function getPreloadProps({params}: {params: Record<string, any>}) {
+    const variables = schema.parse(params);
+    return {
+      queries: {
+      }
+      ,
+      entryPoints: undefined
+    }
+  }
   return {
     root: JSResource.fromModuleId('fs:page(/)'),
-    getPreloadProps({params, schema}) {
-      const variables = schema.parse(params);
-      return {
-        queries: {
-        }
-        ,
-        entryPoints: undefined
-      }
-    }
+    getPreloadProps,
   }
 }

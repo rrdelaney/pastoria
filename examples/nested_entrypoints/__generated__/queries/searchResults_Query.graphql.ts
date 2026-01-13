@@ -1,6 +1,6 @@
 /**
- * @generated SignedSource<<a5e7699bc53a76dfb324e8e29fa450fb>>
- * @relayHash 6e4592e98191f38107831ae55433bee1
+ * @generated SignedSource<<fefd02081287b8b0c944984a1c10fadc>>
+ * @relayHash c3ae55d1215512a4fa3ec7dbe986e35c
  * @lightSyntaxTransform
  * @nogrep
  */
@@ -9,20 +9,20 @@
 /* eslint-disable */
 // @ts-nocheck
 
-// @relayRequestID 6e4592e98191f38107831ae55433bee1
+// @relayRequestID c3ae55d1215512a4fa3ec7dbe986e35c
 
 import { ConcreteRequest } from 'relay-runtime';
-export type searchResults_SearchResultsQuery$variables = {
-  query: string;
+export type searchResults_Query$variables = {
+  query?: string | null | undefined;
 };
-export type searchResults_SearchResultsQuery$data = {
+export type searchResults_Query$data = {
   readonly cities: ReadonlyArray<{
-    readonly name: string;
-  }>;
+    readonly name: string | null | undefined;
+  }> | null | undefined;
 };
-export type searchResults_SearchResultsQuery = {
-  response: searchResults_SearchResultsQuery$data;
-  variables: searchResults_SearchResultsQuery$variables;
+export type searchResults_Query = {
+  response: searchResults_Query$data;
+  variables: searchResults_Query$variables;
 };
 
 const node: ConcreteRequest = (function(){
@@ -66,7 +66,7 @@ return {
     "metadata": {
       "throwOnFieldError": true
     },
-    "name": "searchResults_SearchResultsQuery",
+    "name": "searchResults_Query",
     "selections": (v1/*: any*/),
     "type": "Query",
     "abstractKey": null
@@ -75,20 +75,20 @@ return {
   "operation": {
     "argumentDefinitions": (v0/*: any*/),
     "kind": "Operation",
-    "name": "searchResults_SearchResultsQuery",
+    "name": "searchResults_Query",
     "selections": (v1/*: any*/)
   },
   "params": {
-    "id": "6e4592e98191f38107831ae55433bee1",
+    "id": "c3ae55d1215512a4fa3ec7dbe986e35c",
     "metadata": {},
-    "name": "searchResults_SearchResultsQuery",
+    "name": "searchResults_Query",
     "operationKind": "query",
     "text": null
   }
 };
 })();
 
-(node as any).hash = "9a8ffb6b99f0ba9032d9071aebdd8bc5";
+(node as any).hash = "a7bb6d0fa31fb85e520b67b0946c7b2c";
 
 import { PreloadableQueryRegistry } from 'relay-runtime';
 PreloadableQueryRegistry.set(node.params.id, node);
