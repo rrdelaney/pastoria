@@ -69,7 +69,9 @@ export class PastoriaEnvironment {
   constructor(config: PastoriaEnvironmentConfig) {
     this.schema = config.schema;
     this.createContext = config.createContext;
-    this.enableGraphiQLInProduction = config.enableGraphiQLInProduction ?? false;
-    this.persistedQueriesOnlyInProduction = config.persistedQueriesOnlyInProduction ?? false;
+    this.enableGraphiQLInProduction =
+      config.enableGraphiQLInProduction ?? false;
+    this.persistedQueriesOnlyInProduction =
+      config.persistedQueriesOnlyInProduction ?? false;
   }
 }

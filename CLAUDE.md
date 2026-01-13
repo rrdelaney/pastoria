@@ -173,7 +173,10 @@ The parent page renders nested entry points via `EntryPointContainer`:
 export default function Layout({entryPoints}: PageProps<'/'>) {
   return (
     <Suspense fallback="Loading...">
-      <EntryPointContainer entryPointReference={entryPoints.sidebar} props={{}} />
+      <EntryPointContainer
+        entryPointReference={entryPoints.sidebar}
+        props={{}}
+      />
     </Suspense>
   );
 }

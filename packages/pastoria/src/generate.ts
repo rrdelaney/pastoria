@@ -246,101 +246,109 @@ function writeFilesystemEntryPoint(
   const hasQueries = page.queries.size > 0;
   const hasNestedEntryPoints = page.nestedEntryPoints.size > 0;
 
-  writer.write('function getPreloadProps({params}: {params: Record<string, any>})').block(() => {
-    // Parse params using the captured schema
-    writer.writeLine('const variables = schema.parse(params);');
+  writer
+    .write('function getPreloadProps({params}: {params: Record<string, any>})')
+    .block(() => {
+      // Parse params using the captured schema
+      writer.writeLine('const variables = schema.parse(params);');
 
-    writer.write('return').block(() => {
-      // Write queries object
-      writer.write('queries:').block(() => {
-        for (const [queryRef, queryName] of page.queries.entries()) {
-          // Collect variables needed by this specific query
-          const queryVars = collectQueryParameters(project, [queryName]);
-          const hasVariables = queryVars.size > 0;
+      writer.write('return').block(() => {
+        // Write queries object
+        writer.write('queries:').block(() => {
+          for (const [queryRef, queryName] of page.queries.entries()) {
+            // Collect variables needed by this specific query
+            const queryVars = collectQueryParameters(project, [queryName]);
+            const hasVariables = queryVars.size > 0;
 
-          writer.write(`${queryRef}:`).block(() => {
-            writer.writeLine(`parameters: ${queryName}Parameters,`);
+            writer.write(`${queryRef}:`).block(() => {
+              writer.writeLine(`parameters: ${queryName}Parameters,`);
 
-            if (hasVariables) {
-              const varNames = Array.from(queryVars.keys());
-              writer.write('variables: {');
-              writer.write(
-                varNames.map((v) => `${v}: variables.${v}`).join(', '),
-              );
-              writer.write('}');
-            } else {
-              writer.write('variables: {}');
-            }
-            writer.newLine();
-          });
-          writer.write(',');
-        }
-      });
-      writer.writeLine(',');
-
-      // Write nested entry points (undefined if none)
-      if (hasNestedEntryPoints) {
-        writer.write('entryPoints:').block(() => {
-          for (const [epName, nestedPage] of page.nestedEntryPoints.entries()) {
-            const nestedResourceName = `${resourceName}#${epName}`;
-
-            writer.write(`${epName}:`).block(() => {
-              writer.writeLine('entryPointParams: {},');
-              writer.write('entryPoint:').block(() => {
-                // Write nested entry point (without param parsing)
-                writer.writeLine(
-                  `root: JSResource.fromModuleId('${nestedResourceName}'),`,
+              if (hasVariables) {
+                const varNames = Array.from(queryVars.keys());
+                writer.write('variables: {');
+                writer.write(
+                  varNames.map((v) => `${v}: variables.${v}`).join(', '),
                 );
-                writer.write('getPreloadProps()').block(() => {
-                  writer.write('return').block(() => {
-                    writer.write('queries:').block(() => {
-                      for (const [
-                        nestedQueryRef,
-                        nestedQueryName,
-                      ] of nestedPage.queries.entries()) {
-                        // Collect variables needed by this nested query
-                        const nestedQueryVars = collectQueryParameters(project, [
+                writer.write('}');
+              } else {
+                writer.write('variables: {}');
+              }
+              writer.newLine();
+            });
+            writer.write(',');
+          }
+        });
+        writer.writeLine(',');
+
+        // Write nested entry points (undefined if none)
+        if (hasNestedEntryPoints) {
+          writer.write('entryPoints:').block(() => {
+            for (const [
+              epName,
+              nestedPage,
+            ] of page.nestedEntryPoints.entries()) {
+              const nestedResourceName = `${resourceName}#${epName}`;
+
+              writer.write(`${epName}:`).block(() => {
+                writer.writeLine('entryPointParams: {},');
+                writer.write('entryPoint:').block(() => {
+                  // Write nested entry point (without param parsing)
+                  writer.writeLine(
+                    `root: JSResource.fromModuleId('${nestedResourceName}'),`,
+                  );
+                  writer.write('getPreloadProps()').block(() => {
+                    writer.write('return').block(() => {
+                      writer.write('queries:').block(() => {
+                        for (const [
+                          nestedQueryRef,
                           nestedQueryName,
-                        ]);
-                        const hasNestedVariables = nestedQueryVars.size > 0;
-
-                        writer.write(`${nestedQueryRef}:`).block(() => {
-                          writer.writeLine(
-                            `parameters: ${nestedQueryName}Parameters,`,
+                        ] of nestedPage.queries.entries()) {
+                          // Collect variables needed by this nested query
+                          const nestedQueryVars = collectQueryParameters(
+                            project,
+                            [nestedQueryName],
                           );
+                          const hasNestedVariables = nestedQueryVars.size > 0;
 
-                          if (hasNestedVariables) {
-                            const varNames = Array.from(nestedQueryVars.keys());
-                            writer.write('variables: {');
-                            writer.write(
-                              varNames
-                                .map((v) => `${v}: variables.${v}`)
-                                .join(', '),
+                          writer.write(`${nestedQueryRef}:`).block(() => {
+                            writer.writeLine(
+                              `parameters: ${nestedQueryName}Parameters,`,
                             );
-                            writer.write('}');
-                          } else {
-                            writer.write('variables: {}');
-                          }
-                          writer.newLine();
-                        });
-                        writer.write(',');
-                      }
+
+                            if (hasNestedVariables) {
+                              const varNames = Array.from(
+                                nestedQueryVars.keys(),
+                              );
+                              writer.write('variables: {');
+                              writer.write(
+                                varNames
+                                  .map((v) => `${v}: variables.${v}`)
+                                  .join(', '),
+                              );
+                              writer.write('}');
+                            } else {
+                              writer.write('variables: {}');
+                            }
+                            writer.newLine();
+                          });
+                          writer.write(',');
+                        }
+                      });
+                      writer.writeLine(',');
+                      // Nested entry points don't have further nesting
+                      writer.writeLine('entryPoints: undefined');
                     });
-                    writer.writeLine(',');
-                    // Nested entry points don't have further nesting
-                    writer.writeLine('entryPoints: undefined');
                   });
                 });
               });
-            });
-            writer.writeLine(',');
-          }
-        });
-      } else {
-        writer.writeLine('entryPoints: undefined');
-      }
+              writer.writeLine(',');
+            }
+          });
+        } else {
+          writer.writeLine('entryPoints: undefined');
+        }
+      });
     });
-  });
 }
 
 // ============================================================================

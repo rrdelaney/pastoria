@@ -469,12 +469,7 @@ export function scanFilesystemRoutes(project: Project): FilesystemMetadata {
 
     metadata.apiRoutes.set(routePath, apiRoute);
 
-    logInfo(
-      'Found API route',
-      pc.cyan(routePath),
-      'at',
-      pc.yellow(filePath),
-    );
+    logInfo('Found API route', pc.cyan(routePath), 'at', pc.yellow(filePath));
   }
 
   return metadata;

@@ -91,7 +91,10 @@ async function main() {
   program
     .command('generate')
     .description('Generate Pastoria routing and resources')
-    .option('--skip-schema', 'Skip schema generation (useful if using grats or other tools)')
+    .option(
+      '--skip-schema',
+      'Skip schema generation (useful if using grats or other tools)',
+    )
     .action(async (opts: {skipSchema?: boolean}) => {
       await runCodeGeneration();
       if (!opts.skipSchema) {

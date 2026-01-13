@@ -10,9 +10,7 @@ export const queries = {
 export default function HelloWorldPage({queries}: PageProps<'/hello/[name]'>) {
   const {greet} = usePreloadedQuery(
     graphql`
-      query page_GreetQuery($name: String!)
-      @preloadable
-      @throwOnFieldError {
+      query page_GreetQuery($name: String!) @preloadable @throwOnFieldError {
         greet(name: $name)
       }
     `,

@@ -6,7 +6,9 @@ export const queries = {
   helloBannerRef: helloBanner_Query,
 };
 
-export default function HelloBanner({queries}: PageProps<'/hello/[name]#hello_banner'>) {
+export default function HelloBanner({
+  queries,
+}: PageProps<'/hello/[name]#hello_banner'>) {
   const {helloMessage} = usePreloadedQuery(
     graphql`
       query helloBanner_Query @preloadable @throwOnFieldError {
