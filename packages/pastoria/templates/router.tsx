@@ -28,6 +28,9 @@ import {
 import * as z from 'zod/v4-mini';
 
 type RouterConf = typeof ROUTER_CONF;
+type AnyRouteParams = z.infer<RouterConf[keyof RouterConf]['schema']>;
+type AnyEntryPointParams = EntryPointParams<keyof RouterConf>;
+
 const ROUTER_CONF = {
   noop: {
     entrypoint: null! as EntryPoint<any, any>,
@@ -39,7 +42,7 @@ export type RouteId = keyof RouterConf;
 export type NavigationDirection = string | URL | ((nextUrl: URL) => void);
 
 export interface EntryPointParams<R extends RouteId> {
-  params: Record<string, any>;
+  params: z.infer<RouterConf[R]['schema']>;
 }
 
 const ROUTER = createRouter<RouterConf[keyof RouterConf]>({
@@ -65,7 +68,7 @@ class RouterLocation {
     return ROUTER.lookup(this.pathname);
   }
 
-  params() {
+  params(): AnyRouteParams {
     const matchedRoute = this.route();
     const params = {
       ...matchedRoute?.params,
@@ -75,7 +78,7 @@ class RouterLocation {
     if (matchedRoute?.schema) {
       return matchedRoute.schema.parse(params);
     } else {
-      return params;
+      return params as AnyRouteParams;
     }
   }
 
@@ -143,7 +146,7 @@ export async function router__loadEntryPoint(
   await initialRoute.entrypoint?.root.load();
   return loadEntryPoint(provider, initialRoute.entrypoint, {
     params: initialLocation.params(),
-  });
+  } as AnyEntryPointParams);
 }
 
 interface RouterContextValue {
@@ -230,9 +233,10 @@ export function router__createAppFromEntryPoint(
     useEffect(() => {
       const route = location.route();
       if (route) {
+        // Type assertion: params are validated by schema, so they match the entry point
         loadEntryPointRef({
           params: location.params(),
-        });
+        } as AnyEntryPointParams);
       }
       // eslint-disable-next-line react-hooks/exhaustive-deps
     }, [location]);

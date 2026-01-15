@@ -32,7 +32,9 @@ const RESOURCE_CONF = {
 } as const;
 
 type ModuleId = keyof ResourceConf;
-export type ModuleType<M extends ModuleId> = Awaited<ReturnType<ResourceConf[M]['loader']>>;
+export type ModuleType<M extends ModuleId> = Awaited<
+  ReturnType<ResourceConf[M]['loader']>
+>;
 
 export class JSResource<M extends ModuleId>
   implements JSResourceReference<ModuleType<M>>

@@ -227,30 +227,30 @@ function collectAllQueries(page: FilesystemPage): Set<string> {
  * Writes an entry point definition for a filesystem-based page.
  *
  * Generates a getPreloadProps function that:
- * 1. Parses route parameters using the captured Zod schema
- * 2. Sets up query preloading with the parsed variables
- * 3. Includes any nested entry points
+ * 1. Sets up query preloading with the provided variables
+ * 2. Includes any nested entry points
+ *
+ * Note: Params are already parsed and typed by ROUTER_CONF schema via
+ * EntryPointParams<R>, so no additional parsing is needed here.
  */
 function writeFilesystemEntryPoint(
   writer: CodeBlockWriter,
   project: Project,
   page: FilesystemPage,
   resourceName: string,
-  schemaExpression: string,
+  routerPath: string,
 ) {
-  // Capture the schema in the closure
-  writer.writeLine(`const schema = ${schemaExpression};`);
-  writer.blankLine();
-
   // Write getPreloadProps as a named function
   const hasQueries = page.queries.size > 0;
   const hasNestedEntryPoints = page.nestedEntryPoints.size > 0;
 
   writer
-    .write('function getPreloadProps({params}: {params: Record<string, any>})')
+    .write(
+      `function getPreloadProps({params}: EntryPointParams<'${routerPath}'>)`,
+    )
     .block(() => {
-      // Parse params using the captured schema
-      writer.writeLine('const variables = schema.parse(params);');
+      // Params are already parsed and typed via EntryPointParams<R>
+      writer.writeLine('const variables = params;');
 
       writer.write('return').block(() => {
         // Write queries object
@@ -446,7 +446,7 @@ async function generateRouter(
       schemaExpression = `z.object({ ${schemaFields} })`;
     }
 
-    // Generate the entry point function (captures schema in closure)
+    // Generate the entry point function
     routerTemplate.addFunction({
       name: `entrypoint_${safeResourceName}`,
       returnType: `EntryPoint<ModuleType<'${resourceName}'>, EntryPointParams<'${routerPath}'>>`,
@@ -456,7 +456,7 @@ async function generateRouter(
           project,
           page,
           resourceName,
-          schemaExpression,
+          routerPath,
         );
         writer.write('return ').block(() => {
           writer.writeLine(`root: JSResource.fromModuleId('${resourceName}'),`);

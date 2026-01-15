@@ -35,6 +35,9 @@ import { JSResource, ModuleType } from "./js_resource";
 import page_GreetQueryParameters from "#genfiles/queries/page_GreetQuery$parameters";
 
 type RouterConf = typeof ROUTER_CONF;
+type AnyRouteParams = z.infer<RouterConf[keyof RouterConf]['schema']>;
+type AnyEntryPointParams = EntryPointParams<keyof RouterConf>;
+
 const ROUTER_CONF = {
   "/": {
       entrypoint: entrypoint_fs_page___(),
@@ -50,7 +53,7 @@ export type RouteId = keyof RouterConf;
 export type NavigationDirection = string | URL | ((nextUrl: URL) => void);
 
 export interface EntryPointParams<R extends RouteId> {
-  params: Record<string, any>;
+  params: z.infer<RouterConf[R]['schema']>;
 }
 
 const ROUTER = createRouter<RouterConf[keyof RouterConf]>({
@@ -76,7 +79,7 @@ class RouterLocation {
     return ROUTER.lookup(this.pathname);
   }
 
-  params() {
+  params(): AnyRouteParams {
     const matchedRoute = this.route();
     const params = {
       ...matchedRoute?.params,
@@ -86,7 +89,7 @@ class RouterLocation {
     if (matchedRoute?.schema) {
       return matchedRoute.schema.parse(params);
     } else {
-      return params;
+      return params as AnyRouteParams;
     }
   }
 
@@ -154,7 +157,7 @@ export async function router__loadEntryPoint(
   await initialRoute.entrypoint?.root.load();
   return loadEntryPoint(provider, initialRoute.entrypoint, {
     params: initialLocation.params(),
-  });
+  } as AnyEntryPointParams);
 }
 
 interface RouterContextValue {
@@ -241,9 +244,10 @@ export function router__createAppFromEntryPoint(
     useEffect(() => {
       const route = location.route();
       if (route) {
+        // Type assertion: params are validated by schema, so they match the entry point
         loadEntryPointRef({
           params: location.params(),
-        });
+        } as AnyEntryPointParams);
       }
       // eslint-disable-next-line react-hooks/exhaustive-deps
     }, [location]);
@@ -460,10 +464,8 @@ export function listRoutes() {
 }
 
 function entrypoint_fs_page___(): EntryPoint<ModuleType<'fs:page(/)'>, EntryPointParams<'/'>> {
-  const schema = z.object({});
-
-  function getPreloadProps({params}: {params: Record<string, any>}) {
-    const variables = schema.parse(params);
+  function getPreloadProps({params}: EntryPointParams<'/'>) {
+    const variables = params;
     return {
       queries: {
       }
@@ -478,10 +480,8 @@ function entrypoint_fs_page___(): EntryPoint<ModuleType<'fs:page(/)'>, EntryPoin
 }
 
 function entrypoint_fs_page__hello__name__(): EntryPoint<ModuleType<'fs:page(/hello/[name])'>, EntryPointParams<'/hello/:name'>> {
-  const schema = z.object({ name: z.pipe(z.string(), z.transform(decodeURIComponent)) });
-
-  function getPreloadProps({params}: {params: Record<string, any>}) {
-    const variables = schema.parse(params);
+  function getPreloadProps({params}: EntryPointParams<'/hello/:name'>) {
+    const variables = params;
     return {
       queries: {
         nameQuery: {
