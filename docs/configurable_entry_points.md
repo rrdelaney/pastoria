@@ -170,28 +170,54 @@ definition functions.
 
 # Implementation
 
-Once the above tasks are completed, implementing support for `entrypoint.ts`
-should be fairly straightforward.
+**STATUS: COMPLETE** - Custom `entrypoint.ts` files are now supported.
 
-1. When parsing the file system, if we find an `entrypoint.ts` file, use the
-   exported schema rather than generating our own based on the GraphQL query
-   types.
-2. The `page.tsx` file is still going to get an entrypoint generated for it, but
-   the implementation of `getPreloadProps` is simply going to be the one
-   imported from `entrypoint.ts`.
+~~Once the above tasks are completed, implementing support for `entrypoint.ts`
+should be fairly straightforward.~~
 
-The new generated code should look like:
+The implementation works as follows:
+
+1. When parsing the file system, if we find an `entrypoint.ts` file colocated
+   with a `page.tsx`, the custom entrypoint is associated with that page.
+2. The `page.tsx` file still provides the component, but `getPreloadProps` and
+   `schema` are imported from `entrypoint.ts`.
+3. The generated code still creates query and entry point helpers, which are
+   passed to the custom `getPreloadProps` function.
+
+The generated code for custom entry points looks like:
 
 ```tsx
-function entrypoint_fs_page__hello__name__(): EntryPoint<
-  ModuleType<'fs:page(/hello/[name])'>,
-  EntryPointParams<'/hello/[name]'>
-> {
+function entrypoint_fs_page__hello__name__() {
+  const queryHelpers = {
+    nameQuery: (variables: page_HelloQuery$variables) => ({
+      parameters: page_HelloQueryParameters,
+      variables,
+    }),
+  };
+  const entryPointHelpers = {
+    hello_banner: (variables: helloBanner_Query$variables) => ({
+      entryPointParams: {},
+      entryPoint: {
+        root: JSResource.fromModuleId('fs:page(/hello/[name])#hello_banner'),
+        getPreloadProps() {
+          return {
+            queries: {
+              helloBannerRef: {parameters: helloBanner_QueryParameters, variables},
+            },
+            entryPoints: undefined,
+          };
+        },
+      },
+    }),
+  };
   return {
     root: JSResource.fromModuleId('fs:page(/hello/[name])'),
-    getPreloadProps: getPreloadPropsImportedFromEntryPointFile, // this is not the real name of the generated import
+    getPreloadProps: (p: {params: Record<string, unknown>}) =>
+      customEp_fs_page__hello__name__({
+        params: p.params as z.infer<typeof customEp_fs_page__hello__name___schema>,
+        queries: queryHelpers,
+        entryPoints: entryPointHelpers,
+      }),
   };
 }
 ```
-
-Simple as that!
