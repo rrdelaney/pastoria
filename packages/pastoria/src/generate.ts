@@ -408,21 +408,41 @@ async function generateRouter(
     const resourceName = `fs:page(${routePath})`;
     const safeResourceName = resourceName.replace(/[^a-zA-Z0-9]/g, '_');
 
+    // Check if this page has a custom entrypoint.ts
+    const hasCustomEntryPoint = page.customEntryPointPath != null;
+
+    // Import custom entrypoint exports if present
+    let customEntryPointAlias: string | null = null;
+    if (hasCustomEntryPoint) {
+      customEntryPointAlias = `customEp_${safeResourceName}`;
+      routerTemplate.addImportDeclaration({
+        moduleSpecifier: routerTemplate.getRelativePathAsModuleSpecifierTo(
+          path.join(process.cwd(), page.customEntryPointPath!),
+        ),
+        defaultImport: customEntryPointAlias,
+        namedImports: [
+          {name: 'schema', alias: `${customEntryPointAlias}_schema`},
+        ],
+      });
+    }
+
     // Collect all queries consumed by this page and its nested entry points
     const consumedQueries = collectAllQueries(page);
 
-    // Add imports for query parameters and variable types
-    for (const queryName of consumedQueries) {
-      routerTemplate.addImportDeclaration({
-        moduleSpecifier: `#genfiles/queries/${queryName}$parameters`,
-        defaultImport: `${queryName}Parameters`,
-      });
-      // Add type-only import for variables (doesn't import runtime code)
-      routerTemplate.addImportDeclaration({
-        moduleSpecifier: `#genfiles/queries/${queryName}.graphql`,
-        namedImports: [`${queryName}$variables`],
-        isTypeOnly: true,
-      });
+    // Add imports for query parameters and variable types (only needed for generated entry points)
+    if (!hasCustomEntryPoint) {
+      for (const queryName of consumedQueries) {
+        routerTemplate.addImportDeclaration({
+          moduleSpecifier: `#genfiles/queries/${queryName}$parameters`,
+          defaultImport: `${queryName}Parameters`,
+        });
+        // Add type-only import for variables (doesn't import runtime code)
+        routerTemplate.addImportDeclaration({
+          moduleSpecifier: `#genfiles/queries/${queryName}.graphql`,
+          namedImports: [`${queryName}$variables`],
+          isTypeOnly: true,
+        });
+      }
     }
 
     // Build params schema from route params + query variables
@@ -433,8 +453,8 @@ async function generateRouter(
       params.set(paramName, tc.getStringType());
     }
 
-    // Also include query variables
-    if (consumedQueries.size > 0) {
+    // Also include query variables (only needed for generated entry points)
+    if (!hasCustomEntryPoint && consumedQueries.size > 0) {
       const queryParams = collectQueryParameters(
         project,
         Array.from(consumedQueries),
@@ -449,7 +469,10 @@ async function generateRouter(
 
     // Build schema expression string for the entry point to capture
     let schemaExpression: string;
-    if (params.size === 0) {
+    if (hasCustomEntryPoint) {
+      // Use the imported schema from the custom entrypoint
+      schemaExpression = `${customEntryPointAlias}_schema`;
+    } else if (params.size === 0) {
       schemaExpression = 'z.object({})';
     } else {
       const schemaFields = Array.from(params.entries())
@@ -462,29 +485,122 @@ async function generateRouter(
     }
 
     // Generate the entry point function
-    routerTemplate.addFunction({
-      name: `entrypoint_${safeResourceName}`,
-      statements: (writer) => {
-        writeFilesystemEntryPoint(
-          writer,
-          project,
-          page,
-          resourceName,
-          routePath,
-          schemaExpression,
-        );
-        writer.write('return ').block(() => {
-          writer.writeLine(`root: JSResource.fromModuleId('${resourceName}'),`);
-          writer.writeLine(
-            'getPreloadProps: (p: {params: Record<string, unknown>}) => getPreloadProps({',
-          );
-          writer.writeLine('  params: p.params as z.infer<typeof schema>,');
-          writer.writeLine('  queries: queryHelpers,');
-          writer.writeLine('  entryPoints: entryPointHelpers,');
-          writer.writeLine('}),');
+    if (hasCustomEntryPoint) {
+      // Custom entrypoint: use imported getPreloadProps but still wrap with helpers
+      // First, add query parameter imports needed for the helpers
+      for (const queryName of consumedQueries) {
+        routerTemplate.addImportDeclaration({
+          moduleSpecifier: `#genfiles/queries/${queryName}$parameters`,
+          defaultImport: `${queryName}Parameters`,
         });
-      },
-    });
+        routerTemplate.addImportDeclaration({
+          moduleSpecifier: `#genfiles/queries/${queryName}.graphql`,
+          namedImports: [`${queryName}$variables`],
+          isTypeOnly: true,
+        });
+      }
+
+      routerTemplate.addFunction({
+        name: `entrypoint_${safeResourceName}`,
+        statements: (writer) => {
+          // Generate query helpers
+          writer.write('const queryHelpers = ').block(() => {
+            for (const [queryRef, queryName] of page.queries.entries()) {
+              writer.writeLine(
+                `${queryRef}: (variables: ${queryName}$variables) => ({ parameters: ${queryName}Parameters, variables }),`,
+              );
+            }
+          });
+          writer.writeLine(';');
+
+          // Generate entry point helpers
+          writer.write('const entryPointHelpers = ').block(() => {
+            for (const [
+              epName,
+              nestedPage,
+            ] of page.nestedEntryPoints.entries()) {
+              const nestedResourceName = `${resourceName}#${epName}`;
+              const nestedQueryNames = Array.from(nestedPage.queries.values());
+              const variablesType =
+                nestedQueryNames.length === 0
+                  ? 'Record<string, never>'
+                  : nestedQueryNames.map((q) => `${q}$variables`).join(' & ');
+
+              writer
+                .write(`${epName}: (variables: ${variablesType}) => (`)
+                .block(() => {
+                  writer.writeLine('entryPointParams: {},');
+                  writer.write('entryPoint: ').block(() => {
+                    writer.writeLine(
+                      `root: JSResource.fromModuleId('${nestedResourceName}'),`,
+                    );
+                    writer.write('getPreloadProps() ').block(() => {
+                      writer.write('return ').block(() => {
+                        writer.write('queries: ').block(() => {
+                          for (const [
+                            nestedQueryRef,
+                            nestedQueryName,
+                          ] of nestedPage.queries.entries()) {
+                            writer.writeLine(
+                              `${nestedQueryRef}: { parameters: ${nestedQueryName}Parameters, variables },`,
+                            );
+                          }
+                        });
+                        writer.writeLine(',');
+                        writer.writeLine('entryPoints: undefined');
+                      });
+                    });
+                  });
+                });
+              writer.writeLine('),');
+            }
+          });
+          writer.writeLine(';');
+
+          writer.write('return ').block(() => {
+            writer.writeLine(
+              `root: JSResource.fromModuleId('${resourceName}'),`,
+            );
+            writer.writeLine(
+              `getPreloadProps: (p: {params: Record<string, unknown>}) => ${customEntryPointAlias}({`,
+            );
+            writer.writeLine(
+              `  params: p.params as z.infer<typeof ${customEntryPointAlias}_schema>,`,
+            );
+            writer.writeLine('  queries: queryHelpers,');
+            writer.writeLine('  entryPoints: entryPointHelpers,');
+            writer.writeLine('}),');
+          });
+        },
+      });
+    } else {
+      // Generated entrypoint: create getPreloadProps from page queries
+      routerTemplate.addFunction({
+        name: `entrypoint_${safeResourceName}`,
+        statements: (writer) => {
+          writeFilesystemEntryPoint(
+            writer,
+            project,
+            page,
+            resourceName,
+            routePath,
+            schemaExpression,
+          );
+          writer.write('return ').block(() => {
+            writer.writeLine(
+              `root: JSResource.fromModuleId('${resourceName}'),`,
+            );
+            writer.writeLine(
+              'getPreloadProps: (p: {params: Record<string, unknown>}) => getPreloadProps({',
+            );
+            writer.writeLine('  params: p.params as z.infer<typeof schema>,');
+            writer.writeLine('  queries: queryHelpers,');
+            writer.writeLine('  entryPoints: entryPointHelpers,');
+            writer.writeLine('}),');
+          });
+        },
+      });
+    }
 
     // Add route configuration (uses bracket format, converted to colon for radix3 at runtime)
     routerConf.addPropertyAssignment({
@@ -492,8 +608,6 @@ async function generateRouter(
       initializer: (writer) => {
         writer.write('{').indent(() => {
           writer.writeLine(`entrypoint: entrypoint_${safeResourceName}(),`);
-          // Schema is duplicated here for better type inference
-          // (also defined in entry point function for use by wrappedGetPreloadProps)
           writer.writeLine(`schema: ${schemaExpression}`);
         });
         writer.write('} as const');
@@ -505,54 +619,7 @@ async function generateRouter(
       pc.cyan(routePath),
       'from',
       pc.yellow(page.filePath),
-    );
-  }
-
-  // Process manual entry points (entrypoint.ts files)
-  for (const [routePath, entryPoint] of fsMetadata.entryPoints.entries()) {
-    const importAlias = `ep_${routePath.replace(/[^a-zA-Z0-9]/g, '_')}`;
-
-    routerTemplate.addImportDeclaration({
-      moduleSpecifier: routerTemplate.getRelativePathAsModuleSpecifierTo(
-        path.join(process.cwd(), entryPoint.filePath),
-      ),
-      defaultImport: importAlias,
-    });
-
-    // Generate schema from params
-    const params = new Map<string, ts.Type>();
-    for (const paramName of entryPoint.params) {
-      params.set(paramName, tc.getStringType());
-    }
-
-    // Add route configuration (uses bracket format, converted to colon for radix3 at runtime)
-    routerConf.addPropertyAssignment({
-      name: `"${routePath}"`,
-      initializer: (writer) => {
-        writer.write('{').indent(() => {
-          writer.writeLine(`entrypoint: ${importAlias},`);
-
-          if (params.size === 0) {
-            writer.writeLine('schema: z.object({})');
-          } else {
-            writer.writeLine('schema: z.object({');
-            for (const [paramName, paramType] of params) {
-              writer.writeLine(
-                `  ${paramName}: ${zodSchemaOfType(routerTemplate, tc, paramType)},`,
-              );
-            }
-            writer.writeLine('})');
-          }
-        });
-        writer.write('} as const');
-      },
-    });
-
-    logInfo(
-      'Created manual entry point',
-      pc.cyan(routePath),
-      'from',
-      pc.yellow(entryPoint.filePath),
+      hasCustomEntryPoint ? '(custom entrypoint)' : '',
     );
   }
 

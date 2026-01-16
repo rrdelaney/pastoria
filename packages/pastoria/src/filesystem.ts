@@ -58,6 +58,13 @@ export interface FilesystemPage {
    * Maps entry point name to its page definition.
    */
   nestedEntryPoints: Map<string, FilesystemPage>;
+
+  /**
+   * Path to a custom entrypoint.ts file if one exists in the same directory.
+   * When present, the schema and getPreloadProps are imported from this file
+   * instead of being generated.
+   */
+  customEntryPointPath: string | null;
 }
 
 /**
@@ -369,6 +376,7 @@ export function scanFilesystemRoutes(project: Project): FilesystemMetadata {
       params,
       queries,
       nestedEntryPoints: new Map(),
+      customEntryPointPath: null,
     };
 
     metadata.pages.set(routePath, page);
@@ -413,6 +421,7 @@ export function scanFilesystemRoutes(project: Project): FilesystemMetadata {
       params,
       queries,
       nestedEntryPoints: new Map(), // Nested entry points can't have their own nested entry points
+      customEntryPointPath: null, // Nested entry points can't have custom entrypoint.ts
     };
 
     parentPage.nestedEntryPoints.set(entryPointName, nestedPage);
@@ -425,30 +434,27 @@ export function scanFilesystemRoutes(project: Project): FilesystemMetadata {
     );
   }
 
-  // Process manual entry point files
+  // Associate custom entrypoint.ts files with their colocated page.tsx
   for (const sourceFile of entryPointFiles) {
     const absolutePath = sourceFile.getFilePath();
     const filePath = path.relative(process.cwd(), absolutePath);
-    const {routePath, params} = parseRoutePath(filePath);
+    const {routePath} = parseRoutePath(filePath);
 
-    // Manual entry points take precedence over page.tsx
-    if (metadata.pages.has(routePath)) {
+    // Find the colocated page
+    const page = metadata.pages.get(routePath);
+    if (!page) {
       logWarn(
-        `Manual entrypoint.ts at ${filePath} overrides page.tsx for route ${routePath}`,
+        `Custom entrypoint.ts at ${filePath} has no colocated page.tsx for route ${routePath}. ` +
+          `Each entrypoint.ts must have a colocated page.tsx file.`,
       );
-      metadata.pages.delete(routePath);
+      continue;
     }
 
-    const entryPoint: FilesystemEntryPoint = {
-      routePath,
-      filePath,
-      params,
-    };
-
-    metadata.entryPoints.set(routePath, entryPoint);
+    // Associate the custom entrypoint with the page
+    page.customEntryPointPath = filePath;
 
     logInfo(
-      'Found manual entry point',
+      'Found custom entrypoint',
       pc.cyan(routePath),
       'at',
       pc.yellow(filePath),
