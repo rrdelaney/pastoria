@@ -60,22 +60,26 @@ export const schema = z.object({
   id: z.string(),
 
   // URL-encoded parameter (transform)
-  name: z.string().transform(decodeURIComponent),
+  name: z.pipe(z.string(), z.transform(decodeURIComponent)),
 
-  // Optional search parameter
-  page: z.coerce.number().optional(),
+  // Optional search parameter (nullish allows undefined from URL)
+  page: z.pipe(
+    z.nullish(z.coerce.number()),
+    z.transform((n) => n ?? undefined),
+  ),
 
   // Nullable with default
-  sort: z
-    .string()
-    .nullish()
-    .transform((s) => s ?? 'date'),
+  sort: z.pipe(
+    z.nullish(z.string()),
+    z.transform((s) => s ?? 'date'),
+  ),
 });
 ```
 
-Pastoria uses [Zod](https://zod.dev) for schema validation. The schema is
-applied to the merged route and search parameters before `getPreloadProps` is
-called.
+Pastoria uses [Zod v4-mini](https://zod.dev) for schema validation, which has a
+slightly different API from standard Zod (using `z.pipe()` for transforms). The
+schema is applied to the merged route and search parameters before
+`getPreloadProps` is called.
 
 ### `getPreloadProps` Function
 
@@ -134,8 +138,8 @@ import type {PreloadPropsForRoute} from '#genfiles/router/types';
 import * as z from 'zod/v4-mini';
 
 export const schema = z.object({
-  name: z.string().transform(decodeURIComponent),
-  showBanner: z.coerce.boolean().optional(),
+  name: z.pipe(z.string(), z.transform(decodeURIComponent)),
+  showBanner: z.nullish(z.coerce.boolean()),
 });
 
 export default function getPreloadProps({
@@ -171,11 +175,13 @@ Compute query variables from multiple parameters:
 
 ```tsx
 // pastoria/search/entrypoint.ts
+import * as z from 'zod/v4-mini';
+
 export const schema = z.object({
-  q: z.string().optional(),
-  category: z.string().optional(),
-  minPrice: z.coerce.number().optional(),
-  maxPrice: z.coerce.number().optional(),
+  q: z.nullish(z.string()),
+  category: z.nullish(z.string()),
+  minPrice: z.nullish(z.coerce.number()),
+  maxPrice: z.nullish(z.coerce.number()),
 });
 
 export default function getPreloadProps({params, queries, entryPoints}) {
@@ -280,12 +286,12 @@ import * as z from 'zod/v4-mini';
 
 export const schema = z.object({
   // Route parameters
-  category: z.string().transform(decodeURIComponent),
+  category: z.pipe(z.string(), z.transform(decodeURIComponent)),
   id: z.string(),
 
   // Search parameters
-  showReviews: z.coerce.boolean().optional(),
-  compareWith: z.string().optional(),
+  showReviews: z.nullish(z.coerce.boolean()),
+  compareWith: z.nullish(z.string()),
 });
 
 export default function getPreloadProps({

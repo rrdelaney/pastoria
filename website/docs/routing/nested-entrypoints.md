@@ -185,7 +185,7 @@ import type {PreloadPropsForRoute} from '#genfiles/router/types';
 import * as z from 'zod/v4-mini';
 
 export const schema = z.object({
-  name: z.string().transform(decodeURIComponent),
+  name: z.pipe(z.string(), z.transform(decodeURIComponent)),
 });
 
 export default function getPreloadProps({
