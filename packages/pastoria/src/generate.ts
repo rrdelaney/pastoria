@@ -839,7 +839,12 @@ async function generateTypes(project: Project, fsMetadata: FilesystemMetadata) {
           queryNames.length === 0
             ? 'Record<string, never>'
             : queryNames.map((q) => `${q}$variables`).join(' & ');
-        return `${epName}: (variables: ${variablesType}) => { entryPointParams: Record<string, never>; entryPoint: EntryPoint<EntryPointComponent<${nestedTypeName}['queries'], ${nestedTypeName}['entryPoints'], {}, {}>, {}> }`;
+        // Optional entry points can return undefined
+        const baseReturnType = `{ entryPointParams: Record<string, never>; entryPoint: EntryPoint<EntryPointComponent<${nestedTypeName}['queries'], ${nestedTypeName}['entryPoints'], {}, {}>, {}> }`;
+        const returnType = nestedPage.optional
+          ? `${baseReturnType} | undefined`
+          : baseReturnType;
+        return `${epName}: (variables: ${variablesType}) => ${returnType}`;
       })
       .join('; ')} }`;
   }
@@ -890,10 +895,11 @@ async function generateTypes(project: Project, fsMetadata: FilesystemMetadata) {
 
     let entryPointsType = '{}';
     if (page.nestedEntryPoints.size > 0) {
-      const epTypes = Array.from(page.nestedEntryPoints.keys())
-        .map((epName) => {
+      const epTypes = Array.from(page.nestedEntryPoints.entries())
+        .map(([epName, nestedPage]) => {
           const nestedTypeName = routeToTypeName(routePath, epName);
-          return `${epName}: EntryPoint<EntryPointComponent<${nestedTypeName}['queries'], ${nestedTypeName}['entryPoints'], {}, {}>, {}>`;
+          const optionalMarker = nestedPage.optional ? '?' : '';
+          return `${epName}${optionalMarker}: EntryPoint<EntryPointComponent<${nestedTypeName}['queries'], ${nestedTypeName}['entryPoints'], {}, {}>, {}>`;
         })
         .join('; ');
       entryPointsType = `{ ${epTypes} }`;

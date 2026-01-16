@@ -60,6 +60,13 @@ export interface FilesystemPage {
   nestedEntryPoints: Map<string, FilesystemPage>;
 
   /**
+   * Whether this nested entry point is optional.
+   * Optional entry points are defined with parentheses: `(name).page.tsx`
+   * They can be omitted from getPreloadProps return value.
+   */
+  optional: boolean;
+
+  /**
    * Path to a custom entrypoint.ts file if one exists in the same directory.
    * When present, the schema and getPreloadProps are imported from this file
    * instead of being generated.
@@ -174,18 +181,30 @@ export function toRouterPath(routePath: string): string {
 
 /**
  * Extracts the entry point name from a nested entry point file.
+ * Also detects if the entry point is optional (wrapped in parentheses).
  *
  * @example
  * getNestedEntryPointName("pastoria/banner.page.tsx")
- * // Returns: "banner"
+ * // Returns: { name: "banner", optional: false }
  *
  * @example
- * getNestedEntryPointName("pastoria/sidebar.page.tsx")
- * // Returns: "sidebar"
+ * getNestedEntryPointName("pastoria/(sidebar).page.tsx")
+ * // Returns: { name: "sidebar", optional: true }
  */
-export function getNestedEntryPointName(filePath: string): string | null {
+export function getNestedEntryPointName(
+  filePath: string,
+): {name: string; optional: boolean} | null {
   const match = filePath.match(/\/([^/]+)\.page\.tsx?$/);
-  return match?.[1] ?? null;
+  if (!match?.[1]) return null;
+
+  const rawName = match[1];
+  // Check if wrapped in parentheses: (name) -> optional
+  const optionalMatch = rawName.match(/^\(([^)]+)\)$/);
+  if (optionalMatch?.[1]) {
+    return {name: optionalMatch[1], optional: true};
+  }
+
+  return {name: rawName, optional: false};
 }
 
 // ============================================================================
@@ -376,6 +395,7 @@ export function scanFilesystemRoutes(project: Project): FilesystemMetadata {
       params,
       queries,
       nestedEntryPoints: new Map(),
+      optional: false, // Main pages are never optional
       customEntryPointPath: null,
     };
 
@@ -394,8 +414,10 @@ export function scanFilesystemRoutes(project: Project): FilesystemMetadata {
   for (const sourceFile of nestedEntryPointFiles) {
     const absolutePath = sourceFile.getFilePath();
     const filePath = path.relative(process.cwd(), absolutePath);
-    const entryPointName = getNestedEntryPointName(filePath);
-    if (!entryPointName) continue;
+    const entryPointInfo = getNestedEntryPointName(filePath);
+    if (!entryPointInfo) continue;
+
+    const {name: entryPointName, optional} = entryPointInfo;
 
     // Find the parent directory's route
     const parentDir = path.dirname(filePath);
@@ -421,6 +443,7 @@ export function scanFilesystemRoutes(project: Project): FilesystemMetadata {
       params,
       queries,
       nestedEntryPoints: new Map(), // Nested entry points can't have their own nested entry points
+      optional, // Whether this entry point can be omitted
       customEntryPointPath: null, // Nested entry points can't have custom entrypoint.ts
     };
 
@@ -429,6 +452,7 @@ export function scanFilesystemRoutes(project: Project): FilesystemMetadata {
     logInfo(
       'Found nested entry point',
       pc.cyan(entryPointName),
+      optional ? pc.yellow('(optional)') : '',
       'for route',
       pc.cyan(parentRoutePath),
     );

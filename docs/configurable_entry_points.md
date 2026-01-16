@@ -216,17 +216,29 @@ function entrypoint_fs_page__hello__name__() {
   };
   return {
     root: JSResource.fromModuleId('fs:page(/hello/[name])'),
-    getPreloadProps: (p: {params: Record<string, unknown>}) =>
+    getPreloadProps: (p: {
+      params: z.infer<typeof customEp_fs_page__hello__name___schema>;
+    }) =>
       customEp_fs_page__hello__name__({
-        params: p.params as z.infer<
-          typeof customEp_fs_page__hello__name___schema
-        >,
+        params: p.params,
         queries: queryHelpers,
         entryPoints: entryPointHelpers,
       }),
   };
 }
 ```
+
+## Partial Entrypoint Loading
+
+One of the big goals here is allowing users to decide if they should or should
+not load a nested entrypoint in `entrypoint.ts`. Great example of this is
+deciding what tab to load in navigation. If we were to provide `undefined` for
+an entrypoint though, we would get a type error. To workaround this, any nested
+entrypoint wrapped with `?` should be generated as optional in `page.tsx`.
+
+For example, the file `pastoria/hello/[name]/(banner).page.tsx` would be an
+optional entrypoint that `entrypoint.ts` can validly provide `undefined` for,
+and in `page.tsx` would be an optional property of `entryPoints`.
 
 ## Limitations
 
