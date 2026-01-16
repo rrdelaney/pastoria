@@ -238,110 +238,115 @@ function writeFilesystemEntryPoint(
   project: Project,
   page: FilesystemPage,
   resourceName: string,
-  routerPath: string,
+  routePath: string,
+  schemaExpression: string,
 ) {
-  // Write getPreloadProps as a named function
-  const hasQueries = page.queries.size > 0;
   const hasNestedEntryPoints = page.nestedEntryPoints.size > 0;
 
+  // Define schema locally so it can be referenced by wrappedGetPreloadProps
+  writer.writeLine(`const schema = ${schemaExpression};`);
+
+  // Generate query helper functions
+  writer.write('const queryHelpers = ').block(() => {
+    for (const [queryRef, queryName] of page.queries.entries()) {
+      writer.writeLine(
+        `${queryRef}: (variables: ${queryName}$variables) => ({ parameters: ${queryName}Parameters, variables }),`,
+      );
+    }
+  });
+  writer.writeLine(';');
+
+  // Generate entry point helper functions
+  writer.write('const entryPointHelpers = ').block(() => {
+    for (const [epName, nestedPage] of page.nestedEntryPoints.entries()) {
+      const nestedResourceName = `${resourceName}#${epName}`;
+
+      // Build the combined variables type from all queries in this nested entry point
+      const nestedQueryNames = Array.from(nestedPage.queries.values());
+      const variablesType =
+        nestedQueryNames.length === 0
+          ? 'Record<string, never>'
+          : nestedQueryNames.map((q) => `${q}$variables`).join(' & ');
+
+      writer
+        .write(`${epName}: (variables: ${variablesType}) => (`)
+        .block(() => {
+          writer.writeLine('entryPointParams: {},');
+          writer.write('entryPoint: ').block(() => {
+            writer.writeLine(
+              `root: JSResource.fromModuleId('${nestedResourceName}'),`,
+            );
+            writer.write('getPreloadProps() ').block(() => {
+              writer.write('return ').block(() => {
+                writer.write('queries: ').block(() => {
+                  for (const [
+                    nestedQueryRef,
+                    nestedQueryName,
+                  ] of nestedPage.queries.entries()) {
+                    writer.writeLine(
+                      `${nestedQueryRef}: { parameters: ${nestedQueryName}Parameters, variables },`,
+                    );
+                  }
+                });
+                writer.writeLine(',');
+                writer.writeLine('entryPoints: undefined');
+              });
+            });
+          });
+        });
+      writer.writeLine('),');
+    }
+  });
+  writer.writeLine(';');
+
+  // Write getPreloadProps using the helpers
   writer
     .write(
-      `function getPreloadProps({params}: EntryPointParams<'${routerPath}'>)`,
+      `function getPreloadProps({params, queries, entryPoints}: EntryPointParams<'${routePath}'>)`,
     )
     .block(() => {
       // Params are already parsed and typed via EntryPointParams<R>
       writer.writeLine('const variables = params;');
 
-      writer.write('return').block(() => {
-        // Write queries object
-        writer.write('queries:').block(() => {
-          for (const [queryRef, queryName] of page.queries.entries()) {
-            // Collect variables needed by this specific query
-            const queryVars = collectQueryParameters(project, [queryName]);
-            const hasVariables = queryVars.size > 0;
-
-            writer.write(`${queryRef}:`).block(() => {
-              writer.writeLine(`parameters: ${queryName}Parameters,`);
-
-              if (hasVariables) {
-                const varNames = Array.from(queryVars.keys());
-                writer.write('variables: {');
-                writer.write(
-                  varNames.map((v) => `${v}: variables.${v}`).join(', '),
-                );
-                writer.write('}');
-              } else {
-                writer.write('variables: {}');
-              }
-              writer.newLine();
-            });
-            writer.write(',');
+      writer.write('return ').block(() => {
+        // Write queries using helpers
+        writer.write('queries: ').block(() => {
+          for (const [queryRef, _queryName] of page.queries.entries()) {
+            const queryVars = collectQueryParameters(project, [
+              page.queries.get(queryRef)!,
+            ]);
+            if (queryVars.size > 0) {
+              const varNames = Array.from(queryVars.keys());
+              writer.writeLine(
+                `${queryRef}: queries.${queryRef}({${varNames.map((v) => `${v}: variables.${v}`).join(', ')}}),`,
+              );
+            } else {
+              writer.writeLine(`${queryRef}: queries.${queryRef}({}),`);
+            }
           }
         });
         writer.writeLine(',');
 
-        // Write nested entry points (undefined if none)
+        // Write entry points using helpers
         if (hasNestedEntryPoints) {
-          writer.write('entryPoints:').block(() => {
+          writer.write('entryPoints: ').block(() => {
             for (const [
               epName,
               nestedPage,
             ] of page.nestedEntryPoints.entries()) {
-              const nestedResourceName = `${resourceName}#${epName}`;
-
-              writer.write(`${epName}:`).block(() => {
-                writer.writeLine('entryPointParams: {},');
-                writer.write('entryPoint:').block(() => {
-                  // Write nested entry point (without param parsing)
-                  writer.writeLine(
-                    `root: JSResource.fromModuleId('${nestedResourceName}'),`,
-                  );
-                  writer.write('getPreloadProps()').block(() => {
-                    writer.write('return').block(() => {
-                      writer.write('queries:').block(() => {
-                        for (const [
-                          nestedQueryRef,
-                          nestedQueryName,
-                        ] of nestedPage.queries.entries()) {
-                          // Collect variables needed by this nested query
-                          const nestedQueryVars = collectQueryParameters(
-                            project,
-                            [nestedQueryName],
-                          );
-                          const hasNestedVariables = nestedQueryVars.size > 0;
-
-                          writer.write(`${nestedQueryRef}:`).block(() => {
-                            writer.writeLine(
-                              `parameters: ${nestedQueryName}Parameters,`,
-                            );
-
-                            if (hasNestedVariables) {
-                              const varNames = Array.from(
-                                nestedQueryVars.keys(),
-                              );
-                              writer.write('variables: {');
-                              writer.write(
-                                varNames
-                                  .map((v) => `${v}: variables.${v}`)
-                                  .join(', '),
-                              );
-                              writer.write('}');
-                            } else {
-                              writer.write('variables: {}');
-                            }
-                            writer.newLine();
-                          });
-                          writer.write(',');
-                        }
-                      });
-                      writer.writeLine(',');
-                      // Nested entry points don't have further nesting
-                      writer.writeLine('entryPoints: undefined');
-                    });
-                  });
-                });
-              });
-              writer.writeLine(',');
+              // Collect all variables needed by this nested entry point
+              const nestedVars = collectQueryParameters(
+                project,
+                Array.from(nestedPage.queries.values()),
+              );
+              if (nestedVars.size > 0) {
+                const varNames = Array.from(nestedVars.keys());
+                writer.writeLine(
+                  `${epName}: entryPoints.${epName}({${varNames.map((v) => `${v}: variables.${v}`).join(', ')}}),`,
+                );
+              } else {
+                writer.writeLine(`${epName}: entryPoints.${epName}({}),`);
+              }
             }
           });
         } else {
@@ -388,13 +393,17 @@ async function generateRouter(
     namedImports: ['JSResource', 'ModuleType'],
   });
 
+  // Add helper types import from types.ts
+  routerTemplate.addImportDeclaration({
+    moduleSpecifier: './types',
+    namedImports: ['QueryHelpersForRoute', 'EntryPointHelpersForRoute'],
+    isTypeOnly: true,
+  });
+
   const tc = project.getTypeChecker().compilerObject;
 
   // Process each page
   for (const [routePath, page] of fsMetadata.pages.entries()) {
-    // Convert [param] to :param for the router
-    const routerPath = toRouterPath(routePath);
-
     // Create a unique resource name for this page
     const resourceName = `fs:page(${routePath})`;
     const safeResourceName = resourceName.replace(/[^a-zA-Z0-9]/g, '_');
@@ -402,11 +411,17 @@ async function generateRouter(
     // Collect all queries consumed by this page and its nested entry points
     const consumedQueries = collectAllQueries(page);
 
-    // Add imports for query parameters
+    // Add imports for query parameters and variable types
     for (const queryName of consumedQueries) {
       routerTemplate.addImportDeclaration({
         moduleSpecifier: `#genfiles/queries/${queryName}$parameters`,
         defaultImport: `${queryName}Parameters`,
+      });
+      // Add type-only import for variables (doesn't import runtime code)
+      routerTemplate.addImportDeclaration({
+        moduleSpecifier: `#genfiles/queries/${queryName}.graphql`,
+        namedImports: [`${queryName}$variables`],
+        isTypeOnly: true,
       });
     }
 
@@ -449,28 +464,36 @@ async function generateRouter(
     // Generate the entry point function
     routerTemplate.addFunction({
       name: `entrypoint_${safeResourceName}`,
-      returnType: `EntryPoint<ModuleType<'${resourceName}'>, EntryPointParams<'${routerPath}'>>`,
       statements: (writer) => {
         writeFilesystemEntryPoint(
           writer,
           project,
           page,
           resourceName,
-          routerPath,
+          routePath,
+          schemaExpression,
         );
         writer.write('return ').block(() => {
           writer.writeLine(`root: JSResource.fromModuleId('${resourceName}'),`);
-          writer.writeLine('getPreloadProps,');
+          writer.writeLine(
+            'getPreloadProps: (p: {params: Record<string, unknown>}) => getPreloadProps({',
+          );
+          writer.writeLine('  params: p.params as z.infer<typeof schema>,');
+          writer.writeLine('  queries: queryHelpers,');
+          writer.writeLine('  entryPoints: entryPointHelpers,');
+          writer.writeLine('}),');
         });
       },
     });
 
-    // Add route configuration (uses :param format for radix3 router)
+    // Add route configuration (uses bracket format, converted to colon for radix3 at runtime)
     routerConf.addPropertyAssignment({
-      name: `"${routerPath}"`,
+      name: `"${routePath}"`,
       initializer: (writer) => {
         writer.write('{').indent(() => {
           writer.writeLine(`entrypoint: entrypoint_${safeResourceName}(),`);
+          // Schema is duplicated here for better type inference
+          // (also defined in entry point function for use by wrappedGetPreloadProps)
           writer.writeLine(`schema: ${schemaExpression}`);
         });
         writer.write('} as const');
@@ -487,8 +510,6 @@ async function generateRouter(
 
   // Process manual entry points (entrypoint.ts files)
   for (const [routePath, entryPoint] of fsMetadata.entryPoints.entries()) {
-    // Convert [param] to :param for the router
-    const routerPath = toRouterPath(routePath);
     const importAlias = `ep_${routePath.replace(/[^a-zA-Z0-9]/g, '_')}`;
 
     routerTemplate.addImportDeclaration({
@@ -504,8 +525,9 @@ async function generateRouter(
       params.set(paramName, tc.getStringType());
     }
 
+    // Add route configuration (uses bracket format, converted to colon for radix3 at runtime)
     routerConf.addPropertyAssignment({
-      name: `"${routerPath}"`,
+      name: `"${routePath}"`,
       initializer: (writer) => {
         writer.write('{').indent(() => {
           writer.writeLine(`entrypoint: ${importAlias},`);
@@ -710,8 +732,9 @@ async function generateTypes(project: Project, fsMetadata: FilesystemMetadata) {
     {overwrite: true},
   );
 
-  // Collect all query types to import
+  // Collect all query types to import (both the query type and $variables type)
   const queryImports = new Set<string>();
+  const variablesImports = new Set<string>();
 
   // Helper to build queries type string
   function buildQueriesType(queries: Map<string, string>): string {
@@ -720,6 +743,38 @@ async function generateTypes(project: Project, fsMetadata: FilesystemMetadata) {
       .map(([ref, queryTypeName]) => {
         queryImports.add(queryTypeName);
         return `${ref}: ${queryTypeName}`;
+      })
+      .join('; ')} }`;
+  }
+
+  // Helper to build query helper type for a route
+  function buildQueryHelpersType(queries: Map<string, string>): string {
+    if (queries.size === 0) return '{}';
+    return `{ ${Array.from(queries.entries())
+      .map(([ref, queryTypeName]) => {
+        variablesImports.add(queryTypeName);
+        return `${ref}: (variables: ${queryTypeName}$variables) => { parameters: unknown; variables: ${queryTypeName}$variables }`;
+      })
+      .join('; ')} }`;
+  }
+
+  // Helper to build entry point helper type for a route
+  function buildEntryPointHelpersType(
+    routePath: string,
+    nestedEntryPoints: Map<string, FilesystemPage>,
+  ): string {
+    if (nestedEntryPoints.size === 0) return '{}';
+    return `{ ${Array.from(nestedEntryPoints.entries())
+      .map(([epName, nestedPage]) => {
+        const nestedTypeName = routeToTypeName(routePath, epName);
+        // Build intersection of all query variable types for this nested entry point
+        const queryNames = Array.from(nestedPage.queries.values());
+        queryNames.forEach((q) => variablesImports.add(q));
+        const variablesType =
+          queryNames.length === 0
+            ? 'Record<string, never>'
+            : queryNames.map((q) => `${q}$variables`).join(' & ');
+        return `${epName}: (variables: ${variablesType}) => { entryPointParams: Record<string, never>; entryPoint: EntryPoint<EntryPointComponent<${nestedTypeName}['queries'], ${nestedTypeName}['entryPoints'], {}, {}>, {}> }`;
       })
       .join('; ')} }`;
   }
@@ -796,11 +851,48 @@ async function generateTypes(project: Project, fsMetadata: FilesystemMetadata) {
     }
   }
 
+  // Phase 4: Generate helper type aliases for each route
+  const queryHelperAliases: string[] = [];
+  const entryPointHelperAliases: string[] = [];
+  const queryHelpersMapEntries: string[] = [];
+  const entryPointHelpersMapEntries: string[] = [];
+
+  for (const [routePath, page] of fsMetadata.pages.entries()) {
+    const typeName = routeToTypeName(routePath);
+
+    // Query helpers type
+    const queryHelpersType = buildQueryHelpersType(page.queries);
+    queryHelperAliases.push(
+      `type QueryHelpers_${typeName} = ${queryHelpersType};`,
+    );
+    queryHelpersMapEntries.push(`  '${routePath}': QueryHelpers_${typeName}`);
+
+    // Entry point helpers type
+    const entryPointHelpersType = buildEntryPointHelpersType(
+      routePath,
+      page.nestedEntryPoints,
+    );
+    entryPointHelperAliases.push(
+      `type EntryPointHelpers_${typeName} = ${entryPointHelpersType};`,
+    );
+    entryPointHelpersMapEntries.push(
+      `  '${routePath}': EntryPointHelpers_${typeName}`,
+    );
+  }
+
   // Generate import statements for query types
   const queryImportStatements = Array.from(queryImports)
     .map(
       (queryTypeName) =>
         `import type {${queryTypeName}} from '#genfiles/queries/${queryTypeName}.graphql';`,
+    )
+    .join('\n');
+
+  // Generate import statements for $variables types
+  const variablesImportStatements = Array.from(variablesImports)
+    .map(
+      (queryTypeName) =>
+        `import type {${queryTypeName}$variables} from '#genfiles/queries/${queryTypeName}.graphql';`,
     )
     .join('\n');
 
@@ -813,6 +905,7 @@ async function generateTypes(project: Project, fsMetadata: FilesystemMetadata) {
 
 import type {EntryPoint, EntryPointComponent, EntryPointProps} from 'react-relay/hooks';
 ${queryImportStatements ? '\n' + queryImportStatements : ''}
+${variablesImportStatements ? '\n' + variablesImportStatements : ''}
 
 // Route type aliases - nested entry points (leaf nodes)
 ${nestedTypeAliases.join('\n')}
@@ -827,6 +920,36 @@ ${mainTypeAliases.join('\n')}
 export interface PageQueryMap {
 ${routeTypes.join(';\n')}${routeTypes.length > 0 ? ';' : ''}
 }
+
+// Query helper type aliases for each route
+${queryHelperAliases.join('\n')}
+
+// Entry point helper type aliases for each route
+${entryPointHelperAliases.join('\n')}
+
+/**
+ * Query helper functions for a route.
+ * Each helper takes typed variables and returns {parameters, variables} for Relay.
+ */
+export interface QueryHelpersMap {
+${queryHelpersMapEntries.join(';\n')}${queryHelpersMapEntries.length > 0 ? ';' : ''}
+}
+
+export type QueryHelpersForRoute<R extends string> = R extends keyof QueryHelpersMap
+  ? QueryHelpersMap[R]
+  : {};
+
+/**
+ * Entry point helper functions for a route.
+ * Each helper takes typed variables and returns the nested entry point configuration.
+ */
+export interface EntryPointHelpersMap {
+${entryPointHelpersMapEntries.join(';\n')}${entryPointHelpersMapEntries.length > 0 ? ';' : ''}
+}
+
+export type EntryPointHelpersForRoute<R extends string> = R extends keyof EntryPointHelpersMap
+  ? EntryPointHelpersMap[R]
+  : {};
 
 /**
  * Props type for a page component at the given route.
@@ -851,6 +974,45 @@ export type PageProps<R extends keyof PageQueryMap> = EntryPointProps<
   {},
   {}
 >;
+
+/**
+ * Return type for getPreloadProps in entrypoint.ts files.
+ * This type matches the structure expected by Relay's loadEntryPoint.
+ *
+ * @example
+ * \`\`\`typescript
+ * export default function getPreloadProps({
+ *   params,
+ *   queries,
+ *   entryPoints,
+ * }: EntryPointParams<'/posts'>): PreloadPropsForRoute<'/posts'> {
+ *   return {
+ *     queries: {
+ *       postsQuery: queries.postsQuery(params),
+ *     },
+ *     entryPoints: {
+ *       sidebar: entryPoints.sidebar({}),
+ *     },
+ *   };
+ * }
+ * \`\`\`
+ */
+export type PreloadPropsForRoute<R extends keyof PageQueryMap> = {
+  queries: {
+    [K in keyof PageQueryMap[R]['queries']]: {
+      parameters: unknown;
+      variables: unknown;
+    };
+  };
+  entryPoints: PageQueryMap[R]['entryPoints'] extends Record<string, never>
+    ? undefined
+    : {
+        [K in keyof PageQueryMap[R]['entryPoints']]: {
+          entryPointParams: unknown;
+          entryPoint: unknown;
+        };
+      };
+};
 `);
 
   await typesFile.save();

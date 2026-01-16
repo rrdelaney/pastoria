@@ -9,6 +9,8 @@ import type {EntryPoint, EntryPointComponent, EntryPointProps} from 'react-relay
 
 import type {page_GreetQuery} from '#genfiles/queries/page_GreetQuery.graphql';
 
+import type {page_GreetQuery$variables} from '#genfiles/queries/page_GreetQuery.graphql';
+
 // Route type aliases - nested entry points (leaf nodes)
 
 
@@ -24,6 +26,40 @@ export interface PageQueryMap {
   '/': RouteRoot;
   '/hello/[name]': RouteHello$name;
 }
+
+// Query helper type aliases for each route
+type QueryHelpers_RouteRoot = {};
+type QueryHelpers_RouteHello$name = { nameQuery: (variables: page_GreetQuery$variables) => { parameters: unknown; variables: page_GreetQuery$variables } };
+
+// Entry point helper type aliases for each route
+type EntryPointHelpers_RouteRoot = {};
+type EntryPointHelpers_RouteHello$name = {};
+
+/**
+ * Query helper functions for a route.
+ * Each helper takes typed variables and returns {parameters, variables} for Relay.
+ */
+export interface QueryHelpersMap {
+  '/': QueryHelpers_RouteRoot;
+  '/hello/[name]': QueryHelpers_RouteHello$name;
+}
+
+export type QueryHelpersForRoute<R extends string> = R extends keyof QueryHelpersMap
+  ? QueryHelpersMap[R]
+  : {};
+
+/**
+ * Entry point helper functions for a route.
+ * Each helper takes typed variables and returns the nested entry point configuration.
+ */
+export interface EntryPointHelpersMap {
+  '/': EntryPointHelpers_RouteRoot;
+  '/hello/[name]': EntryPointHelpers_RouteHello$name;
+}
+
+export type EntryPointHelpersForRoute<R extends string> = R extends keyof EntryPointHelpersMap
+  ? EntryPointHelpersMap[R]
+  : {};
 
 /**
  * Props type for a page component at the given route.
@@ -48,3 +84,42 @@ export type PageProps<R extends keyof PageQueryMap> = EntryPointProps<
   {},
   {}
 >;
+
+/**
+ * Return type for getPreloadProps in entrypoint.ts files.
+ * This type matches the structure expected by Relay's loadEntryPoint.
+ *
+ * @example
+ * ```typescript
+ * export default function getPreloadProps({
+ *   params,
+ *   queries,
+ *   entryPoints,
+ * }: EntryPointParams<'/posts'>): PreloadPropsForRoute<'/posts'> {
+ *   return {
+ *     queries: {
+ *       postsQuery: queries.postsQuery(params),
+ *     },
+ *     entryPoints: {
+ *       sidebar: entryPoints.sidebar({}),
+ *     },
+ *   };
+ * }
+ * ```
+ */
+export type PreloadPropsForRoute<R extends keyof PageQueryMap> = {
+  queries: {
+    [K in keyof PageQueryMap[R]['queries']]: {
+      parameters: unknown;
+      variables: unknown;
+    };
+  };
+  entryPoints: PageQueryMap[R]['entryPoints'] extends Record<string, never>
+    ? undefined
+    : {
+        [K in keyof PageQueryMap[R]['entryPoints']]: {
+          entryPointParams: unknown;
+          entryPoint: unknown;
+        };
+      };
+};

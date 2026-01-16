@@ -29,7 +29,8 @@ import * as z from 'zod/v4-mini';
 
 type RouterConf = typeof ROUTER_CONF;
 type AnyRouteParams = z.infer<RouterConf[keyof RouterConf]['schema']>;
-type AnyEntryPointParams = EntryPointParams<keyof RouterConf>;
+type AnyRouteEntryPoint = RouterConf[keyof RouterConf]['entrypoint'];
+type LoadEntryPointFn = (params: {params: AnyRouteParams}) => void;
 
 const ROUTER_CONF = {
   noop: {
@@ -43,10 +44,42 @@ export type NavigationDirection = string | URL | ((nextUrl: URL) => void);
 
 export interface EntryPointParams<R extends RouteId> {
   params: z.infer<RouterConf[R]['schema']>;
+  queries: QueryHelpersForRoute<R>;
+  entryPoints: EntryPointHelpersForRoute<R>;
 }
 
+/**
+ * Load a route entry point with proper typing.
+ *
+ * This wrapper exists because TypeScript struggles with union type inference
+ * when calling loadEntryPoint with a union of entry point types. All route
+ * entry points accept {params: Record<string, unknown>}, so this is safe.
+ */
+function loadRouteEntryPoint(
+  provider: EnvironmentProvider,
+  entrypoint: AnyRouteEntryPoint,
+  params: {params: AnyRouteParams},
+) {
+  // Cast needed because Relay's loadEntryPoint infers params from the entry point type.
+  // When entrypoint is a union, the inferred params become an intersection (contravariance),
+  // which resolves to `never`. Our entry points all accept the same params shape, so this is safe.
+  return loadEntryPoint(
+    provider,
+    entrypoint as unknown as EntryPoint<unknown, {params: AnyRouteParams}>,
+    params,
+  );
+}
+
+// Convert bracket format [param] to colon format :param for radix3 router
+function bracketToColon(path: string): string {
+  return path.replace(/\[([^\]]+)\]/g, ':$1');
+}
+
+// Create radix3 router with colon-format paths (radix3 uses :param syntax)
 const ROUTER = createRouter<RouterConf[keyof RouterConf]>({
-  routes: ROUTER_CONF,
+  routes: Object.fromEntries(
+    Object.entries(ROUTER_CONF).map(([k, v]) => [bracketToColon(k), v]),
+  ) as Record<string, RouterConf[keyof RouterConf]>,
 });
 
 class RouterLocation {
@@ -144,9 +177,9 @@ export async function router__loadEntryPoint(
   if (!initialRoute) return null;
 
   await initialRoute.entrypoint?.root.load();
-  return loadEntryPoint(provider, initialRoute.entrypoint, {
+  return loadRouteEntryPoint(provider, initialRoute.entrypoint, {
     params: initialLocation.params(),
-  } as AnyEntryPointParams);
+  });
 }
 
 interface RouterContextValue {
@@ -233,10 +266,8 @@ export function router__createAppFromEntryPoint(
     useEffect(() => {
       const route = location.route();
       if (route) {
-        // Type assertion: params are validated by schema, so they match the entry point
-        loadEntryPointRef({
-          params: location.params(),
-        } as AnyEntryPointParams);
+        // Cast needed for same reason as loadRouteEntryPoint - see that function's docs
+        (loadEntryPointRef as LoadEntryPointFn)({params: location.params()});
       }
       // eslint-disable-next-line react-hooks/exhaustive-deps
     }, [location]);
@@ -297,7 +328,7 @@ export function useRouteParams<R extends RouteId>(
 
 function router__createPathForRoute(
   routeId: RouteId,
-  inputParams: Record<string, any>,
+  inputParams: Record<string, unknown>,
 ): string {
   const schema = ROUTER_CONF[routeId].schema;
   const params = schema.parse(inputParams);
@@ -307,7 +338,8 @@ function router__createPathForRoute(
 
   Object.entries(params).forEach(([key, value]) => {
     if (value != null) {
-      const paramPattern = `:${key}`;
+      // Route IDs use bracket format: /hello/[name]
+      const paramPattern = `[${key}]`;
       if (pathname.includes(paramPattern)) {
         pathname = pathname.replace(
           paramPattern,

@@ -21,13 +21,13 @@ export default function HelloWorld({
     queries.nameQuery,
   );
 
-  const {name, q} = useRouteParams('/hello/:name');
+  const {name, q} = useRouteParams('/hello/[name]');
   const [search, setSearch] = useState(q ?? '');
 
   const {replaceRoute} = useNavigation();
   useEffect(() => {
     const timeoutId = setTimeout(() => {
-      replaceRoute('/hello/:name', {name, q: !!search ? search : null});
+      replaceRoute('/hello/[name]', {name, q: !!search ? search : null});
     }, 500);
 
     return () => {

@@ -148,16 +148,20 @@ We must implement the following before moving on to looking for
 
 - [x] Remove `schema.parse` from generated `getPreloadProps` to prevent double
       parsing. Params should come into `getPreloadProps` pre-parsed.
-- [ ] Refactor `ROUTER_CONF` to reference path names (`/hello/[name]` instead of
-      `/hello/[name]`). Required for referencing
+- [x] Refactor `ROUTER_CONF` to reference path names (`/hello/[name]` instead of
+      `/hello/:name`). Required for referencing
       `EntryPointParams<'/hello/[name]'>`.
-- [ ] Add `queries` functions to `EntryPointParams` and use this in generated
+- [x] Add `queries` functions to `EntryPointParams` and use this in generated
       code for entry points.
-- [ ] Add `entryPoints` functions to `EntryPointParams` and use this in
+- [x] Add `entryPoints` functions to `EntryPointParams` and use this in
       generated code for entry points.
-- [ ] Begin generating `PreloadPropsForRoute` and use it in return types for
+- [x] Begin generating `PreloadPropsForRoute` and use it in return types for
       `getPreloadProps`. This should be an instantiated `PreloadProps` from
       `react-relay/hooks`.
+- [x] Fix type inference for `loadEntryPoint` calls in `router.tsx`.
+      Encapsulated the necessary cast in `loadRouteEntryPoint` helper with
+      documentation explaining why it's needed (Relay's contravariant params
+      inference from union types).
 
 OPTIONAL: the code that generated nested entrypoints currently does it inline.
 It may be significantly easier to generate the e.g. `entryPoint.banner`

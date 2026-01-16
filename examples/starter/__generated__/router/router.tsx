@@ -32,7 +32,9 @@ import {
 } from 'react-relay/hooks';
 import * as z from 'zod/v4-mini';
 import { JSResource, ModuleType } from "./js_resource";
+import type { QueryHelpersForRoute, EntryPointHelpersForRoute } from "./types";
 import page_GreetQueryParameters from "#genfiles/queries/page_GreetQuery$parameters";
+import type { page_GreetQuery$variables } from "#genfiles/queries/page_GreetQuery.graphql";
 
 type RouterConf = typeof ROUTER_CONF;
 type AnyRouteParams = z.infer<RouterConf[keyof RouterConf]['schema']>;
@@ -43,7 +45,7 @@ const ROUTER_CONF = {
       entrypoint: entrypoint_fs_page___(),
       schema: z.object({})
     } as const,
-  "/hello/:name": {
+  "/hello/[name]": {
       entrypoint: entrypoint_fs_page__hello__name__(),
       schema: z.object({ name: z.pipe(z.string(), z.transform(decodeURIComponent)) })
     } as const
@@ -54,10 +56,20 @@ export type NavigationDirection = string | URL | ((nextUrl: URL) => void);
 
 export interface EntryPointParams<R extends RouteId> {
   params: z.infer<RouterConf[R]['schema']>;
+  queries: QueryHelpersForRoute<R>;
+  entryPoints: EntryPointHelpersForRoute<R>;
 }
 
+// Convert bracket format [param] to colon format :param for radix3 router
+function bracketToColon(path: string): string {
+  return path.replace(/\[([^\]]+)\]/g, ':$1');
+}
+
+// Create radix3 router with colon-format paths (radix3 uses :param syntax)
 const ROUTER = createRouter<RouterConf[keyof RouterConf]>({
-  routes: ROUTER_CONF,
+  routes: Object.fromEntries(
+    Object.entries(ROUTER_CONF).map(([k, v]) => [bracketToColon(k), v]),
+  ) as Record<string, RouterConf[keyof RouterConf]>,
 });
 
 class RouterLocation {
@@ -155,9 +167,15 @@ export async function router__loadEntryPoint(
   if (!initialRoute) return null;
 
   await initialRoute.entrypoint?.root.load();
-  return loadEntryPoint(provider, initialRoute.entrypoint, {
-    params: initialLocation.params(),
-  } as AnyEntryPointParams);
+  // Cast through unknown to avoid union type inference issues with loadEntryPoint
+  return loadEntryPoint(
+    provider,
+    initialRoute.entrypoint as unknown as EntryPoint<
+      unknown,
+      {params: AnyRouteParams}
+    >,
+    {params: initialLocation.params()},
+  );
 }
 
 interface RouterContextValue {
@@ -245,9 +263,10 @@ export function router__createAppFromEntryPoint(
       const route = location.route();
       if (route) {
         // Type assertion: params are validated by schema, so they match the entry point
-        loadEntryPointRef({
+        // Cast to unknown first to avoid union type inference issues
+        (loadEntryPointRef as (params: {params: AnyRouteParams}) => void)({
           params: location.params(),
-        } as AnyEntryPointParams);
+        });
       }
       // eslint-disable-next-line react-hooks/exhaustive-deps
     }, [location]);
@@ -318,7 +337,8 @@ function router__createPathForRoute(
 
   Object.entries(params).forEach(([key, value]) => {
     if (value != null) {
-      const paramPattern = `:${key}`;
+      // Route IDs use bracket format: /hello/[name]
+      const paramPattern = `[${key}]`;
       if (pathname.includes(paramPattern)) {
         pathname = pathname.replace(
           paramPattern,
@@ -463,8 +483,15 @@ export function listRoutes() {
   return Object.keys(ROUTER_CONF);
 }
 
-function entrypoint_fs_page___(): EntryPoint<ModuleType<'fs:page(/)'>, EntryPointParams<'/'>> {
-  function getPreloadProps({params}: EntryPointParams<'/'>) {
+function entrypoint_fs_page___() {
+  const schema = z.object({});
+  const queryHelpers = {
+  }
+  ;
+  const entryPointHelpers = {
+  }
+  ;
+  function getPreloadProps({params, queries, entryPoints}: EntryPointParams<'/'>) {
     const variables = params;
     return {
       queries: {
@@ -473,29 +500,45 @@ function entrypoint_fs_page___(): EntryPoint<ModuleType<'fs:page(/)'>, EntryPoin
       entryPoints: undefined
     }
   }
+  
+  const wrappedGetPreloadProps = (p: {params: Record<string, unknown>}) => getPreloadProps({
+    params: p.params as z.infer<typeof schema>,
+    queries: queryHelpers,
+    entryPoints: entryPointHelpers,
+  });
   return {
     root: JSResource.fromModuleId('fs:page(/)'),
-    getPreloadProps,
+    getPreloadProps: wrappedGetPreloadProps,
   }
 }
 
-function entrypoint_fs_page__hello__name__(): EntryPoint<ModuleType<'fs:page(/hello/[name])'>, EntryPointParams<'/hello/:name'>> {
-  function getPreloadProps({params}: EntryPointParams<'/hello/:name'>) {
+function entrypoint_fs_page__hello__name__() {
+  const schema = z.object({ name: z.pipe(z.string(), z.transform(decodeURIComponent)) });
+  const queryHelpers = {
+    nameQuery: (variables: page_GreetQuery$variables) => ({ parameters: page_GreetQueryParameters, variables }),
+  }
+  ;
+  const entryPointHelpers = {
+  }
+  ;
+  function getPreloadProps({params, queries, entryPoints}: EntryPointParams<'/hello/[name]'>) {
     const variables = params;
     return {
       queries: {
-        nameQuery: {
-          parameters: page_GreetQueryParameters,
-          variables: {name: variables.name}
-        }
-        ,
+        nameQuery: queries.nameQuery!({name: variables.name}),
       }
       ,
       entryPoints: undefined
     }
   }
+  
+  const wrappedGetPreloadProps = (p: {params: Record<string, unknown>}) => getPreloadProps({
+    params: p.params as z.infer<typeof schema>,
+    queries: queryHelpers,
+    entryPoints: entryPointHelpers,
+  });
   return {
     root: JSResource.fromModuleId('fs:page(/hello/[name])'),
-    getPreloadProps,
+    getPreloadProps: wrappedGetPreloadProps,
   }
 }

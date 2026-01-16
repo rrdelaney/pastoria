@@ -32,21 +32,27 @@ import {
 } from 'react-relay/hooks';
 import * as z from 'zod/v4-mini';
 import { JSResource, ModuleType } from "./js_resource";
+import type { QueryHelpersForRoute, EntryPointHelpersForRoute } from "./types";
 import searchResults_QueryParameters from "#genfiles/queries/searchResults_Query$parameters";
+import type { searchResults_Query$variables } from "#genfiles/queries/searchResults_Query.graphql";
 import page_HelloQueryParameters from "#genfiles/queries/page_HelloQuery$parameters";
+import type { page_HelloQuery$variables } from "#genfiles/queries/page_HelloQuery.graphql";
 import helloBanner_QueryParameters from "#genfiles/queries/helloBanner_Query$parameters";
+import type { helloBanner_Query$variables } from "#genfiles/queries/helloBanner_Query.graphql";
 import helloResults_CityResultsQueryParameters from "#genfiles/queries/helloResults_CityResultsQuery$parameters";
+import type { helloResults_CityResultsQuery$variables } from "#genfiles/queries/helloResults_CityResultsQuery.graphql";
 
 type RouterConf = typeof ROUTER_CONF;
 type AnyRouteParams = z.infer<RouterConf[keyof RouterConf]['schema']>;
-type AnyEntryPointParams = EntryPointParams<keyof RouterConf>;
+type AnyRouteEntryPoint = RouterConf[keyof RouterConf]['entrypoint'];
+type LoadEntryPointFn = (params: {params: AnyRouteParams}) => void;
 
 const ROUTER_CONF = {
   "/": {
       entrypoint: entrypoint_fs_page___(),
       schema: z.object({ query: z.pipe(z.nullish(z.pipe(z.string(), z.transform(decodeURIComponent))), z.transform(s => s == null ? undefined : s)) })
     } as const,
-  "/hello/:name": {
+  "/hello/[name]": {
       entrypoint: entrypoint_fs_page__hello__name__(),
       schema: z.object({ name: z.pipe(z.string(), z.transform(decodeURIComponent)), q: z.pipe(z.nullish(z.pipe(z.string(), z.transform(decodeURIComponent))), z.transform(s => s == null ? undefined : s)) })
     } as const
@@ -57,10 +63,42 @@ export type NavigationDirection = string | URL | ((nextUrl: URL) => void);
 
 export interface EntryPointParams<R extends RouteId> {
   params: z.infer<RouterConf[R]['schema']>;
+  queries: QueryHelpersForRoute<R>;
+  entryPoints: EntryPointHelpersForRoute<R>;
 }
 
+/**
+ * Load a route entry point with proper typing.
+ *
+ * This wrapper exists because TypeScript struggles with union type inference
+ * when calling loadEntryPoint with a union of entry point types. All route
+ * entry points accept {params: Record<string, unknown>}, so this is safe.
+ */
+function loadRouteEntryPoint(
+  provider: EnvironmentProvider,
+  entrypoint: AnyRouteEntryPoint,
+  params: {params: AnyRouteParams},
+) {
+  // Cast needed because Relay's loadEntryPoint infers params from the entry point type.
+  // When entrypoint is a union, the inferred params become an intersection (contravariance),
+  // which resolves to `never`. Our entry points all accept the same params shape, so this is safe.
+  return loadEntryPoint(
+    provider,
+    entrypoint as unknown as EntryPoint<unknown, {params: AnyRouteParams}>,
+    params,
+  );
+}
+
+// Convert bracket format [param] to colon format :param for radix3 router
+function bracketToColon(path: string): string {
+  return path.replace(/\[([^\]]+)\]/g, ':$1');
+}
+
+// Create radix3 router with colon-format paths (radix3 uses :param syntax)
 const ROUTER = createRouter<RouterConf[keyof RouterConf]>({
-  routes: ROUTER_CONF,
+  routes: Object.fromEntries(
+    Object.entries(ROUTER_CONF).map(([k, v]) => [bracketToColon(k), v]),
+  ) as Record<string, RouterConf[keyof RouterConf]>,
 });
 
 class RouterLocation {
@@ -158,9 +196,9 @@ export async function router__loadEntryPoint(
   if (!initialRoute) return null;
 
   await initialRoute.entrypoint?.root.load();
-  return loadEntryPoint(provider, initialRoute.entrypoint, {
+  return loadRouteEntryPoint(provider, initialRoute.entrypoint, {
     params: initialLocation.params(),
-  } as AnyEntryPointParams);
+  });
 }
 
 interface RouterContextValue {
@@ -247,10 +285,8 @@ export function router__createAppFromEntryPoint(
     useEffect(() => {
       const route = location.route();
       if (route) {
-        // Type assertion: params are validated by schema, so they match the entry point
-        loadEntryPointRef({
-          params: location.params(),
-        } as AnyEntryPointParams);
+        // Cast needed for same reason as loadRouteEntryPoint - see that function's docs
+        (loadEntryPointRef as LoadEntryPointFn)({params: location.params()});
       }
       // eslint-disable-next-line react-hooks/exhaustive-deps
     }, [location]);
@@ -311,7 +347,7 @@ export function useRouteParams<R extends RouteId>(
 
 function router__createPathForRoute(
   routeId: RouteId,
-  inputParams: Record<string, any>,
+  inputParams: Record<string, unknown>,
 ): string {
   const schema = ROUTER_CONF[routeId].schema;
   const params = schema.parse(inputParams);
@@ -321,7 +357,8 @@ function router__createPathForRoute(
 
   Object.entries(params).forEach(([key, value]) => {
     if (value != null) {
-      const paramPattern = `:${key}`;
+      // Route IDs use bracket format: /hello/[name]
+      const paramPattern = `[${key}]`;
       if (pathname.includes(paramPattern)) {
         pathname = pathname.replace(
           paramPattern,
@@ -466,101 +503,111 @@ export function listRoutes() {
   return Object.keys(ROUTER_CONF);
 }
 
-function entrypoint_fs_page___(): EntryPoint<ModuleType<'fs:page(/)'>, EntryPointParams<'/'>> {
-  function getPreloadProps({params}: EntryPointParams<'/'>) {
+function entrypoint_fs_page___() {
+  const schema = z.object({ query: z.pipe(z.nullish(z.pipe(z.string(), z.transform(decodeURIComponent))), z.transform(s => s == null ? undefined : s)) });
+  const queryHelpers = {
+  }
+  ;
+  const entryPointHelpers = {
+    search_results: (variables: searchResults_Query$variables) => ( {
+      entryPointParams: {},
+      entryPoint: {
+        root: JSResource.fromModuleId('fs:page(/)#search_results'),
+        getPreloadProps() {
+          return {
+            queries: {
+              citiesQueryRef: { parameters: searchResults_QueryParameters, variables },
+            }
+            ,
+            entryPoints: undefined
+          }
+        }
+      }
+    }
+    ),
+  }
+  ;
+  function getPreloadProps({params, queries, entryPoints}: EntryPointParams<'/'>) {
     const variables = params;
     return {
       queries: {
       }
       ,
       entryPoints: {
-        search_results: {
-          entryPointParams: {},
-          entryPoint: {
-            root: JSResource.fromModuleId('fs:page(/)#search_results'),
-            getPreloadProps() {
-              return {
-                queries: {
-                  citiesQueryRef: {
-                    parameters: searchResults_QueryParameters,
-                    variables: {query: variables.query}
-                  }
-                  ,
-                }
-                ,
-                entryPoints: undefined
-              }
-            }
-          }
-        }
-        ,
+        search_results: entryPoints.search_results({query: variables.query}),
       }
     }
   }
   return {
     root: JSResource.fromModuleId('fs:page(/)'),
-    getPreloadProps,
+    getPreloadProps: (p: {params: Record<string, unknown>}) => getPreloadProps({
+      params: p.params as z.infer<typeof schema>,
+      queries: queryHelpers,
+      entryPoints: entryPointHelpers,
+    }),
   }
 }
 
-function entrypoint_fs_page__hello__name__(): EntryPoint<ModuleType<'fs:page(/hello/[name])'>, EntryPointParams<'/hello/:name'>> {
-  function getPreloadProps({params}: EntryPointParams<'/hello/:name'>) {
+function entrypoint_fs_page__hello__name__() {
+  const schema = z.object({ name: z.pipe(z.string(), z.transform(decodeURIComponent)), q: z.pipe(z.nullish(z.pipe(z.string(), z.transform(decodeURIComponent))), z.transform(s => s == null ? undefined : s)) });
+  const queryHelpers = {
+    nameQuery: (variables: page_HelloQuery$variables) => ({ parameters: page_HelloQueryParameters, variables }),
+  }
+  ;
+  const entryPointHelpers = {
+    hello_banner: (variables: helloBanner_Query$variables) => ( {
+      entryPointParams: {},
+      entryPoint: {
+        root: JSResource.fromModuleId('fs:page(/hello/[name])#hello_banner'),
+        getPreloadProps() {
+          return {
+            queries: {
+              helloBannerRef: { parameters: helloBanner_QueryParameters, variables },
+            }
+            ,
+            entryPoints: undefined
+          }
+        }
+      }
+    }
+    ),
+    hello_results: (variables: helloResults_CityResultsQuery$variables) => ( {
+      entryPointParams: {},
+      entryPoint: {
+        root: JSResource.fromModuleId('fs:page(/hello/[name])#hello_results'),
+        getPreloadProps() {
+          return {
+            queries: {
+              citiesQuery: { parameters: helloResults_CityResultsQueryParameters, variables },
+            }
+            ,
+            entryPoints: undefined
+          }
+        }
+      }
+    }
+    ),
+  }
+  ;
+  function getPreloadProps({params, queries, entryPoints}: EntryPointParams<'/hello/[name]'>) {
     const variables = params;
     return {
       queries: {
-        nameQuery: {
-          parameters: page_HelloQueryParameters,
-          variables: {name: variables.name}
-        }
-        ,
+        nameQuery: queries.nameQuery({name: variables.name}),
       }
       ,
       entryPoints: {
-        hello_banner: {
-          entryPointParams: {},
-          entryPoint: {
-            root: JSResource.fromModuleId('fs:page(/hello/[name])#hello_banner'),
-            getPreloadProps() {
-              return {
-                queries: {
-                  helloBannerRef: {
-                    parameters: helloBanner_QueryParameters,
-                    variables: {}
-                  }
-                  ,
-                }
-                ,
-                entryPoints: undefined
-              }
-            }
-          }
-        }
-        ,
-        hello_results: {
-          entryPointParams: {},
-          entryPoint: {
-            root: JSResource.fromModuleId('fs:page(/hello/[name])#hello_results'),
-            getPreloadProps() {
-              return {
-                queries: {
-                  citiesQuery: {
-                    parameters: helloResults_CityResultsQueryParameters,
-                    variables: {q: variables.q}
-                  }
-                  ,
-                }
-                ,
-                entryPoints: undefined
-              }
-            }
-          }
-        }
-        ,
+        hello_banner: entryPoints.hello_banner({}),
+        hello_results: entryPoints.hello_results({q: variables.q}),
       }
     }
   }
   return {
     root: JSResource.fromModuleId('fs:page(/hello/[name])'),
-    getPreloadProps,
+    getPreloadProps: (p: {params: Record<string, unknown>}) => getPreloadProps({
+      params: p.params as z.infer<typeof schema>,
+      queries: queryHelpers,
+      entryPoints: entryPointHelpers,
+    }),
   }
 }

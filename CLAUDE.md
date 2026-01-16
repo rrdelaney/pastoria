@@ -295,6 +295,19 @@ User projects are expected to have:
 - Development requires building packages first since CLI references compiled
   code
 
+## Code Generation Guidelines
+
+When working on code generation (`packages/pastoria/src/generate.ts` and
+`packages/pastoria/templates/`):
+
+- **NEVER use `any` in generated code unless absolutely necessary.** Generated
+  code should be fully type-safe. Use `unknown` if you need a placeholder type,
+  or generate proper types based on the route's queries and entry points.
+- Generated types should leverage TypeScript's type inference and mapped types
+  to provide accurate typing for each route.
+- Template files in `packages/pastoria/templates/` are copied and modified
+  during generation - keep them as type-safe as possible.
+
 ## Development Notes
 
 - Always build packages before testing CLI functionality: `pnpm -r build`

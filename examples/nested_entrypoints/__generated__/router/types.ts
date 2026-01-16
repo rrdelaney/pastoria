@@ -12,6 +12,11 @@ import type {helloBanner_Query} from '#genfiles/queries/helloBanner_Query.graphq
 import type {helloResults_CityResultsQuery} from '#genfiles/queries/helloResults_CityResultsQuery.graphql';
 import type {page_HelloQuery} from '#genfiles/queries/page_HelloQuery.graphql';
 
+import type {searchResults_Query$variables} from '#genfiles/queries/searchResults_Query.graphql';
+import type {page_HelloQuery$variables} from '#genfiles/queries/page_HelloQuery.graphql';
+import type {helloBanner_Query$variables} from '#genfiles/queries/helloBanner_Query.graphql';
+import type {helloResults_CityResultsQuery$variables} from '#genfiles/queries/helloResults_CityResultsQuery.graphql';
+
 // Route type aliases - nested entry points (leaf nodes)
 type RouteRoot_search_results = { queries: { citiesQueryRef: searchResults_Query }; entryPoints: {} };
 type RouteHello$name_hello_banner = { queries: { helloBannerRef: helloBanner_Query }; entryPoints: {} };
@@ -32,6 +37,40 @@ export interface PageQueryMap {
   '/hello/[name]#hello_banner': RouteHello$name_hello_banner;
   '/hello/[name]#hello_results': RouteHello$name_hello_results;
 }
+
+// Query helper type aliases for each route
+type QueryHelpers_RouteRoot = {};
+type QueryHelpers_RouteHello$name = { nameQuery: (variables: page_HelloQuery$variables) => { parameters: unknown; variables: page_HelloQuery$variables } };
+
+// Entry point helper type aliases for each route
+type EntryPointHelpers_RouteRoot = { search_results: (variables: searchResults_Query$variables) => { entryPointParams: Record<string, never>; entryPoint: EntryPoint<EntryPointComponent<RouteRoot_search_results['queries'], RouteRoot_search_results['entryPoints'], {}, {}>, {}> } };
+type EntryPointHelpers_RouteHello$name = { hello_banner: (variables: helloBanner_Query$variables) => { entryPointParams: Record<string, never>; entryPoint: EntryPoint<EntryPointComponent<RouteHello$name_hello_banner['queries'], RouteHello$name_hello_banner['entryPoints'], {}, {}>, {}> }; hello_results: (variables: helloResults_CityResultsQuery$variables) => { entryPointParams: Record<string, never>; entryPoint: EntryPoint<EntryPointComponent<RouteHello$name_hello_results['queries'], RouteHello$name_hello_results['entryPoints'], {}, {}>, {}> } };
+
+/**
+ * Query helper functions for a route.
+ * Each helper takes typed variables and returns {parameters, variables} for Relay.
+ */
+export interface QueryHelpersMap {
+  '/': QueryHelpers_RouteRoot;
+  '/hello/[name]': QueryHelpers_RouteHello$name;
+}
+
+export type QueryHelpersForRoute<R extends string> = R extends keyof QueryHelpersMap
+  ? QueryHelpersMap[R]
+  : {};
+
+/**
+ * Entry point helper functions for a route.
+ * Each helper takes typed variables and returns the nested entry point configuration.
+ */
+export interface EntryPointHelpersMap {
+  '/': EntryPointHelpers_RouteRoot;
+  '/hello/[name]': EntryPointHelpers_RouteHello$name;
+}
+
+export type EntryPointHelpersForRoute<R extends string> = R extends keyof EntryPointHelpersMap
+  ? EntryPointHelpersMap[R]
+  : {};
 
 /**
  * Props type for a page component at the given route.
@@ -56,3 +95,42 @@ export type PageProps<R extends keyof PageQueryMap> = EntryPointProps<
   {},
   {}
 >;
+
+/**
+ * Return type for getPreloadProps in entrypoint.ts files.
+ * This type matches the structure expected by Relay's loadEntryPoint.
+ *
+ * @example
+ * ```typescript
+ * export default function getPreloadProps({
+ *   params,
+ *   queries,
+ *   entryPoints,
+ * }: EntryPointParams<'/posts'>): PreloadPropsForRoute<'/posts'> {
+ *   return {
+ *     queries: {
+ *       postsQuery: queries.postsQuery(params),
+ *     },
+ *     entryPoints: {
+ *       sidebar: entryPoints.sidebar({}),
+ *     },
+ *   };
+ * }
+ * ```
+ */
+export type PreloadPropsForRoute<R extends keyof PageQueryMap> = {
+  queries: {
+    [K in keyof PageQueryMap[R]['queries']]: {
+      parameters: unknown;
+      variables: unknown;
+    };
+  };
+  entryPoints: PageQueryMap[R]['entryPoints'] extends Record<string, never>
+    ? undefined
+    : {
+        [K in keyof PageQueryMap[R]['entryPoints']]: {
+          entryPointParams: unknown;
+          entryPoint: unknown;
+        };
+      };
+};
