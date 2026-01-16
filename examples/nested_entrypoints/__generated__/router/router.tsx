@@ -35,6 +35,7 @@ import { JSResource, ModuleType } from "./js_resource";
 import type { QueryHelpersForRoute, EntryPointHelpersForRoute } from "./types";
 import searchResults_QueryParameters from "#genfiles/queries/searchResults_Query$parameters";
 import type { searchResults_Query$variables } from "#genfiles/queries/searchResults_Query.graphql";
+import customEp_fs_page__hello__name__, { schema as customEp_fs_page__hello__name___schema } from "../../pastoria/hello/[name]/entrypoint";
 import page_HelloQueryParameters from "#genfiles/queries/page_HelloQuery$parameters";
 import type { page_HelloQuery$variables } from "#genfiles/queries/page_HelloQuery.graphql";
 import helloBanner_QueryParameters from "#genfiles/queries/helloBanner_Query$parameters";
@@ -54,7 +55,7 @@ const ROUTER_CONF = {
     } as const,
   "/hello/[name]": {
       entrypoint: entrypoint_fs_page__hello__name__(),
-      schema: z.object({ name: z.pipe(z.string(), z.transform(decodeURIComponent)), q: z.pipe(z.nullish(z.pipe(z.string(), z.transform(decodeURIComponent))), z.transform(s => s == null ? undefined : s)) })
+      schema: customEp_fs_page__hello__name___schema
     } as const
 } as const;
 
@@ -549,7 +550,6 @@ function entrypoint_fs_page___() {
 }
 
 function entrypoint_fs_page__hello__name__() {
-  const schema = z.object({ name: z.pipe(z.string(), z.transform(decodeURIComponent)), q: z.pipe(z.nullish(z.pipe(z.string(), z.transform(decodeURIComponent))), z.transform(s => s == null ? undefined : s)) });
   const queryHelpers = {
     nameQuery: (variables: page_HelloQuery$variables) => ({ parameters: page_HelloQueryParameters, variables }),
   }
@@ -589,23 +589,10 @@ function entrypoint_fs_page__hello__name__() {
     ),
   }
   ;
-  function getPreloadProps({params, queries, entryPoints}: EntryPointParams<'/hello/[name]'>) {
-    const variables = params;
-    return {
-      queries: {
-        nameQuery: queries.nameQuery({name: variables.name}),
-      }
-      ,
-      entryPoints: {
-        hello_banner: entryPoints.hello_banner({}),
-        hello_results: entryPoints.hello_results({q: variables.q}),
-      }
-    }
-  }
   return {
     root: JSResource.fromModuleId('fs:page(/hello/[name])'),
-    getPreloadProps: (p: {params: Record<string, unknown>}) => getPreloadProps({
-      params: p.params as z.infer<typeof schema>,
+    getPreloadProps: (p: {params: z.infer<typeof customEp_fs_page__hello__name___schema>}) => customEp_fs_page__hello__name__({
+      params: p.params,
       queries: queryHelpers,
       entryPoints: entryPointHelpers,
     }),

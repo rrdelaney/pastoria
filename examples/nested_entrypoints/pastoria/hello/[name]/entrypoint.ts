@@ -3,8 +3,9 @@
  *
  * This file demonstrates how to customize the loading behavior of a route:
  * - Define a custom schema for URL parameter validation
- * - Conditionally load nested entry points based on parameters
  * - Transform parameters before passing to queries
+ *
+ * Note: Conditional loading of nested entry points is not yet supported.
  */
 
 import type {EntryPointParams} from '#genfiles/router/router.jsx';
@@ -24,16 +25,13 @@ export default function getPreloadProps({
   queries,
   entryPoints,
 }: EntryPointParams<'/hello/[name]'>): PreloadPropsForRoute<'/hello/[name]'> {
-  // Custom logic: only load the banner for non-guest users
-  const isGuest = params.name.toLowerCase() === 'guest';
-
   return {
     queries: {
-      nameQuery: queries.nameQuery({name: params.name}),
+      // Example: transform the name parameter before passing to query
+      nameQuery: queries.nameQuery({name: params.name + '!'}),
     },
     entryPoints: {
-      // Conditionally skip loading the banner for guest users
-      ...(isGuest ? {} : {hello_banner: entryPoints.hello_banner({})}),
+      hello_banner: entryPoints.hello_banner({}),
       hello_results: entryPoints.hello_results({q: params.q}),
     },
   };

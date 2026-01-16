@@ -562,11 +562,9 @@ async function generateRouter(
               `root: JSResource.fromModuleId('${resourceName}'),`,
             );
             writer.writeLine(
-              `getPreloadProps: (p: {params: Record<string, unknown>}) => ${customEntryPointAlias}({`,
+              `getPreloadProps: (p: {params: z.infer<typeof ${customEntryPointAlias}_schema>}) => ${customEntryPointAlias}({`,
             );
-            writer.writeLine(
-              `  params: p.params as z.infer<typeof ${customEntryPointAlias}_schema>,`,
-            );
+            writer.writeLine('  params: p.params,');
             writer.writeLine('  queries: queryHelpers,');
             writer.writeLine('  entryPoints: entryPointHelpers,');
             writer.writeLine('}),');

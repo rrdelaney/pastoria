@@ -170,7 +170,8 @@ definition functions.
 
 # Implementation
 
-**STATUS: COMPLETE** - Custom `entrypoint.ts` files are now supported.
+**STATUS: PARTIALLY COMPLETE** - Custom `entrypoint.ts` files are now supported,
+but conditional loading of nested entry points is not yet implemented.
 
 ~~Once the above tasks are completed, implementing support for `entrypoint.ts`
 should be fairly straightforward.~~
@@ -202,7 +203,10 @@ function entrypoint_fs_page__hello__name__() {
         getPreloadProps() {
           return {
             queries: {
-              helloBannerRef: {parameters: helloBanner_QueryParameters, variables},
+              helloBannerRef: {
+                parameters: helloBanner_QueryParameters,
+                variables,
+              },
             },
             entryPoints: undefined,
           };
@@ -214,10 +218,21 @@ function entrypoint_fs_page__hello__name__() {
     root: JSResource.fromModuleId('fs:page(/hello/[name])'),
     getPreloadProps: (p: {params: Record<string, unknown>}) =>
       customEp_fs_page__hello__name__({
-        params: p.params as z.infer<typeof customEp_fs_page__hello__name___schema>,
+        params: p.params as z.infer<
+          typeof customEp_fs_page__hello__name___schema
+        >,
         queries: queryHelpers,
         entryPoints: entryPointHelpers,
       }),
   };
 }
 ```
+
+## Limitations
+
+**Conditional loading of nested entry points is not yet implemented.** While the
+custom `getPreloadProps` function can technically omit entry points from the
+return value, the page component will still expect them to be present. To fully
+support conditional loading, the page component would need to handle missing
+entry points gracefully (e.g., checking if the entry point reference exists
+before rendering `EntryPointContainer`).
