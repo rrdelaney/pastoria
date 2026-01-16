@@ -1,5 +1,5 @@
 /**
- * @generated SignedSource<<fefd02081287b8b0c944984a1c10fadc>>
+ * @generated SignedSource<<dfcdfce04e4f0cc9e66be602a924b085>>
  * @relayHash c3ae55d1215512a4fa3ec7dbe986e35c
  * @lightSyntaxTransform
  * @nogrep
@@ -17,8 +17,8 @@ export type searchResults_Query$variables = {
 };
 export type searchResults_Query$data = {
   readonly cities: ReadonlyArray<{
-    readonly name: string | null | undefined;
-  }> | null | undefined;
+    readonly name: string;
+  }>;
 };
 export type searchResults_Query = {
   response: searchResults_Query$data;

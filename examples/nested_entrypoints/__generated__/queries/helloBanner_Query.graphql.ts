@@ -1,5 +1,5 @@
 /**
- * @generated SignedSource<<d3fdeba81bac3084ffbd447a8a046f01>>
+ * @generated SignedSource<<efde76951360e2dbd4a0bee20013ca8f>>
  * @relayHash ecab468d08eff088a39b7c3055094b7c
  * @lightSyntaxTransform
  * @nogrep
@@ -14,7 +14,7 @@
 import { ConcreteRequest } from 'relay-runtime';
 export type helloBanner_Query$variables = Record<PropertyKey, never>;
 export type helloBanner_Query$data = {
-  readonly helloMessage: string | null | undefined;
+  readonly helloMessage: string;
 };
 export type helloBanner_Query = {
   response: helloBanner_Query$data;

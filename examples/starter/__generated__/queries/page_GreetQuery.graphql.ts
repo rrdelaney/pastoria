@@ -1,5 +1,5 @@
 /**
- * @generated SignedSource<<0fd10f13f9920889baa0abe423570366>>
+ * @generated SignedSource<<564b5d0831445647e2907defc91bf77f>>
  * @relayHash f4bed0ce754342516a491a8536b2a9f7
  * @lightSyntaxTransform
  * @nogrep
@@ -16,7 +16,7 @@ export type page_GreetQuery$variables = {
   name: string;
 };
 export type page_GreetQuery$data = {
-  readonly greet: string | null | undefined;
+  readonly greet: string;
 };
 export type page_GreetQuery = {
   response: page_GreetQuery$data;
