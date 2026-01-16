@@ -17,6 +17,11 @@ Generates router artifacts from your `pastoria/` directory.
 pastoria generate
 ```
 
+Options:
+
+- `--skip-schema` - Skip GraphQL schema generation (useful if using Grats or
+  other schema tools that generate their own schema file)
+
 This command scans your filesystem routes and generates:
 
 - `__generated__/router/router.tsx` - Client-side router configuration
@@ -36,13 +41,17 @@ Starts the development server with hot module reloading.
 pastoria dev
 ```
 
+Options:
+
+- `--port <port>` - Port to listen on (default: `3000`)
+
 Features:
 
 - Vite-powered development with fast refresh
 - Server-side rendering during development
 - Automatic reloading when files change
 
-The dev server runs at `http://localhost:5173` by default.
+The dev server runs at `http://localhost:3000` by default.
 
 ### `pastoria build`
 
