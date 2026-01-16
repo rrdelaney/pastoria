@@ -228,6 +228,11 @@ function createReactHandler(
   };
 }
 
+// Convert bracket format [param] to colon format :param for Express
+function bracketToColon(path: string): string {
+  return path.replace(/\[([^\]]+)\]/g, ':$1');
+}
+
 export function createRouterHandler(
   routes: string[],
   srcOfModuleId: SrcOfModuleId,
@@ -249,10 +254,13 @@ export function createRouterHandler(
     manifest,
   );
 
+  // Convert routes from bracket format to colon format for Express
+  const expressRoutes = routes.map(bracketToColon);
+
   return express
     .Router()
     .use('/api/graphql', express.json(), graphqlHandler)
-    .get(routes, reactHandler);
+    .get(expressRoutes, reactHandler);
 }
 
 async function loadQueries(entryPoint: AnyPreloadedEntryPoint) {
