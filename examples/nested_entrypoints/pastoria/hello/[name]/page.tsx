@@ -37,10 +37,13 @@ export default function HelloWorld({
 
   return (
     <div className="flex min-h-screen flex-col items-center justify-start pt-36">
-      <EntryPointContainer
-        entryPointReference={entryPoints.hello_banner}
-        props={{}}
-      />
+      {/* hello_banner is optional - check if it exists before rendering */}
+      {entryPoints.hello_banner && (
+        <EntryPointContainer
+          entryPointReference={entryPoints.hello_banner}
+          props={{}}
+        />
+      )}
 
       <input
         value={search}

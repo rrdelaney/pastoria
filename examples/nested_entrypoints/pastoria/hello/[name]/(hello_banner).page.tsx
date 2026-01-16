@@ -1,9 +1,9 @@
-import helloBanner_Query from '#genfiles/queries/helloBanner_Query.graphql';
+import HelloBannerQuery from '#genfiles/queries/HelloBannerQuery.graphql';
 import type {PageProps} from '#genfiles/router/types';
 import {graphql, usePreloadedQuery} from 'react-relay';
 
 export const queries = {
-  helloBannerRef: helloBanner_Query,
+  helloBannerRef: HelloBannerQuery,
 };
 
 export default function HelloBanner({
@@ -11,7 +11,7 @@ export default function HelloBanner({
 }: PageProps<'/hello/[name]#hello_banner'>) {
   const {helloMessage} = usePreloadedQuery(
     graphql`
-      query helloBanner_Query @preloadable @throwOnFieldError {
+      query HelloBannerQuery @preloadable @throwOnFieldError {
         helloMessage
       }
     `,

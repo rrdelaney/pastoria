@@ -170,8 +170,8 @@ definition functions.
 
 # Implementation
 
-**STATUS: PARTIALLY COMPLETE** - Custom `entrypoint.ts` files are now supported,
-but conditional loading of nested entry points is not yet implemented.
+**STATUS: COMPLETE** - Custom `entrypoint.ts` files and optional nested entry
+points are now supported.
 
 ~~Once the above tasks are completed, implementing support for `entrypoint.ts`
 should be fairly straightforward.~~
@@ -230,21 +230,21 @@ function entrypoint_fs_page__hello__name__() {
 
 ## Partial Entrypoint Loading
 
-One of the big goals here is allowing users to decide if they should or should
-not load a nested entrypoint in `entrypoint.ts`. Great example of this is
-deciding what tab to load in navigation. If we were to provide `undefined` for
-an entrypoint though, we would get a type error. To workaround this, any nested
-entrypoint wrapped with `?` should be generated as optional in `page.tsx`.
+**STATUS: IMPLEMENTED**
 
-For example, the file `pastoria/hello/[name]/(banner).page.tsx` would be an
-optional entrypoint that `entrypoint.ts` can validly provide `undefined` for,
-and in `page.tsx` would be an optional property of `entryPoints`.
+Optional nested entry points allow users to conditionally load entry points
+based on route parameters. To make an entry point optional, wrap its name in
+parentheses:
 
-## Limitations
+```
+pastoria/hello/[name]/(banner).page.tsx  →  optional entry point "banner"
+pastoria/hello/[name]/sidebar.page.tsx   →  required entry point "sidebar"
+```
 
-**Conditional loading of nested entry points is not yet implemented.** While the
-custom `getPreloadProps` function can technically omit entry points from the
-return value, the page component will still expect them to be present. To fully
-support conditional loading, the page component would need to handle missing
-entry points gracefully (e.g., checking if the entry point reference exists
-before rendering `EntryPointContainer`).
+For optional entry points:
+
+- The `entryPoints` property in `PageProps` will have the property marked as
+  optional (`banner?: ...`)
+- The helper function in `EntryPointParams` returns `... | undefined`
+- The custom `getPreloadProps` can return `undefined` for that entry point
+- The page component should check if the entry point exists before rendering

@@ -38,8 +38,8 @@ import type { searchResults_Query$variables } from "#genfiles/queries/searchResu
 import customEp_fs_page__hello__name__, { schema as customEp_fs_page__hello__name___schema } from "../../pastoria/hello/[name]/entrypoint";
 import page_HelloQueryParameters from "#genfiles/queries/page_HelloQuery$parameters";
 import type { page_HelloQuery$variables } from "#genfiles/queries/page_HelloQuery.graphql";
-import helloBanner_QueryParameters from "#genfiles/queries/helloBanner_Query$parameters";
-import type { helloBanner_Query$variables } from "#genfiles/queries/helloBanner_Query.graphql";
+import HelloBannerQueryParameters from "#genfiles/queries/HelloBannerQuery$parameters";
+import type { HelloBannerQuery$variables } from "#genfiles/queries/HelloBannerQuery.graphql";
 import helloResults_CityResultsQueryParameters from "#genfiles/queries/helloResults_CityResultsQuery$parameters";
 import type { helloResults_CityResultsQuery$variables } from "#genfiles/queries/helloResults_CityResultsQuery.graphql";
 
@@ -555,14 +555,14 @@ function entrypoint_fs_page__hello__name__() {
   }
   ;
   const entryPointHelpers = {
-    hello_banner: (variables: helloBanner_Query$variables) => ( {
+    hello_banner: (variables: HelloBannerQuery$variables) => ( {
       entryPointParams: {},
       entryPoint: {
         root: JSResource.fromModuleId('fs:page(/hello/[name])#hello_banner'),
         getPreloadProps() {
           return {
             queries: {
-              helloBannerRef: { parameters: helloBanner_QueryParameters, variables },
+              helloBannerRef: { parameters: HelloBannerQueryParameters, variables },
             }
             ,
             entryPoints: undefined

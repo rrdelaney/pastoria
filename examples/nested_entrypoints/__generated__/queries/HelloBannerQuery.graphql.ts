@@ -1,6 +1,6 @@
 /**
- * @generated SignedSource<<efde76951360e2dbd4a0bee20013ca8f>>
- * @relayHash ecab468d08eff088a39b7c3055094b7c
+ * @generated SignedSource<<7820b633be1da57cca50a652a9c15584>>
+ * @relayHash 8121184a0b5af318d403bea9ce55b729
  * @lightSyntaxTransform
  * @nogrep
  */
@@ -9,16 +9,16 @@
 /* eslint-disable */
 // @ts-nocheck
 
-// @relayRequestID ecab468d08eff088a39b7c3055094b7c
+// @relayRequestID 8121184a0b5af318d403bea9ce55b729
 
 import { ConcreteRequest } from 'relay-runtime';
-export type helloBanner_Query$variables = Record<PropertyKey, never>;
-export type helloBanner_Query$data = {
+export type HelloBannerQuery$variables = Record<PropertyKey, never>;
+export type HelloBannerQuery$data = {
   readonly helloMessage: string;
 };
-export type helloBanner_Query = {
-  response: helloBanner_Query$data;
-  variables: helloBanner_Query$variables;
+export type HelloBannerQuery = {
+  response: HelloBannerQuery$data;
+  variables: HelloBannerQuery$variables;
 };
 
 const node: ConcreteRequest = (function(){
@@ -38,7 +38,7 @@ return {
     "metadata": {
       "throwOnFieldError": true
     },
-    "name": "helloBanner_Query",
+    "name": "HelloBannerQuery",
     "selections": (v0/*: any*/),
     "type": "Query",
     "abstractKey": null
@@ -47,20 +47,20 @@ return {
   "operation": {
     "argumentDefinitions": [],
     "kind": "Operation",
-    "name": "helloBanner_Query",
+    "name": "HelloBannerQuery",
     "selections": (v0/*: any*/)
   },
   "params": {
-    "id": "ecab468d08eff088a39b7c3055094b7c",
+    "id": "8121184a0b5af318d403bea9ce55b729",
     "metadata": {},
-    "name": "helloBanner_Query",
+    "name": "HelloBannerQuery",
     "operationKind": "query",
     "text": null
   }
 };
 })();
 
-(node as any).hash = "fb2d47bf9b3a262a2670407f26962063";
+(node as any).hash = "df66845a80353f695facb3386617786c";
 
 import { PreloadableQueryRegistry } from 'relay-runtime';
 PreloadableQueryRegistry.set(node.params.id, node);

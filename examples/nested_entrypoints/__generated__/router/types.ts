@@ -8,23 +8,23 @@
 import type {EntryPoint, EntryPointComponent, EntryPointProps} from 'react-relay/hooks';
 
 import type {searchResults_Query} from '#genfiles/queries/searchResults_Query.graphql';
-import type {helloBanner_Query} from '#genfiles/queries/helloBanner_Query.graphql';
+import type {HelloBannerQuery} from '#genfiles/queries/HelloBannerQuery.graphql';
 import type {helloResults_CityResultsQuery} from '#genfiles/queries/helloResults_CityResultsQuery.graphql';
 import type {page_HelloQuery} from '#genfiles/queries/page_HelloQuery.graphql';
 
 import type {searchResults_Query$variables} from '#genfiles/queries/searchResults_Query.graphql';
 import type {page_HelloQuery$variables} from '#genfiles/queries/page_HelloQuery.graphql';
-import type {helloBanner_Query$variables} from '#genfiles/queries/helloBanner_Query.graphql';
+import type {HelloBannerQuery$variables} from '#genfiles/queries/HelloBannerQuery.graphql';
 import type {helloResults_CityResultsQuery$variables} from '#genfiles/queries/helloResults_CityResultsQuery.graphql';
 
 // Route type aliases - nested entry points (leaf nodes)
 type RouteRoot_search_results = { queries: { citiesQueryRef: searchResults_Query }; entryPoints: {} };
-type RouteHello$name_hello_banner = { queries: { helloBannerRef: helloBanner_Query }; entryPoints: {} };
+type RouteHello$name_hello_banner = { queries: { helloBannerRef: HelloBannerQuery }; entryPoints: {} };
 type RouteHello$name_hello_results = { queries: { citiesQuery: helloResults_CityResultsQuery }; entryPoints: {} };
 
 // Route type aliases - main pages
 type RouteRoot = { queries: {}; entryPoints: { search_results: EntryPoint<EntryPointComponent<RouteRoot_search_results['queries'], RouteRoot_search_results['entryPoints'], {}, {}>, {}> } };
-type RouteHello$name = { queries: { nameQuery: page_HelloQuery }; entryPoints: { hello_banner: EntryPoint<EntryPointComponent<RouteHello$name_hello_banner['queries'], RouteHello$name_hello_banner['entryPoints'], {}, {}>, {}>; hello_results: EntryPoint<EntryPointComponent<RouteHello$name_hello_results['queries'], RouteHello$name_hello_results['entryPoints'], {}, {}>, {}> } };
+type RouteHello$name = { queries: { nameQuery: page_HelloQuery }; entryPoints: { hello_banner?: EntryPoint<EntryPointComponent<RouteHello$name_hello_banner['queries'], RouteHello$name_hello_banner['entryPoints'], {}, {}>, {}>; hello_results: EntryPoint<EntryPointComponent<RouteHello$name_hello_results['queries'], RouteHello$name_hello_results['entryPoints'], {}, {}>, {}> } };
 
 /**
  * Map of route paths to their query types.
@@ -44,7 +44,7 @@ type QueryHelpers_RouteHello$name = { nameQuery: (variables: page_HelloQuery$var
 
 // Entry point helper type aliases for each route
 type EntryPointHelpers_RouteRoot = { search_results: (variables: searchResults_Query$variables) => { entryPointParams: Record<string, never>; entryPoint: EntryPoint<EntryPointComponent<RouteRoot_search_results['queries'], RouteRoot_search_results['entryPoints'], {}, {}>, {}> } };
-type EntryPointHelpers_RouteHello$name = { hello_banner: (variables: helloBanner_Query$variables) => { entryPointParams: Record<string, never>; entryPoint: EntryPoint<EntryPointComponent<RouteHello$name_hello_banner['queries'], RouteHello$name_hello_banner['entryPoints'], {}, {}>, {}> }; hello_results: (variables: helloResults_CityResultsQuery$variables) => { entryPointParams: Record<string, never>; entryPoint: EntryPoint<EntryPointComponent<RouteHello$name_hello_results['queries'], RouteHello$name_hello_results['entryPoints'], {}, {}>, {}> } };
+type EntryPointHelpers_RouteHello$name = { hello_banner: (variables: HelloBannerQuery$variables) => { entryPointParams: Record<string, never>; entryPoint: EntryPoint<EntryPointComponent<RouteHello$name_hello_banner['queries'], RouteHello$name_hello_banner['entryPoints'], {}, {}>, {}> } | undefined; hello_results: (variables: helloResults_CityResultsQuery$variables) => { entryPointParams: Record<string, never>; entryPoint: EntryPoint<EntryPointComponent<RouteHello$name_hello_results['queries'], RouteHello$name_hello_results['entryPoints'], {}, {}>, {}> } };
 
 /**
  * Query helper functions for a route.

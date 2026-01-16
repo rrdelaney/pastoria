@@ -22,8 +22,8 @@ const RESOURCE_CONF = {
       loader: (): Promise<ComponentType<PageProps<'/hello/[name]'>>> => import("../../pastoria/hello/[name]/page").then(m => m.default)
     },
   "fs:page(/hello/[name])#hello_banner": {
-      src: "pastoria/hello/[name]/hello_banner.page.tsx",
-      loader: (): Promise<ComponentType<PageProps<'/hello/[name]#hello_banner'>>> => import("../../pastoria/hello/[name]/hello_banner.page").then(m => m.default)
+      src: "pastoria/hello/[name]/(hello_banner).page.tsx",
+      loader: (): Promise<ComponentType<PageProps<'/hello/[name]#hello_banner'>>> => import("../../pastoria/hello/[name]/(hello_banner).page").then(m => m.default)
     },
   "fs:page(/hello/[name])#hello_results": {
       src: "pastoria/hello/[name]/hello_results.page.tsx",

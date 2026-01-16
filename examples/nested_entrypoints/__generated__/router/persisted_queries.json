@@ -1,6 +1,7 @@
 {
   "247b4b9e8b2b50c2e9fa0e24efa219ae": "query helloResults_CityResultsQuery(\n  $q: String\n) {\n  cities(query: $q) {\n    name\n  }\n}\n",
   "6e4592e98191f38107831ae55433bee1": "query searchResults_SearchResultsQuery(\n  $query: String!\n) {\n  cities(query: $query) {\n    name\n  }\n}\n",
+  "8121184a0b5af318d403bea9ce55b729": "query HelloBannerQuery {\n  helloMessage\n}\n",
   "86dbfc00845d112dfbcf73f5ee07713d": "query helloWorld_HelloCityResultsQuery(\n  $q: String!\n) {\n  cities(query: $q) {\n    name\n  }\n}\n",
   "976a7f67a139b2c31e8e83558b5e3660": "query search_SearchResultsQuery(\n  $query: String!\n) {\n  cities(query: $query) {\n    name\n  }\n}\n",
   "9875552ac1edd82ce53482b489696a19": "query helloWorld_AppBannerQuery {\n  helloMessage\n}\n",
