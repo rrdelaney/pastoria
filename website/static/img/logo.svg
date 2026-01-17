@@ -2,31 +2,26 @@
 <svg width="100px" height="100px" viewBox="0 0 100 100" version="1.1" xmlns="http://www.w3.org/2000/svg">
     <title>Pastoria Logo</title>
     <defs>
-        <linearGradient x1="0%" y1="0%" x2="100%" y2="100%" id="nodeGradient">
+        <linearGradient x1="0%" y1="0%" x2="100%" y2="100%" id="gradient1">
             <stop stop-color="#6d9afb" offset="0%"></stop>
             <stop stop-color="#a855f7" offset="100%"></stop>
         </linearGradient>
-        <linearGradient x1="0%" y1="0%" x2="100%" y2="100%" id="sparkGradient">
-            <stop stop-color="#a855f7" offset="0%"></stop>
-            <stop stop-color="#f97316" offset="100%"></stop>
-        </linearGradient>
     </defs>
     <g stroke="none" stroke-width="1" fill="none" fill-rule="evenodd">
-        <!-- Connection lines -->
-        <line x1="50" y1="50" x2="20" y2="25" stroke="url(#nodeGradient)" stroke-width="3" stroke-linecap="round" opacity="0.6"></line>
-        <line x1="50" y1="50" x2="80" y2="25" stroke="url(#nodeGradient)" stroke-width="3" stroke-linecap="round" opacity="0.6"></line>
-        <line x1="50" y1="50" x2="20" y2="75" stroke="url(#nodeGradient)" stroke-width="3" stroke-linecap="round" opacity="0.6"></line>
-        <line x1="50" y1="50" x2="80" y2="75" stroke="url(#nodeGradient)" stroke-width="3" stroke-linecap="round" opacity="0.6"></line>
+        <!-- Connection - super chunky -->
+        <path d="M25,30 L75,70" stroke="url(#gradient1)" stroke-width="10" stroke-linecap="round"></path>
 
-        <!-- Outer nodes -->
-        <circle cx="20" cy="25" r="8" fill="url(#nodeGradient)"></circle>
-        <circle cx="80" cy="25" r="8" fill="url(#nodeGradient)"></circle>
-        <circle cx="20" cy="75" r="8" fill="url(#nodeGradient)"></circle>
-        <circle cx="80" cy="75" r="8" fill="url(#nodeGradient)"></circle>
+        <!-- Two chunky nodes -->
+        <circle cx="25" cy="30" r="16" fill="url(#gradient1)"></circle>
+        <circle cx="75" cy="70" r="16" fill="url(#gradient1)"></circle>
 
-        <!-- Center node (larger, with glow effect) -->
-        <circle cx="50" cy="50" r="16" fill="url(#sparkGradient)" opacity="0.3"></circle>
-        <circle cx="50" cy="50" r="12" fill="url(#sparkGradient)"></circle>
-        <circle cx="50" cy="50" r="6" fill="#ffffff"></circle>
+        <!-- White centers -->
+        <circle cx="25" cy="30" r="7" fill="#ffffff"></circle>
+        <circle cx="75" cy="70" r="7" fill="#ffffff"></circle>
+
+        <!-- Spark traveling -->
+        <circle r="6" fill="#ffffff">
+            <animateMotion dur="1.2s" repeatCount="indefinite" path="M25,30 L75,70"/>
+        </circle>
     </g>
 </svg>

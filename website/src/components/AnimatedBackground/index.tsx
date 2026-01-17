@@ -33,28 +33,29 @@ export default function AnimatedBackground() {
   const mouseRef = useRef({x: 0, y: 0, active: false});
 
   const initNodes = useCallback((width: number, height: number) => {
-    const nodeCount = Math.floor((width * height) / 25000);
+    // More nodes for the 3D perspective view
+    const nodeCount = Math.floor((width * height) / 15000);
     const nodes: Node[] = [];
 
     for (let i = 0; i < nodeCount; i++) {
       nodes.push({
         x: Math.random() * width,
         y: Math.random() * height,
-        vx: (Math.random() - 0.5) * 0.3,
-        vy: (Math.random() - 0.5) * 0.3,
-        radius: Math.random() * 2 + 1,
+        vx: (Math.random() - 0.5) * 0.2,
+        vy: (Math.random() - 0.5) * 0.2,
+        radius: Math.random() * 2.5 + 1.5,
         connections: [],
       });
     }
 
-    // Build connections based on proximity
-    const connectionDistance = Math.min(width, height) * 0.15;
+    // Build connections based on proximity - larger distance for more connections
+    const connectionDistance = Math.min(width, height) * 0.18;
     for (let i = 0; i < nodes.length; i++) {
       for (let j = i + 1; j < nodes.length; j++) {
         const dx = nodes[i].x - nodes[j].x;
         const dy = nodes[i].y - nodes[j].y;
         const dist = Math.sqrt(dx * dx + dy * dy);
-        if (dist < connectionDistance && nodes[i].connections.length < 4) {
+        if (dist < connectionDistance && nodes[i].connections.length < 5) {
           nodes[i].connections.push(j);
         }
       }
@@ -126,12 +127,12 @@ export default function AnimatedBackground() {
     canvas.addEventListener('mousemove', handleMouseMove);
     canvas.addEventListener('mouseleave', handleMouseLeave);
 
-    // Spawn sparks periodically
+    // Spawn sparks periodically - more sparks for the 3D view
     const sparkInterval = setInterval(() => {
-      if (sparksRef.current.length < 15) {
+      if (sparksRef.current.length < 25) {
         spawnSpark();
       }
-    }, 200);
+    }, 150);
 
     const animate = () => {
       const rect = canvas.getBoundingClientRect();
@@ -222,20 +223,20 @@ export default function AnimatedBackground() {
         const x = fromNode.x + (toNode.x - fromNode.x) * spark.progress;
         const y = fromNode.y + (toNode.y - fromNode.y) * spark.progress;
 
-        // Draw spark glow
-        const gradient = ctx.createRadialGradient(x, y, 0, x, y, 12);
+        // Draw spark glow - larger for 3D perspective
+        const gradient = ctx.createRadialGradient(x, y, 0, x, y, 16);
         gradient.addColorStop(0, spark.color);
-        gradient.addColorStop(0.5, spark.color + '80');
+        gradient.addColorStop(0.4, spark.color + 'aa');
         gradient.addColorStop(1, 'transparent');
 
         ctx.beginPath();
-        ctx.arc(x, y, 12, 0, Math.PI * 2);
+        ctx.arc(x, y, 16, 0, Math.PI * 2);
         ctx.fillStyle = gradient;
         ctx.fill();
 
         // Draw spark core
         ctx.beginPath();
-        ctx.arc(x, y, 3, 0, Math.PI * 2);
+        ctx.arc(x, y, 4, 0, Math.PI * 2);
         ctx.fillStyle = '#ffffff';
         ctx.fill();
 
@@ -271,5 +272,12 @@ export default function AnimatedBackground() {
     };
   }, [initNodes, spawnSpark]);
 
-  return <canvas ref={canvasRef} className={styles.canvas} />;
+  return (
+    <div className={styles.wrapper}>
+      <div className={styles.plane}>
+        <canvas ref={canvasRef} className={styles.canvas} />
+      </div>
+      <div className={styles.gradient} />
+    </div>
+  );
 }
