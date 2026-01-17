@@ -6,19 +6,24 @@
 
 /* You can override the default Infima variables here. */
 :root {
-  --ifm-color-primary: #992a05;
-  --ifm-color-primary-dark: #8a2605;
-  --ifm-color-primary-darker: #822404;
-  --ifm-color-primary-darkest: #6b1d04;
-  --ifm-color-primary-light: #a82e06;
-  --ifm-color-primary-lighter: #b03006;
-  --ifm-color-primary-lightest: #c73707;
+  --ifm-color-primary: #6d9afb;
+  --ifm-color-primary-dark: #4a82fa;
+  --ifm-color-primary-darker: #3876fa;
+  --ifm-color-primary-darkest: #0752f5;
+  --ifm-color-primary-light: #90b2fc;
+  --ifm-color-primary-lighter: #a2befc;
+  --ifm-color-primary-lightest: #d6e3fe;
 
   --docusaurus-highlighted-code-line-bg: rgba(0, 0, 0, 0.1);
 
   --ifm-heading-font-family: 'Source Serif 4', serif;
   --ifm-font-family-base: 'Work Sans', system-ui, sans-serif;
   --ifm-font-family-monospace: 'Cascadia Code', monospace;
+
+  --ifm-background-color: #0a0a0f;
+  --ifm-background-surface-color: #121218;
+  --ifm-navbar-background-color: rgba(10, 10, 15, 0.8);
+  --ifm-footer-background-color: #0a0a0f;
 }
 
 /* For readability concerns, you should choose a lighter palette in dark mode. */
@@ -30,8 +35,188 @@
   --ifm-color-primary-light: #90b2fc;
   --ifm-color-primary-lighter: #a2befc;
   --ifm-color-primary-lightest: #d6e3fe;
+
+  --ifm-background-color: #0a0a0f;
+  --ifm-background-surface-color: #121218;
+  --ifm-navbar-background-color: rgba(10, 10, 15, 0.8);
+  --ifm-footer-background-color: #0a0a0f;
 }
 
-.hero__title {
-  font-size: 5rem;
+/* Navbar styling */
+.navbar {
+  backdrop-filter: blur(12px);
+  -webkit-backdrop-filter: blur(12px);
+  border-bottom: 1px solid rgba(255, 255, 255, 0.06);
+  box-shadow: none;
+}
+
+.navbar__title {
+  font-weight: 700;
+  color: #ffffff;
+}
+
+.navbar__link {
+  color: rgba(255, 255, 255, 0.7);
+  font-weight: 500;
+}
+
+.navbar__link:hover {
+  color: #ffffff;
+}
+
+.navbar__link--active {
+  color: #6d9afb;
+}
+
+/* Footer styling */
+.footer {
+  background: #0a0a0f;
+  border-top: 1px solid rgba(255, 255, 255, 0.06);
+}
+
+.footer__title {
+  color: #ffffff;
+}
+
+.footer__link-item {
+  color: rgba(255, 255, 255, 0.6);
+}
+
+.footer__link-item:hover {
+  color: #ffffff;
+}
+
+.footer__copyright {
+  color: rgba(255, 255, 255, 0.4);
+}
+
+/* Code blocks in docs */
+.prism-code {
+  background: #16161e !important;
+}
+
+pre {
+  background: #16161e !important;
+  border: 1px solid rgba(255, 255, 255, 0.06);
+}
+
+/* Inline code styling */
+:not(pre) > code {
+  background: rgba(109, 154, 251, 0.1);
+  border: 1px solid rgba(109, 154, 251, 0.1);
+  border-radius: 4px;
+  padding: 0.1em 0.3em;
+}
+
+/* Code inside pre blocks should have no styling */
+pre code {
+  background: transparent !important;
+  border: none !important;
+  padding: 0 !important;
+}
+
+/* Docs page styling */
+.theme-doc-sidebar-container {
+  border-right: 1px solid rgba(255, 255, 255, 0.06) !important;
+}
+
+.menu__link {
+  color: rgba(255, 255, 255, 0.7);
+}
+
+.menu__link:hover {
+  color: #ffffff;
+  background: rgba(255, 255, 255, 0.05);
+}
+
+.menu__link--active {
+  color: #6d9afb;
+  background: rgba(109, 154, 251, 0.1);
+}
+
+/* Table of contents */
+.table-of-contents__link {
+  color: rgba(255, 255, 255, 0.6);
+}
+
+.table-of-contents__link:hover {
+  color: #ffffff;
+}
+
+.table-of-contents__link--active {
+  color: #6d9afb;
+}
+
+/* Pagination */
+.pagination-nav__link {
+  background: rgba(255, 255, 255, 0.02);
+  border-color: rgba(255, 255, 255, 0.06);
+}
+
+.pagination-nav__link:hover {
+  background: rgba(255, 255, 255, 0.05);
+  border-color: rgba(109, 154, 251, 0.2);
+}
+
+/* Search */
+.DocSearch-Button {
+  background: rgba(255, 255, 255, 0.05) !important;
+  border: 1px solid rgba(255, 255, 255, 0.1) !important;
+}
+
+.DocSearch-Button:hover {
+  background: rgba(255, 255, 255, 0.1) !important;
+}
+
+/* Headings */
+h1,
+h2,
+h3,
+h4,
+h5,
+h6 {
+  color: #ffffff;
+}
+
+/* Paragraph text in docs */
+.theme-doc-markdown p {
+  color: rgba(255, 255, 255, 0.8);
+}
+
+/* Links */
+a {
+  color: #6d9afb;
+}
+
+a:hover {
+  color: #90b2fc;
+}
+
+/* Scrollbar styling */
+::-webkit-scrollbar {
+  width: 8px;
+  height: 8px;
+}
+
+::-webkit-scrollbar-track {
+  background: rgba(255, 255, 255, 0.02);
+}
+
+::-webkit-scrollbar-thumb {
+  background: rgba(255, 255, 255, 0.1);
+  border-radius: 4px;
+}
+
+::-webkit-scrollbar-thumb:hover {
+  background: rgba(255, 255, 255, 0.2);
+}
+
+/* Selection */
+::selection {
+  background: rgba(109, 154, 251, 0.3);
+}
+
+/* Smooth scrolling */
+html {
+  scroll-behavior: smooth;
 }
