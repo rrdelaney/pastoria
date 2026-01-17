@@ -19,9 +19,5 @@
         <circle cx="25" cy="30" r="7" fill="#ffffff"></circle>
         <circle cx="75" cy="70" r="7" fill="#ffffff"></circle>
 
-        <!-- Spark traveling -->
-        <circle r="6" fill="#ffffff">
-            <animateMotion dur="1.2s" repeatCount="indefinite" path="M25,30 L75,70"/>
-        </circle>
     </g>
 </svg>
