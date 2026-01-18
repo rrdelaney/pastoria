@@ -89,35 +89,6 @@ function RelayIcon({className}: {className?: string}) {
         opacity="0.4"
       />
 
-      {/* Animated spark dots */}
-      <circle r="3" fill="#fff">
-        <animateMotion dur="2s" repeatCount="indefinite" path="M50,50 L20,30" />
-      </circle>
-      <circle r="3" fill="#fff">
-        <animateMotion
-          dur="2.5s"
-          repeatCount="indefinite"
-          path="M50,50 L80,25"
-          begin="0.5s"
-        />
-      </circle>
-      <circle r="2.5" fill="#fff">
-        <animateMotion
-          dur="1.8s"
-          repeatCount="indefinite"
-          path="M50,50 L85,70"
-          begin="1s"
-        />
-      </circle>
-      <circle r="2.5" fill="#fff">
-        <animateMotion
-          dur="2.2s"
-          repeatCount="indefinite"
-          path="M50,50 L25,75"
-          begin="0.3s"
-        />
-      </circle>
-
       <defs>
         <linearGradient id="centerGradient" x1="0%" y1="0%" x2="100%" y2="100%">
           <stop offset="0%" stopColor="#6d9afb" />
