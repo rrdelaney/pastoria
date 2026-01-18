@@ -123,13 +123,15 @@ function FeatureCard({
   icon,
   title,
   description,
+  delay = 0,
 }: {
   icon: ReactNode;
   title: string;
   description: string;
+  delay?: number;
 }) {
   return (
-    <div className={styles.featureCard}>
+    <div className={styles.featureCard} style={{animationDelay: `${delay}ms`}}>
       <div className={styles.featureIcon}>{icon}</div>
       <h3 className={styles.featureTitle}>{title}</h3>
       <p className={styles.featureDescription}>{description}</p>
@@ -207,6 +209,7 @@ function FeaturesSection() {
 
         <div className={styles.featuresGrid}>
           <FeatureCard
+            delay={0}
             icon={
               <svg
                 width="24"
@@ -223,6 +226,7 @@ function FeaturesSection() {
             description="Define routes by creating files in the pastoria/ directory. Dynamic segments, nested layouts, and API routes work out of the box."
           />
           <FeatureCard
+            delay={100}
             icon={
               <svg
                 width="24"
@@ -247,6 +251,7 @@ function FeaturesSection() {
             description="Colocate your data requirements with your components. Relay handles caching, pagination, and optimistic updates automatically."
           />
           <FeatureCard
+            delay={200}
             icon={
               <svg
                 width="24"
@@ -263,6 +268,7 @@ function FeaturesSection() {
             description="Pages render on the server for fast initial loads and SEO. Hydration is automatic with Relay state transfer."
           />
           <FeatureCard
+            delay={300}
             icon={
               <svg
                 width="24"
@@ -279,6 +285,7 @@ function FeaturesSection() {
             description="Full TypeScript support from routes to queries. PageProps infers the exact shape of your data and parameters."
           />
           <FeatureCard
+            delay={400}
             icon={
               <svg
                 width="24"
@@ -295,6 +302,7 @@ function FeaturesSection() {
             description="Lightning-fast development with hot module replacement. Production builds are optimized and code-split automatically."
           />
           <FeatureCard
+            delay={500}
             icon={
               <svg
                 width="24"
