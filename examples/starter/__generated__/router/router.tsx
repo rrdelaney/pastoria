@@ -38,7 +38,8 @@ import type { page_GreetQuery$variables } from "#genfiles/queries/page_GreetQuer
 
 type RouterConf = typeof ROUTER_CONF;
 type AnyRouteParams = z.infer<RouterConf[keyof RouterConf]['schema']>;
-type AnyEntryPointParams = EntryPointParams<keyof RouterConf>;
+type AnyRouteEntryPoint = RouterConf[keyof RouterConf]['entrypoint'];
+type LoadEntryPointFn = (params: {params: AnyRouteParams}) => void;
 
 const ROUTER_CONF = {
   "/": {
@@ -60,9 +61,35 @@ export interface EntryPointParams<R extends RouteId> {
   entryPoints: EntryPointHelpersForRoute<R>;
 }
 
-// Convert bracket format [param] to colon format :param for radix3 router
+/**
+ * Load a route entry point with proper typing.
+ *
+ * This wrapper exists because TypeScript struggles with union type inference
+ * when calling loadEntryPoint with a union of entry point types. All route
+ * entry points accept {params: Record<string, unknown>}, so this is safe.
+ */
+function loadRouteEntryPoint(
+  provider: EnvironmentProvider,
+  entrypoint: AnyRouteEntryPoint,
+  params: {params: AnyRouteParams},
+) {
+  // Cast needed because Relay's loadEntryPoint infers params from the entry point type.
+  // When entrypoint is a union, the inferred params become an intersection (contravariance),
+  // which resolves to `never`. Our entry points all accept the same params shape, so this is safe.
+  return loadEntryPoint(
+    provider,
+    entrypoint as unknown as EntryPoint<unknown, {params: AnyRouteParams}>,
+    params,
+  );
+}
+
+// Convert bracket format [param]/[[param]] to colon format :param/:param? for radix3 router
 function bracketToColon(path: string): string {
-  return path.replace(/\[([^\]]+)\]/g, ':$1');
+  // First convert optional params [[param]] to :param?
+  let result = path.replace(/\[\[([^\]]+)\]\]/g, ':$1?');
+  // Then convert required params [param] to :param
+  result = result.replace(/\[([^\]]+)\]/g, ':$1');
+  return result;
 }
 
 // Create radix3 router with colon-format paths (radix3 uses :param syntax)
@@ -167,15 +194,9 @@ export async function router__loadEntryPoint(
   if (!initialRoute) return null;
 
   await initialRoute.entrypoint?.root.load();
-  // Cast through unknown to avoid union type inference issues with loadEntryPoint
-  return loadEntryPoint(
-    provider,
-    initialRoute.entrypoint as unknown as EntryPoint<
-      unknown,
-      {params: AnyRouteParams}
-    >,
-    {params: initialLocation.params()},
-  );
+  return loadRouteEntryPoint(provider, initialRoute.entrypoint, {
+    params: initialLocation.params(),
+  });
 }
 
 interface RouterContextValue {
@@ -262,11 +283,8 @@ export function router__createAppFromEntryPoint(
     useEffect(() => {
       const route = location.route();
       if (route) {
-        // Type assertion: params are validated by schema, so they match the entry point
-        // Cast to unknown first to avoid union type inference issues
-        (loadEntryPointRef as (params: {params: AnyRouteParams}) => void)({
-          params: location.params(),
-        });
+        // Cast needed for same reason as loadRouteEntryPoint - see that function's docs
+        (loadEntryPointRef as LoadEntryPointFn)({params: location.params()});
       }
       // eslint-disable-next-line react-hooks/exhaustive-deps
     }, [location]);
@@ -327,7 +345,7 @@ export function useRouteParams<R extends RouteId>(
 
 function router__createPathForRoute(
   routeId: RouteId,
-  inputParams: Record<string, any>,
+  inputParams: Record<string, unknown>,
 ): string {
   const schema = ROUTER_CONF[routeId].schema;
   const params = schema.parse(inputParams);
@@ -336,19 +354,46 @@ function router__createPathForRoute(
   const searchParams = new URLSearchParams();
 
   Object.entries(params).forEach(([key, value]) => {
-    if (value != null) {
-      // Route IDs use bracket format: /hello/[name]
-      const paramPattern = `[${key}]`;
-      if (pathname.includes(paramPattern)) {
+    // Check for optional param pattern first: [[key]]
+    const optionalPattern = `[[${key}]]`;
+    if (pathname.includes(optionalPattern)) {
+      if (value != null) {
+        pathname = pathname.replace(
+          optionalPattern,
+          encodeURIComponent(String(value)),
+        );
+      } else {
+        // Remove the optional segment entirely (including the preceding slash if present)
+        pathname = pathname.replace(`/${optionalPattern}`, '');
+        pathname = pathname.replace(optionalPattern, '');
+      }
+      return;
+    }
+
+    // Check for required param pattern: [key]
+    const paramPattern = `[${key}]`;
+    if (pathname.includes(paramPattern)) {
+      if (value != null) {
         pathname = pathname.replace(
           paramPattern,
           encodeURIComponent(String(value)),
         );
-      } else {
-        searchParams.set(key, String(value));
       }
+      return;
+    }
+
+    // Not a path param, add to search params if non-null
+    if (value != null) {
+      searchParams.set(key, String(value));
     }
   });
+
+  // Clean up any double slashes that might result
+  pathname = pathname.replace(/\/+/g, '/');
+  // Ensure we don't end up with empty path
+  if (pathname === '') {
+    pathname = '/';
+  }
 
   if (searchParams.size > 0) {
     return pathname + '?' + searchParams.toString();
@@ -500,15 +545,13 @@ function entrypoint_fs_page___() {
       entryPoints: undefined
     }
   }
-  
-  const wrappedGetPreloadProps = (p: {params: Record<string, unknown>}) => getPreloadProps({
-    params: p.params as z.infer<typeof schema>,
-    queries: queryHelpers,
-    entryPoints: entryPointHelpers,
-  });
   return {
     root: JSResource.fromModuleId('fs:page(/)'),
-    getPreloadProps: wrappedGetPreloadProps,
+    getPreloadProps: (p: {params: Record<string, unknown>}) => getPreloadProps({
+      params: p.params as z.infer<typeof schema>,
+      queries: queryHelpers,
+      entryPoints: entryPointHelpers,
+    }),
   }
 }
 
@@ -525,20 +568,18 @@ function entrypoint_fs_page__hello__name__() {
     const variables = params;
     return {
       queries: {
-        nameQuery: queries.nameQuery!({name: variables.name}),
+        nameQuery: queries.nameQuery({name: variables.name}),
       }
       ,
       entryPoints: undefined
     }
   }
-  
-  const wrappedGetPreloadProps = (p: {params: Record<string, unknown>}) => getPreloadProps({
-    params: p.params as z.infer<typeof schema>,
-    queries: queryHelpers,
-    entryPoints: entryPointHelpers,
-  });
   return {
     root: JSResource.fromModuleId('fs:page(/hello/[name])'),
-    getPreloadProps: wrappedGetPreloadProps,
+    getPreloadProps: (p: {params: Record<string, unknown>}) => getPreloadProps({
+      params: p.params as z.infer<typeof schema>,
+      queries: queryHelpers,
+      entryPoints: entryPointHelpers,
+    }),
   }
 }

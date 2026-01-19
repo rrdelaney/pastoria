@@ -228,9 +228,18 @@ function createReactHandler(
   };
 }
 
-// Convert bracket format [param] to colon format :param for Express
+// Convert bracket format [param]/[[param]] to colon format for Express/path-to-regexp v8
+// Required params: [param] -> :param
+// Optional params: [[param]] -> {:param} (path-to-regexp v8 syntax for optional)
 function bracketToColon(path: string): string {
-  return path.replace(/\[([^\]]+)\]/g, ':$1');
+  // First convert optional params [[param]] to {:param} (v8 optional syntax)
+  // We need to include the preceding slash in the optional group: /[[param]] -> {/:param}
+  let result = path.replace(/\/\[\[([^\]]+)\]\]/g, '{/:$1}');
+  // Handle case where optional param is at the start (no preceding slash)
+  result = result.replace(/\[\[([^\]]+)\]\]/g, '{:$1}');
+  // Then convert required params [param] to :param
+  result = result.replace(/\[([^\]]+)\]/g, ':$1');
+  return result;
 }
 
 export function createRouterHandler(

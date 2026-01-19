@@ -35,6 +35,8 @@ import { JSResource, ModuleType } from "./js_resource";
 import type { QueryHelpersForRoute, EntryPointHelpersForRoute } from "./types";
 import searchResults_QueryParameters from "#genfiles/queries/searchResults_Query$parameters";
 import type { searchResults_Query$variables } from "#genfiles/queries/searchResults_Query.graphql";
+import page_OptionalGreetQueryParameters from "#genfiles/queries/page_OptionalGreetQuery$parameters";
+import type { page_OptionalGreetQuery$variables } from "#genfiles/queries/page_OptionalGreetQuery.graphql";
 import customEp_fs_page__hello__name__, { schema as customEp_fs_page__hello__name___schema } from "../../pastoria/hello/[name]/entrypoint";
 import page_HelloQueryParameters from "#genfiles/queries/page_HelloQuery$parameters";
 import type { page_HelloQuery$variables } from "#genfiles/queries/page_HelloQuery.graphql";
@@ -52,6 +54,10 @@ const ROUTER_CONF = {
   "/": {
       entrypoint: entrypoint_fs_page___(),
       schema: z.object({ query: z.pipe(z.nullish(z.pipe(z.string(), z.transform(decodeURIComponent))), z.transform(s => s == null ? undefined : s)) })
+    } as const,
+  "/greet/[[name]]": {
+      entrypoint: entrypoint_fs_page__greet___name___(),
+      schema: z.object({ name: z.optional(z.pipe(z.string(), z.transform(decodeURIComponent))) })
     } as const,
   "/hello/[name]": {
       entrypoint: entrypoint_fs_page__hello__name__(),
@@ -92,13 +98,47 @@ function loadRouteEntryPoint(
 
 // Convert bracket format [param] to colon format :param for radix3 router
 function bracketToColon(path: string): string {
+  // Convert required params [param] to :param
+  // Note: optional params [[param]] are handled separately by expandOptionalRoutes
   return path.replace(/\[([^\]]+)\]/g, ':$1');
 }
 
+// Expand routes with optional params into multiple routes
+// e.g., /greet/[[name]] becomes ['/greet', '/greet/:name']
+function expandOptionalRoutes(
+  routePath: string,
+  config: RouterConf[keyof RouterConf],
+): Array<[string, RouterConf[keyof RouterConf]]> {
+  // Check if route has optional params
+  const optionalMatch = routePath.match(/\/\[\[([^\]]+)\]\]/g);
+  if (!optionalMatch) {
+    // No optional params, just convert brackets to colons
+    return [[bracketToColon(routePath), config]];
+  }
+
+  // For routes with optional params, create two routes:
+  // 1. Without the optional segment (e.g., /greet)
+  // 2. With the optional segment as required (e.g., /greet/:name)
+  const withoutOptional = routePath.replace(/\/\[\[([^\]]+)\]\]/g, '');
+  const withOptional = routePath.replace(/\[\[([^\]]+)\]\]/g, '[$1]');
+
+  const routes: Array<[string, RouterConf[keyof RouterConf]]> = [];
+
+  // Add the route without optional param (handles /greet)
+  const pathWithout = bracketToColon(withoutOptional) || '/';
+  routes.push([pathWithout, config]);
+
+  // Add the route with optional param as required (handles /greet/:name)
+  routes.push([bracketToColon(withOptional), config]);
+
+  return routes;
+}
+
 // Create radix3 router with colon-format paths (radix3 uses :param syntax)
+// Routes with optional params are expanded into multiple routes
 const ROUTER = createRouter<RouterConf[keyof RouterConf]>({
   routes: Object.fromEntries(
-    Object.entries(ROUTER_CONF).map(([k, v]) => [bracketToColon(k), v]),
+    Object.entries(ROUTER_CONF).flatMap(([k, v]) => expandOptionalRoutes(k, v)),
   ) as Record<string, RouterConf[keyof RouterConf]>,
 });
 
@@ -357,19 +397,46 @@ function router__createPathForRoute(
   const searchParams = new URLSearchParams();
 
   Object.entries(params).forEach(([key, value]) => {
-    if (value != null) {
-      // Route IDs use bracket format: /hello/[name]
-      const paramPattern = `[${key}]`;
-      if (pathname.includes(paramPattern)) {
+    // Check for optional param pattern first: [[key]]
+    const optionalPattern = `[[${key}]]`;
+    if (pathname.includes(optionalPattern)) {
+      if (value != null) {
+        pathname = pathname.replace(
+          optionalPattern,
+          encodeURIComponent(String(value)),
+        );
+      } else {
+        // Remove the optional segment entirely (including the preceding slash if present)
+        pathname = pathname.replace(`/${optionalPattern}`, '');
+        pathname = pathname.replace(optionalPattern, '');
+      }
+      return;
+    }
+
+    // Check for required param pattern: [key]
+    const paramPattern = `[${key}]`;
+    if (pathname.includes(paramPattern)) {
+      if (value != null) {
         pathname = pathname.replace(
           paramPattern,
           encodeURIComponent(String(value)),
         );
-      } else {
-        searchParams.set(key, String(value));
       }
+      return;
+    }
+
+    // Not a path param, add to search params if non-null
+    if (value != null) {
+      searchParams.set(key, String(value));
     }
   });
+
+  // Clean up any double slashes that might result
+  pathname = pathname.replace(/\/+/g, '/');
+  // Ensure we don't end up with empty path
+  if (pathname === '') {
+    pathname = '/';
+  }
 
   if (searchParams.size > 0) {
     return pathname + '?' + searchParams.toString();
@@ -541,6 +608,35 @@ function entrypoint_fs_page___() {
   }
   return {
     root: JSResource.fromModuleId('fs:page(/)'),
+    getPreloadProps: (p: {params: Record<string, unknown>}) => getPreloadProps({
+      params: p.params as z.infer<typeof schema>,
+      queries: queryHelpers,
+      entryPoints: entryPointHelpers,
+    }),
+  }
+}
+
+function entrypoint_fs_page__greet___name___() {
+  const schema = z.object({ name: z.optional(z.pipe(z.string(), z.transform(decodeURIComponent))) });
+  const queryHelpers = {
+    greetQuery: (variables: page_OptionalGreetQuery$variables) => ({ parameters: page_OptionalGreetQueryParameters, variables }),
+  }
+  ;
+  const entryPointHelpers = {
+  }
+  ;
+  function getPreloadProps({params, queries, entryPoints}: EntryPointParams<'/greet/[[name]]'>) {
+    const variables = params;
+    return {
+      queries: {
+        greetQuery: queries.greetQuery({name: variables.name}),
+      }
+      ,
+      entryPoints: undefined
+    }
+  }
+  return {
+    root: JSResource.fromModuleId('fs:page(/greet/[[name]])'),
     getPreloadProps: (p: {params: Record<string, unknown>}) => getPreloadProps({
       params: p.params as z.infer<typeof schema>,
       queries: queryHelpers,

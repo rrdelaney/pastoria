@@ -17,6 +17,10 @@ const RESOURCE_CONF = {
       src: "pastoria/search_results.page.tsx",
       loader: (): Promise<ComponentType<PageProps<'/#search_results'>>> => import("../../pastoria/search_results.page").then(m => m.default)
     },
+  "fs:page(/greet/[[name]])": {
+      src: "pastoria/greet/[[name]]/page.tsx",
+      loader: (): Promise<ComponentType<PageProps<'/greet/[[name]]'>>> => import("../../pastoria/greet/[[name]]/page").then(m => m.default)
+    },
   "fs:page(/hello/[name])": {
       src: "pastoria/hello/[name]/page.tsx",
       loader: (): Promise<ComponentType<PageProps<'/hello/[name]'>>> => import("../../pastoria/hello/[name]/page").then(m => m.default)

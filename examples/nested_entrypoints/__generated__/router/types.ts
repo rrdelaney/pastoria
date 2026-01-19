@@ -10,9 +10,11 @@ import type {EntryPoint, EntryPointComponent, EntryPointProps} from 'react-relay
 import type {searchResults_Query} from '#genfiles/queries/searchResults_Query.graphql';
 import type {HelloBannerQuery} from '#genfiles/queries/HelloBannerQuery.graphql';
 import type {helloResults_CityResultsQuery} from '#genfiles/queries/helloResults_CityResultsQuery.graphql';
+import type {page_OptionalGreetQuery} from '#genfiles/queries/page_OptionalGreetQuery.graphql';
 import type {page_HelloQuery} from '#genfiles/queries/page_HelloQuery.graphql';
 
 import type {searchResults_Query$variables} from '#genfiles/queries/searchResults_Query.graphql';
+import type {page_OptionalGreetQuery$variables} from '#genfiles/queries/page_OptionalGreetQuery.graphql';
 import type {page_HelloQuery$variables} from '#genfiles/queries/page_HelloQuery.graphql';
 import type {HelloBannerQuery$variables} from '#genfiles/queries/HelloBannerQuery.graphql';
 import type {helloResults_CityResultsQuery$variables} from '#genfiles/queries/helloResults_CityResultsQuery.graphql';
@@ -24,6 +26,7 @@ type RouteHello$name_hello_results = { queries: { citiesQuery: helloResults_City
 
 // Route type aliases - main pages
 type RouteRoot = { queries: {}; entryPoints: { search_results: EntryPoint<EntryPointComponent<RouteRoot_search_results['queries'], RouteRoot_search_results['entryPoints'], {}, {}>, {}> } };
+type RouteGreet$$name = { queries: { greetQuery: page_OptionalGreetQuery }; entryPoints: {} };
 type RouteHello$name = { queries: { nameQuery: page_HelloQuery }; entryPoints: { hello_banner?: EntryPoint<EntryPointComponent<RouteHello$name_hello_banner['queries'], RouteHello$name_hello_banner['entryPoints'], {}, {}>, {}>; hello_results: EntryPoint<EntryPointComponent<RouteHello$name_hello_results['queries'], RouteHello$name_hello_results['entryPoints'], {}, {}>, {}> } };
 
 /**
@@ -33,6 +36,7 @@ type RouteHello$name = { queries: { nameQuery: page_HelloQuery }; entryPoints: {
 export interface PageQueryMap {
   '/': RouteRoot;
   '/#search_results': RouteRoot_search_results;
+  '/greet/[[name]]': RouteGreet$$name;
   '/hello/[name]': RouteHello$name;
   '/hello/[name]#hello_banner': RouteHello$name_hello_banner;
   '/hello/[name]#hello_results': RouteHello$name_hello_results;
@@ -40,10 +44,12 @@ export interface PageQueryMap {
 
 // Query helper type aliases for each route
 type QueryHelpers_RouteRoot = {};
+type QueryHelpers_RouteGreet$$name = { greetQuery: (variables: page_OptionalGreetQuery$variables) => { parameters: unknown; variables: page_OptionalGreetQuery$variables } };
 type QueryHelpers_RouteHello$name = { nameQuery: (variables: page_HelloQuery$variables) => { parameters: unknown; variables: page_HelloQuery$variables } };
 
 // Entry point helper type aliases for each route
 type EntryPointHelpers_RouteRoot = { search_results: (variables: searchResults_Query$variables) => { entryPointParams: Record<string, never>; entryPoint: EntryPoint<EntryPointComponent<RouteRoot_search_results['queries'], RouteRoot_search_results['entryPoints'], {}, {}>, {}> } };
+type EntryPointHelpers_RouteGreet$$name = {};
 type EntryPointHelpers_RouteHello$name = { hello_banner: (variables: HelloBannerQuery$variables) => { entryPointParams: Record<string, never>; entryPoint: EntryPoint<EntryPointComponent<RouteHello$name_hello_banner['queries'], RouteHello$name_hello_banner['entryPoints'], {}, {}>, {}> } | undefined; hello_results: (variables: helloResults_CityResultsQuery$variables) => { entryPointParams: Record<string, never>; entryPoint: EntryPoint<EntryPointComponent<RouteHello$name_hello_results['queries'], RouteHello$name_hello_results['entryPoints'], {}, {}>, {}> } };
 
 /**
@@ -52,6 +58,7 @@ type EntryPointHelpers_RouteHello$name = { hello_banner: (variables: HelloBanner
  */
 export interface QueryHelpersMap {
   '/': QueryHelpers_RouteRoot;
+  '/greet/[[name]]': QueryHelpers_RouteGreet$$name;
   '/hello/[name]': QueryHelpers_RouteHello$name;
 }
 
@@ -65,6 +72,7 @@ export type QueryHelpersForRoute<R extends string> = R extends keyof QueryHelper
  */
 export interface EntryPointHelpersMap {
   '/': EntryPointHelpers_RouteRoot;
+  '/greet/[[name]]': EntryPointHelpers_RouteGreet$$name;
   '/hello/[name]': EntryPointHelpers_RouteHello$name;
 }
 

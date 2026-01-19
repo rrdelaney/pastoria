@@ -9,6 +9,7 @@
   "c3ae55d1215512a4fa3ec7dbe986e35c": "query searchResults_Query(\n  $query: String\n) {\n  cities(query: $query) {\n    name\n  }\n}\n",
   "d03c19a9dab11b6c007a14da9688c904": "query helloWorld_HelloBannerQuery {\n  helloMessage\n}\n",
   "d0d4c4f69a4432c5b2aaae71e8bf7726": "query helloWorld_HelloCityResultsQuery(\n  $q: String\n) {\n  cities(query: $q) {\n    name\n  }\n}\n",
+  "ebc8b7038e09dc4e90a6598c5b310536": "query page_OptionalGreetQuery(\n  $name: String\n) {\n  optionalGreet(name: $name)\n}\n",
   "ecab468d08eff088a39b7c3055094b7c": "query helloBanner_Query {\n  helloMessage\n}\n",
   "f07c85955fc79194b93e6337cf53fc52": "query searchResults_Query(\n  $query: String!\n) {\n  cities(query: $query) {\n    name\n  }\n}\n",
   "f3c9f8095b88d8ae99732233554f7fa1": "query page_HelloQuery(\n  $name: String!\n) {\n  greet(name: $name)\n}\n"

@@ -47,4 +47,9 @@ type Query {
   greet(name: String!): String @semanticNonNull
   """A simple hello world query that returns a greeting message."""
   helloMessage: String @semanticNonNull
+  """
+  Example query with an optional name argument.
+  Returns a personalized or generic greeting.
+  """
+  optionalGreet(name: String): String @semanticNonNull
 }

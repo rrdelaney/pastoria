@@ -79,6 +79,46 @@ used inside of GraphQL queries for a page. By default, these page parameters are
 merged with search parameters and used as the variables for the GraphQL query,
 with page parameters taking preference.
 
+### Optional Parameters
+
+Optional parameters can be defined using double brackets: `[[paramName]]`.
+Routes with optional parameters will match both with and without the parameter
+segment.
+
+For example, `pastoria/hello/[[name]]/page.tsx` would match:
+
+- `/hello` (with `name` being `undefined`)
+- `/hello/ryan` (with `name` being `"ryan"`)
+
+```tsx
+// pastoria/hello/[[name]]/page.tsx
+
+export const queries = {
+  greeting: page_GreetingQuery,
+};
+
+export default function HelloPage({queries}: PageProps<'/hello/[[name]]'>) {
+  const {name} = useRouteParams('/hello/[[name]]');
+
+  return (
+    <div>
+      <h1>Hello, {name ?? 'World'}!</h1>
+    </div>
+  );
+}
+```
+
+When building URLs with optional parameters, omitting the value or passing
+`undefined` will exclude that segment from the path:
+
+```tsx
+// Navigates to /hello
+pushRoute('/hello/[[name]]', {name: undefined});
+
+// Navigates to /hello/ryan
+pushRoute('/hello/[[name]]', {name: 'ryan'});
+```
+
 _TODO: should have a way to customize this behavior._
 
 ## Manually Defined Entry Points

@@ -32,18 +32,32 @@ import pc from 'picocolors';
 // ============================================================================
 
 /**
+ * Represents a route parameter extracted from the filesystem path.
+ */
+export interface RouteParam {
+  /** The parameter name (e.g., "slug", "name") */
+  name: string;
+
+  /** Whether the parameter is optional (uses [[param]] syntax) */
+  optional: boolean;
+}
+
+/**
  * Represents a page discovered in the filesystem.
  * Pages are defined by `page.tsx` files and map to URL routes.
  */
 export interface FilesystemPage {
-  /** The URL route path (e.g., "/", "/about", "/post/[slug]") */
+  /** The URL route path (e.g., "/", "/about", "/post/[slug]", "/hello/[[name]]") */
   routePath: string;
 
   /** The filesystem path relative to project root (e.g., "pastoria/about/page.tsx") */
   filePath: string;
 
-  /** Route parameters extracted from the path (e.g., ["slug"]) */
+  /** Route parameters extracted from the path (e.g., ["slug"]) - names only for backwards compat */
   params: string[];
+
+  /** Route parameters with optional flag (e.g., [{name: "slug", optional: false}]) */
+  routeParams: RouteParam[];
 
   /**
    * Queries exported from the page file.
@@ -127,19 +141,24 @@ export interface FilesystemMetadata {
 
 /**
  * Extracts the route path and parameters from a filesystem path.
- * Route paths preserve the `[param]` syntax from the filesystem.
+ * Route paths preserve the `[param]` and `[[param]]` syntax from the filesystem.
  *
  * @example
  * parseRoutePath("pastoria/post/[slug]/page.tsx")
- * // Returns: { routePath: "/post/[slug]", params: ["slug"] }
+ * // Returns: { routePath: "/post/[slug]", params: ["slug"], routeParams: [{name: "slug", optional: false}] }
+ *
+ * @example
+ * parseRoutePath("pastoria/hello/[[name]]/page.tsx")
+ * // Returns: { routePath: "/hello/[[name]]", params: ["name"], routeParams: [{name: "name", optional: true}] }
  *
  * @example
  * parseRoutePath("pastoria/about/page.tsx")
- * // Returns: { routePath: "/about", params: [] }
+ * // Returns: { routePath: "/about", params: [], routeParams: [] }
  */
 export function parseRoutePath(filePath: string): {
   routePath: string;
   params: string[];
+  routeParams: RouteParam[];
 } {
   // Remove the pastoria/ prefix and the filename
   const relativePath = filePath
@@ -150,33 +169,52 @@ export function parseRoutePath(filePath: string): {
 
   // Handle root route
   if (relativePath === '') {
-    return {routePath: '/', params: []};
+    return {routePath: '/', params: [], routeParams: []};
   }
 
   const params: string[] = [];
+  const routeParams: RouteParam[] = [];
   const segments = relativePath.split('/').filter(Boolean);
 
-  // Collect param names from [param] segments (but keep the brackets in the path)
+  // Collect param names from [param] and [[param]] segments (keep brackets in the path)
   for (const segment of segments) {
+    // Check for optional param first: [[param]]
+    const optionalMatch = segment.match(/^\[\[(.+)\]\]$/);
+    if (optionalMatch && optionalMatch[1]) {
+      params.push(optionalMatch[1]);
+      routeParams.push({name: optionalMatch[1], optional: true});
+      continue;
+    }
+
+    // Check for required param: [param]
     const paramMatch = segment.match(/^\[(.+)\]$/);
     if (paramMatch && paramMatch[1]) {
       params.push(paramMatch[1]);
+      routeParams.push({name: paramMatch[1], optional: false});
     }
   }
 
   const routePath = '/' + segments.join('/');
-  return {routePath, params};
+  return {routePath, params, routeParams};
 }
 
 /**
- * Converts a route path from [param] format to :param format for the router.
+ * Converts a route path from [param]/[[param]] format to :param/:param? format for the router.
  *
  * @example
  * toRouterPath("/post/[slug]")
  * // Returns: "/post/:slug"
+ *
+ * @example
+ * toRouterPath("/hello/[[name]]")
+ * // Returns: "/hello/:name?"
  */
 export function toRouterPath(routePath: string): string {
-  return routePath.replace(/\[([^\]]+)\]/g, ':$1');
+  // First convert optional params [[param]] to :param?
+  let result = routePath.replace(/\[\[([^\]]+)\]\]/g, ':$1?');
+  // Then convert required params [param] to :param
+  result = result.replace(/\[([^\]]+)\]/g, ':$1');
+  return result;
 }
 
 /**
@@ -385,7 +423,7 @@ export function scanFilesystemRoutes(project: Project): FilesystemMetadata {
   for (const sourceFile of pageFiles) {
     const absolutePath = sourceFile.getFilePath();
     const filePath = path.relative(process.cwd(), absolutePath);
-    const {routePath, params} = parseRoutePath(filePath);
+    const {routePath, params, routeParams} = parseRoutePath(filePath);
 
     const queries = extractQueriesFromPage(sourceFile);
 
@@ -393,6 +431,7 @@ export function scanFilesystemRoutes(project: Project): FilesystemMetadata {
       routePath,
       filePath,
       params,
+      routeParams,
       queries,
       nestedEntryPoints: new Map(),
       optional: false, // Main pages are never optional
@@ -435,12 +474,13 @@ export function scanFilesystemRoutes(project: Project): FilesystemMetadata {
     }
 
     const queries = extractQueriesFromPage(sourceFile);
-    const {params} = parseRoutePath(filePath);
+    const {params, routeParams} = parseRoutePath(filePath);
 
     const nestedPage: FilesystemPage = {
       routePath: `${parentRoutePath}#${entryPointName}`, // Internal identifier
       filePath,
       params,
+      routeParams,
       queries,
       nestedEntryPoints: new Map(), // Nested entry points can't have their own nested entry points
       optional, // Whether this entry point can be omitted

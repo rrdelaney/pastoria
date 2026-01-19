@@ -46,6 +46,7 @@ import {
 import {
   type FilesystemMetadata,
   type FilesystemPage,
+  type RouteParam,
   scanFilesystemRoutes,
   toRouterPath,
 } from './filesystem.js';
@@ -446,11 +447,15 @@ async function generateRouter(
     }
 
     // Build params schema from route params + query variables
-    const params = new Map<string, ts.Type>();
+    // Track both the type and whether it's optional
+    const params = new Map<string, {type: ts.Type; optional: boolean}>();
 
-    // Add filesystem params as string types
-    for (const paramName of page.params) {
-      params.set(paramName, tc.getStringType());
+    // Add filesystem params as string types (using routeParams for optional info)
+    for (const routeParam of page.routeParams) {
+      params.set(routeParam.name, {
+        type: tc.getStringType(),
+        optional: routeParam.optional,
+      });
     }
 
     // Also include query variables (only needed for generated entry points)
@@ -462,7 +467,7 @@ async function generateRouter(
       // Merge query params with route params (route params take precedence)
       for (const [paramName, paramType] of queryParams) {
         if (!params.has(paramName)) {
-          params.set(paramName, paramType);
+          params.set(paramName, {type: paramType, optional: false});
         }
       }
     }
@@ -476,10 +481,12 @@ async function generateRouter(
       schemaExpression = 'z.object({})';
     } else {
       const schemaFields = Array.from(params.entries())
-        .map(
-          ([paramName, paramType]) =>
-            `${paramName}: ${zodSchemaOfType(routerTemplate, tc, paramType)}`,
-        )
+        .map(([paramName, {type: paramType, optional: isOptional}]) => {
+          const baseSchema = zodSchemaOfType(routerTemplate, tc, paramType);
+          // Wrap optional params with z.optional()
+          const schema = isOptional ? `z.optional(${baseSchema})` : baseSchema;
+          return `${paramName}: ${schema}`;
+        })
         .join(', ');
       schemaExpression = `z.object({ ${schemaFields} })`;
     }
@@ -851,7 +858,7 @@ async function generateTypes(project: Project, fsMetadata: FilesystemMetadata) {
 
   // Helper to convert route path to a valid TypeScript identifier
   function routeToTypeName(routePath: string, nestedName?: string): string {
-    // Convert /hello/[name] to Hello$name, / to Root
+    // Convert /hello/[name] to Hello$name, /hello/[[name]] to Hello$$name, / to Root
     const pathPart =
       routePath === '/'
         ? 'Root'
@@ -859,8 +866,12 @@ async function generateTypes(project: Project, fsMetadata: FilesystemMetadata) {
             .slice(1) // remove leading /
             .split('/')
             .map((segment) => {
+              // Check for optional param first: [[name]] -> $$name
+              if (segment.startsWith('[[') && segment.endsWith(']]')) {
+                return '$$' + segment.slice(2, -2);
+              }
+              // Check for required param: [name] -> $name
               if (segment.startsWith('[') && segment.endsWith(']')) {
-                // Dynamic segment: [name] -> $name
                 return '$' + segment.slice(1, -1);
               }
               // Static segment: hello -> Hello (capitalize first letter)
