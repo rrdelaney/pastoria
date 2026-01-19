@@ -11,8 +11,8 @@ export default function GreetPage({queries}: PageProps<'/greet/[[name]]'>) {
   const {optionalGreet} = usePreloadedQuery(
     graphql`
       query page_OptionalGreetQuery($name: String)
-        @preloadable
-        @throwOnFieldError {
+      @preloadable
+      @throwOnFieldError {
         optionalGreet(name: $name)
       }
     `,
@@ -54,7 +54,10 @@ export default function GreetPage({queries}: PageProps<'/greet/[[name]]'>) {
         </Link>
       </div>
 
-      <Link href="/" className="mt-8 text-blue-500 underline hover:text-blue-700">
+      <Link
+        href="/"
+        className="mt-8 text-blue-500 underline hover:text-blue-700"
+      >
         Back to home
       </Link>
     </div>
