@@ -23,7 +23,7 @@ async function determineCapabilities(): Promise<PastoriaCapabilities> {
 
   async function hasAppRoot() {
     try {
-      await access('__generated__/router/app_root.ts');
+      await access('pastoria/app.tsx');
       capabilities.hasAppRoot = true;
     } catch {}
   }

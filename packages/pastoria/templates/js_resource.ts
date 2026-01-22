@@ -49,6 +49,10 @@ export class JSResource<M extends ModuleId>
         .then((m) => {
           this.moduleCache = m as ModuleType<M>;
           return this.moduleCache;
+        })
+        .catch((err) => {
+          console.error(`JSResource.load() failed for: ${this.moduleId}`, err);
+          throw err;
         });
     }
 

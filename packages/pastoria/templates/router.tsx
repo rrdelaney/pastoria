@@ -5,7 +5,7 @@ import {
   RouterOps,
 } from 'pastoria-runtime';
 import {createRouter} from 'radix3';
-import {
+import React, {
   AnchorHTMLAttributes,
   createContext,
   PropsWithChildren,
@@ -25,6 +25,7 @@ import {
   RelayEnvironmentProvider,
   useEntryPointLoader,
 } from 'react-relay/hooks';
+import {PreloadableQueryRegistry} from 'relay-runtime';
 import * as z from 'zod/v4-mini';
 
 type RouterConf = typeof ROUTER_CONF;
@@ -196,6 +197,15 @@ export function router__hydrateStore(provider: EnvironmentProvider) {
   if ('__router_ops' in window) {
     const ops = (window as any).__router_ops as RouterOps;
     for (const [op, payload] of ops) {
+      // Register the ConcreteRequest with PreloadableQueryRegistry so that
+      // loadQuery can find it and check store availability instead of
+      // immediately fetching. This is critical for nested entry points whose
+      // query modules haven't been loaded yet.
+      const concreteRequest = op.request?.node;
+      const queryId = concreteRequest?.params?.id;
+      if (queryId && concreteRequest) {
+        PreloadableQueryRegistry.set(queryId, concreteRequest);
+      }
       env.commitPayload(op, payload);
     }
   }
@@ -211,9 +221,32 @@ export async function router__loadEntryPoint(
   if (!initialRoute) return null;
 
   await initialRoute.entrypoint?.root.load();
-  return loadRouteEntryPoint(provider, initialRoute.entrypoint, {
+  const ep = loadRouteEntryPoint(provider, initialRoute.entrypoint, {
     params: initialLocation.params(),
   });
+
+  // Recursively load all nested entry point modules.
+  // This ensures their queries get registered in PreloadableQueryRegistry
+  // before the server tries to serialize them.
+  await loadNestedEntryPointModules(ep);
+
+  return ep;
+}
+
+/**
+ * Recursively load all nested entry point modules so their queries
+ * get registered in PreloadableQueryRegistry.
+ */
+async function loadNestedEntryPointModules(
+  entryPoint: AnyPreloadedEntryPoint | null,
+): Promise<void> {
+  if (!entryPoint) return;
+  for (const nestedEntry of Object.values(entryPoint.entryPoints ?? {})) {
+    if (nestedEntry.rootModuleID) {
+      await JSResource.fromModuleId(nestedEntry.rootModuleID as any).load();
+    }
+    await loadNestedEntryPointModules(nestedEntry);
+  }
 }
 
 interface RouterContextValue {

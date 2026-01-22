@@ -327,41 +327,6 @@ When working on code generation (`packages/pastoria/src/generate.ts` and
 
 ## Known Issues / Future Work
 
-### Nested Entry Points Suspend on Client
-
-Nested entry point queries are not properly serialized during SSR, causing them
-to suspend on the client after hydration.
-
-**Root Cause:** The server's `loadQueries` function in `router_handler.tsx`
-needs queries to be registered with Relay's `PreloadableQueryRegistry` to
-serialize them. Queries are registered when their `.graphql.ts` files are
-imported (as a side effect). However:
-
-1. The generated `router.tsx` only imports lightweight `$parameters` files to
-   keep the client bundle small
-2. The full `.graphql.ts` files are imported by page components
-3. On the server, only the root page component is loaded before `loadQueries`
-   runs
-4. Nested entry point components (and their query registrations) aren't loaded
-   until rendering
-
-**Attempted Solutions:**
-
-- Importing `.graphql.ts` files in router.tsx works but defeats the purpose of
-  keeping the router bundle lightweight
-- Calling `await entryPoint.getComponent()` recursively before collecting
-  queries didn't trigger the module loads as expected
-- Adding a `loadModuleById` callback to explicitly load modules by their
-  `rootModuleID` - needs more investigation
-
-**Potential Fix:** Ensure all nested entry point component modules are loaded on
-the server before `loadQueries` runs. This could be done by:
-
-1. Having `router__loadEntryPoint` recursively load nested modules after calling
-   Relay's `loadEntryPoint`
-2. Or passing a module loader function to the server handler that can load by
-   `rootModuleID`
-
 ### Manually Defined Entry Points
 
 The PASTORIA_2.md spec describes support for manually defined `entrypoint.ts`
