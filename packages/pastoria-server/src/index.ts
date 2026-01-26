@@ -6,7 +6,15 @@ import express from 'express';
 import {readFile} from 'node:fs/promises';
 import * as path from 'node:path';
 import pc from 'picocolors';
+import pino from 'pino';
+import {pinoHttp} from 'pino-http';
 import type {Manifest} from 'vite';
+
+const logger = pino({
+  level: process.env.LOG_LEVEL || 'info',
+});
+
+const httpLogger = pinoHttp({logger});
 
 interface PersistedQueries {
   [hash: string]: string;
@@ -46,14 +54,27 @@ async function createServer() {
   const handler = createHandler(persistedQueries, manifest);
 
   const app = express();
+  app.use(httpLogger);
   app.use(cookieParser());
   app.use(handler);
   app.use(express.static('dist/client'));
 
+  // Debug: Log active handles every 30 seconds to detect accumulation
+  setInterval(() => {
+    const handles = (process as any)._getActiveHandles() as any[];
+    const handleTypes: Record<string, number> = {};
+    for (const h of handles) {
+      const type = h.constructor?.name || 'unknown';
+      handleTypes[type] = (handleTypes[type] || 0) + 1;
+    }
+    logger.info({handleCount: handles.length, handleTypes}, 'Active handles');
+  }, 30000);
+
   app.listen(8000, (err) => {
     if (err) {
-      console.error(err);
+      logger.error(err, 'Failed to start server');
     } else {
+      logger.info('Listening on port 8000');
       console.log(pc.cyan('Listening on port 8000!'));
     }
   });

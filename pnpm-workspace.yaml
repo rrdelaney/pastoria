@@ -18,6 +18,8 @@ catalog:
   graphql: 17.0.0-alpha.9
   grats: ^0.0.33
   picocolors: ^1.1.1
+  pino: ^9.6.0
+  pino-http: ^10.4.0
   react: ^19.2.0
   react-dom: ^19.2.0
   react-relay: ^20.1.1

@@ -17,7 +17,9 @@
   "dependencies": {
     "cookie-parser": "catalog:",
     "dotenv": "catalog:",
-    "picocolors": "catalog:"
+    "picocolors": "catalog:",
+    "pino": "catalog:",
+    "pino-http": "catalog:"
   },
   "devDependencies": {
     "@types/cookie-parser": "catalog:",
