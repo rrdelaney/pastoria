@@ -1,5 +1,12 @@
 # pastoria-server
 
+## 2.0.1
+
+### Patch Changes
+
+- 41357d1: Add logging for http requests and debug logging for excessive CPU
+  usage
+
 ## 2.0.0
 
 ### Minor Changes
