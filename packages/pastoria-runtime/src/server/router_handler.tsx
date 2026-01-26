@@ -299,7 +299,8 @@ async function loadQueries(entryPoint: AnyPreloadedEntryPoint) {
     }
   }
 
-  for (const nestedEntry of Object.values(entryPoint.entryPoints ?? {})) {
+  for (const nestedEntry of Object.values(entryPoint?.entryPoints ?? {})) {
+    if (!nestedEntry) continue; // Skip undefined entry points
     preloadedQueryOps.push(...(await loadQueries(nestedEntry)));
   }
 
