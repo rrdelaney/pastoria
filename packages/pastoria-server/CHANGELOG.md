@@ -1,5 +1,16 @@
 # pastoria-server
 
+## 2.0.0
+
+### Minor Changes
+
+- ca35f9e: Update routing to new file-based conventions
+
+### Patch Changes
+
+- Updated dependencies [ca35f9e]
+  - pastoria-runtime@1.1.0
+
 ## 1.0.15
 
 ### Patch Changes

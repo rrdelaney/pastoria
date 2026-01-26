@@ -1,5 +1,11 @@
 # pastoria
 
+## 1.2.0
+
+### Minor Changes
+
+- ca35f9e: Update routing to new file-based conventions
+
 ## 1.1.0
 
 ### Minor Changes
