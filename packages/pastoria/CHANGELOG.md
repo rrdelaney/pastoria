@@ -1,5 +1,11 @@
 # pastoria
 
+## 2.0.1
+
+### Patch Changes
+
+- 01aa010: Remove call to entryPointLoader in render
+
 ## 2.0.0
 
 ### Major Changes
