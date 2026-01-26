@@ -1,5 +1,11 @@
 # pastoria
 
+## 2.0.2
+
+### Patch Changes
+
+- cef9171: Stop recursively loading modules
+
 ## 2.0.1
 
 ### Patch Changes

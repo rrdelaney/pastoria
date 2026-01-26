@@ -1,5 +1,11 @@
 # pastoria-runtime
 
+## 1.1.1
+
+### Patch Changes
+
+- cef9171: Stop recursively loading modules
+
 ## 1.1.0
 
 ### Minor Changes

@@ -1,5 +1,12 @@
 # pastoria-server
 
+## 2.0.2
+
+### Patch Changes
+
+- Updated dependencies [cef9171]
+  - pastoria-runtime@1.1.1
+
 ## 2.0.1
 
 ### Patch Changes
