@@ -16,6 +16,7 @@ import React, {
   useEffect,
   useMemo,
   useState,
+  useTransition,
 } from 'react';
 import {preinit, preloadModule} from 'react-dom';
 import {
@@ -330,7 +331,7 @@ export function router__createAppFromEntryPoint(
       location.route()?.entrypoint,
     );
 
-    useEffect(() => {
+    useMemo(() => {
       const route = location.route();
       if (route) {
         // Cast needed for same reason as loadRouteEntryPoint - see that function's docs
@@ -476,48 +477,63 @@ function router__evaluateNavigationDirection(nav: NavigationDirection) {
 
 export function useNavigation() {
   const {setLocation} = useContext(RouterContext);
+  const [isPending, startTransition] = useTransition();
 
   return useMemo(() => {
     function push(nav: NavigationDirection) {
-      setLocation(
-        RouterLocation.parse(router__evaluateNavigationDirection(nav), 'push'),
-      );
+      startTransition(() => {
+        setLocation(
+          RouterLocation.parse(
+            router__evaluateNavigationDirection(nav),
+            'push',
+          ),
+        );
+      });
     }
 
     function replace(nav: NavigationDirection) {
-      setLocation(
-        RouterLocation.parse(
-          router__evaluateNavigationDirection(nav),
-          'replace',
-        ),
-      );
+      startTransition(() => {
+        setLocation(
+          RouterLocation.parse(
+            router__evaluateNavigationDirection(nav),
+            'replace',
+          ),
+        );
+      });
     }
 
     function pushRoute<R extends RouteId>(
       routeId: R,
       params: z.input<RouterConf[R]['schema']>,
     ) {
-      setLocation(
-        RouterLocation.parse(
-          router__createPathForRoute(routeId, params),
-          'push',
-        ),
-      );
+      startTransition(() => {
+        setLocation(
+          RouterLocation.parse(
+            router__createPathForRoute(routeId, params),
+            'push',
+          ),
+        );
+      });
     }
 
     function replaceRoute<R extends RouteId>(
       routeId: R,
       params: z.input<RouterConf[R]['schema']>,
     ) {
-      setLocation((prevLoc) =>
-        RouterLocation.parse(
-          router__createPathForRoute(routeId, {...prevLoc.params(), ...params}),
-          'replace',
-        ),
-      );
+      startTransition(() => {
+        setLocation((prevLoc) =>
+          RouterLocation.parse(
+            router__createPathForRoute(routeId, {
+              ...prevLoc.params(),
+              ...params,
+            }),
+            'replace',
+          ),
+        );
+      });
     }
 
-    return {push, replace, pushRoute, replaceRoute} as const;
+    return {push, replace, pushRoute, replaceRoute, isPending} as const;
   }, [setLocation]);
 }
 
