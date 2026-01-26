@@ -332,6 +332,9 @@ export function router__createAppFromEntryPoint(
     );
 
     useMemo(() => {
+      // Skip during SSR - entry point is already loaded before rendering
+      if (typeof window === 'undefined') return;
+
       const route = location.route();
       if (route) {
         // Cast needed for same reason as loadRouteEntryPoint - see that function's docs
