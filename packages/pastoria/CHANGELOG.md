@@ -1,5 +1,11 @@
 # pastoria
 
+## 2.0.0
+
+### Major Changes
+
+- 9a92396: Remove startTransition from router navigation
+
 ## 1.2.1
 
 ### Patch Changes
