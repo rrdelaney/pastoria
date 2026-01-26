@@ -534,7 +534,7 @@ export function useNavigation() {
     }
 
     return {push, replace, pushRoute, replaceRoute, isPending} as const;
-  }, [setLocation]);
+  }, [setLocation, isPending]);
 }
 
 export function Link({
