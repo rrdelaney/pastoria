@@ -1,5 +1,11 @@
 # pastoria
 
+## 1.2.1
+
+### Patch Changes
+
+- 5c2d231: Update template to remove useMemo lint error
+
 ## 1.2.0
 
 ### Minor Changes
