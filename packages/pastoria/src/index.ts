@@ -69,13 +69,9 @@ async function main() {
   program
     .command('build')
     .description('Build for production')
-    .argument('<target>', 'Build target: client or server')
-    .action(async (target: string) => {
-      if (target !== 'client' && target !== 'server') {
-        console.error('Invalid target. Must be "client" or "server"');
-        process.exit(1);
-      }
-      await runViteBuild(target as 'client' | 'server');
+    .action(async () => {
+      await runViteBuild('client');
+      await runViteBuild('server');
     });
 
   program.parseAsync();
