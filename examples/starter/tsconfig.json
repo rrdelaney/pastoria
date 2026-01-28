@@ -18,19 +18,20 @@
     "incremental": true,
     "paths": {
       "#src/*": ["./src/*"],
-      "#genfiles/*": ["./__generated__/*"]
-    }
+      "#genfiles/*": ["./__generated__/*"],
+      "#pastoria/*": ["./pastoria/*"],
+    },
   },
   "include": [
     "__generated__/**/*.ts",
     "__generated__/**/*.tsx",
     "src/**/*.ts",
-    "src/**/*.tsx"
+    "src/**/*.tsx",
   ],
   "grats": {
     "graphqlSchema": "./__generated__/schema/schema.graphql",
     "tsSchema": "./__generated__/schema/schema.ts",
     "nullableByDefault": true,
-    "strictSemanticNullability": true
-  }
+    "strictSemanticNullability": true,
+  },
 }

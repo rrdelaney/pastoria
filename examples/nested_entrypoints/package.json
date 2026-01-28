@@ -5,14 +5,16 @@
   "type": "module",
   "scripts": {
     "format": "prettier -w .",
-    "build": "just build",
+    "generate": "grats && relay-compiler && pastoria generate",
+    "build": "pastoria build",
     "dev": "pastoria dev",
     "start": "NODE_ENV=production pastoria-server",
     "check": "tsc"
   },
   "imports": {
     "#src/*": "./src/*",
-    "#genfiles/*": "./__generated__/*"
+    "#genfiles/*": "./__generated__/*",
+    "#pastoria/*": "./pastoria/*"
   },
   "dependencies": {
     "dotenv": "catalog:",

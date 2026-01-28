@@ -1,6 +1,5 @@
 import tailwindcss from '@tailwindcss/vite';
 import react from '@vitejs/plugin-react';
-import {access} from 'node:fs/promises';
 import {
   InlineConfig,
   PluginOption,
@@ -8,36 +7,8 @@ import {
   type Plugin,
 } from 'vite';
 import {cjsInterop} from 'vite-plugin-cjs-interop';
-import {
-  generateClientEntry,
-  generateServerEntry,
-  PastoriaCapabilities,
-} from './generate.js';
+import {generateClientEntry, generateServerEntry} from './generate.js';
 import {logger} from './logger.js';
-
-async function determineCapabilities(): Promise<PastoriaCapabilities> {
-  const capabilities: PastoriaCapabilities = {
-    hasAppRoot: false,
-    hasServerHandler: false,
-  };
-
-  async function hasAppRoot() {
-    try {
-      await access('__generated__/router/app_root.ts');
-      capabilities.hasAppRoot = true;
-    } catch {}
-  }
-
-  async function hasServerHandler() {
-    try {
-      await access('__generated__/router/server_handler.ts');
-      capabilities.hasServerHandler = true;
-    } catch {}
-  }
-
-  await Promise.all([hasAppRoot(), hasServerHandler()]);
-  return capabilities;
-}
 
 function pastoriaEntryPlugin(): Plugin {
   const clientEntryModuleId = 'virtual:pastoria-entry-client.tsx';
@@ -53,11 +24,10 @@ function pastoriaEntryPlugin(): Plugin {
       }
     },
     async load(id) {
-      const capabilities = await determineCapabilities();
       if (id === clientEntryModuleId) {
-        return generateClientEntry(capabilities);
+        return generateClientEntry();
       } else if (id === serverEntryModuleId) {
-        return generateServerEntry(capabilities);
+        return generateServerEntry();
       }
     },
   };

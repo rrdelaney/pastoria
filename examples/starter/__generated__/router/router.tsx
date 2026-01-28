@@ -259,20 +259,7 @@ export function router__createAppFromEntryPoint(
 
     return (
       <RouterContext value={routerContextValue}>
-        {'fallback' in entryPoint.entryPoints ? (
-          <Suspense
-            fallback={
-              <EntryPointContainer
-                entryPointReference={entryPoint.entryPoints.fallback}
-                props={{}}
-              />
-            }
-          >
-            <EntryPointContainer entryPointReference={entryPoint} props={{}} />
-          </Suspense>
-        ) : (
-          <EntryPointContainer entryPointReference={entryPoint} props={{}} />
-        )}
+        <EntryPointContainer entryPointReference={entryPoint} props={{}} />
       </RouterContext>
     );
   }
@@ -487,7 +474,7 @@ function entrypoint_routehelloname(): EntryPoint<ModuleType<'route(/hello/:name)
         queries: {
           nameQuery: {
             parameters: helloWorld_HelloQueryParameters,
-            variables
+            variables: {name: variables.name}
           }
           ,
         }

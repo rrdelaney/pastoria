@@ -62,11 +62,9 @@ async function main() {
     .action(startDevserver);
 
   program
-    .command('gen')
+    .command('generate')
     .description('Generate Pastoria router artifacts')
-    .action(async () => {
-      await runCodeGeneration();
-    });
+    .action(runCodeGeneration);
 
   program
     .command('build')

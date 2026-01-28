@@ -360,7 +360,7 @@ function bootstrapScripts(
   }
 
   if (process.env.NODE_ENV !== 'production') {
-    bootstrap.preloadStylesheets.push('/src/globals.css');
+    bootstrap.preloadStylesheets.push('/pastoria/globals.css');
     bootstrap.bootstrapModules.push(
       '/@vite/client',
       '/@id/virtual:pastoria-entry-client.tsx',
