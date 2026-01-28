@@ -1,21 +1,17 @@
 #!/usr/bin/env node
 
 import {program} from 'commander';
-import {printSchema, type GraphQLSchema} from 'graphql';
-import {mkdir, readFile, writeFile} from 'node:fs/promises';
+import {readFile} from 'node:fs/promises';
 import * as path from 'node:path';
 import {IndentationText, Project} from 'ts-morph';
-import {build, createServer as createViteServer} from 'vite';
+import {build} from 'vite';
 import {startDevserver} from './devserver.js';
-import {generatePastoriaArtifacts} from './generate.js';
+import {
+  generatePastoriaArtifacts,
+  generatePastoriaExports,
+} from './generate.js';
 import {logInfo} from './logger.js';
 import {CLIENT_BUILD, createBuildConfig, SERVER_BUILD} from './vite_plugin.js';
-
-interface PastoriaEnvironmentModule {
-  default: {
-    schema: GraphQLSchema;
-  };
-}
 
 async function runCodeGeneration() {
   const project = new Project({
@@ -27,7 +23,11 @@ async function runCodeGeneration() {
 
   logInfo('Generating Pastoria artifacts...');
 
-  await generatePastoriaArtifacts(project);
+  // Generate exports and collect metadata
+  const metadata = await generatePastoriaExports(project);
+
+  // Generate artifacts using cached metadata
+  await generatePastoriaArtifacts(project, metadata);
 
   logInfo('Code generation complete!');
 }
@@ -43,33 +43,6 @@ async function runViteBuild(target: 'client' | 'server') {
   });
 
   logInfo(`${target} build complete!`);
-}
-
-async function printGraphQLSchema() {
-  logInfo('Printing GraphQL schema...');
-
-  const buildConfig = createBuildConfig(CLIENT_BUILD);
-  const vite = await createViteServer({
-    ...buildConfig,
-    configFile: false,
-    server: {middlewareMode: true},
-  });
-
-  try {
-    const environmentModule = (await vite.ssrLoadModule(
-      './pastoria/environment.ts',
-    )) as PastoriaEnvironmentModule;
-
-    const schema = environmentModule.default.schema;
-    const sdl = printSchema(schema);
-
-    await mkdir('__generated__/schema', {recursive: true});
-    await writeFile('__generated__/schema/schema.graphql', sdl);
-
-    logInfo('Schema written to __generated__/schema/schema.graphql');
-  } finally {
-    await vite.close();
-  }
 }
 
 async function main() {
@@ -89,35 +62,22 @@ async function main() {
     .action(startDevserver);
 
   program
-    .command('generate')
-    .description('Generate Pastoria routing and resources')
-    .option(
-      '--skip-schema',
-      'Skip schema generation (useful if using grats or other tools)',
-    )
-    .action(async (opts: {skipSchema?: boolean}) => {
+    .command('gen')
+    .description('Generate Pastoria router artifacts')
+    .action(async () => {
       await runCodeGeneration();
-      if (!opts.skipSchema) {
-        await printGraphQLSchema();
-      }
     });
 
   program
     .command('build')
     .description('Build for production')
-    .argument('[target]', 'Build target: client, server, or omit for both')
-    .action(async (target?: string) => {
-      if (target != null && target !== 'client' && target !== 'server') {
+    .argument('<target>', 'Build target: client or server')
+    .action(async (target: string) => {
+      if (target !== 'client' && target !== 'server') {
         console.error('Invalid target. Must be "client" or "server"');
         process.exit(1);
       }
-
-      if (target == null) {
-        await runViteBuild('client');
-        await runViteBuild('server');
-      } else {
-        await runViteBuild(target as 'client' | 'server');
-      }
+      await runViteBuild(target as 'client' | 'server');
     });
 
   program.parseAsync();

@@ -1,35 +1,5 @@
 # pastoria
 
-## 2.0.2
-
-### Patch Changes
-
-- cef9171: Stop recursively loading modules
-
-## 2.0.1
-
-### Patch Changes
-
-- 01aa010: Remove call to entryPointLoader in render
-
-## 2.0.0
-
-### Major Changes
-
-- 9a92396: Remove startTransition from router navigation
-
-## 1.2.1
-
-### Patch Changes
-
-- 5c2d231: Update template to remove useMemo lint error
-
-## 1.2.0
-
-### Minor Changes
-
-- ca35f9e: Update routing to new file-based conventions
-
 ## 1.1.0
 
 ### Minor Changes

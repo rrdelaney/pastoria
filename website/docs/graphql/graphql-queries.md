@@ -2,368 +2,246 @@
 sidebar_position: 2
 ---
 
-# Writing GraphQL Queries
+# Writing GraphQL queries
 
 Pastoria uses [React Relay](https://relay.dev) for GraphQL data fetching. Relay
-provides automatic query optimization, persisted queries, and seamless
-server-side rendering integration.
+provides powerful features like automatic query optimization, persisted queries,
+and seamless server-side rendering integration.
 
 ## Quick Overview
 
 In Pastoria apps, you write GraphQL queries using the `graphql` template literal
-tag and consume them with `usePreloadedQuery`. Queries are preloaded on the
+tag, and consume them with `usePreloadedQuery`. Queries are preloaded on the
 server before rendering, eliminating loading states on initial page load.
 
-**Example:**
+**Example from `examples/starter/src/hello_world.tsx`:**
 
 ```tsx
-// pastoria/posts/[id]/page.tsx
-import {graphql, usePreloadedQuery} from 'react-relay';
-import postQuery from '#genfiles/queries/page_PostQuery.graphql';
-import type {PageProps} from '#genfiles/router/types';
+import {helloWorld_HelloQuery} from '#genfiles/queries/helloWorld_HelloQuery.graphql.js';
+import {EntryPointComponent, graphql, usePreloadedQuery} from 'react-relay';
 
-export const queries = {
-  postQuery: postQuery,
-};
-
-export default function PostPage({queries}: PageProps<'/posts/[id]'>) {
-  const data = usePreloadedQuery(
+/**
+ * @route /hello/:name
+ * @resource m#hello
+ * @param {string} name
+ */
+export const HelloWorldPage: EntryPointComponent<
+  {nameQuery: helloWorld_HelloQuery},
+  {}
+> = ({queries}) => {
+  const {greet} = usePreloadedQuery(
     graphql`
-      query page_PostQuery($id: ID!) @preloadable {
-        post(id: $id) {
-          title
-          content
-        }
+      query helloWorld_HelloQuery($name: String!)
+      @preloadable
+      @throwOnFieldError {
+        greet(name: $name)
       }
     `,
-    queries.postQuery,
+    queries.nameQuery,
   );
 
   return (
-    <article>
-      <h1>{data.post.title}</h1>
-      <div>{data.post.content}</div>
-    </article>
+    <div className="flex min-h-screen items-center justify-center">
+      <div className="text-center">
+        <h1 className="text-4xl font-bold text-white">{greet}</h1>
+      </div>
+    </div>
   );
-}
-```
-
-## The Queries Export Pattern
-
-Pages in Pastoria export a `queries` object to define which GraphQL queries to
-preload:
-
-```tsx
-import postQuery from '#genfiles/queries/page_PostQuery.graphql';
-
-export const queries = {
-  postQuery: postQuery,
 };
 ```
 
-**Key points:**
-
-1. Import the generated query object from `#genfiles/queries/`
-2. Export a `queries` object with named properties
-3. The property name (e.g., `postQuery`) is how you access it in the component
-
 ## Writing Queries
 
-### Basic Query
+Queries are defined using the `graphql` template literal:
 
 ```tsx
 const data = usePreloadedQuery(
   graphql`
-    query page_PostsQuery @preloadable {
-      posts {
-        id
-        title
+    query MyComponentQuery($userId: ID!) @preloadable @throwOnFieldError {
+      user(id: $userId) {
+        name
+        email
       }
     }
   `,
-  queries.postsQuery,
+  queries.myQuery,
 );
 ```
 
-### Query with Variables
+**Key parts:**
 
-```tsx
-const data = usePreloadedQuery(
-  graphql`
-    query page_PostQuery($id: ID!) @preloadable {
-      post(id: $id) {
-        title
-        content
-      }
-    }
-  `,
-  queries.postQuery,
-);
-```
-
-Route parameters are automatically passed as variables. For `/posts/[id]`, the
-`id` route parameter becomes the `$id` query variable.
-
-### Required Directives
-
-**`@preloadable`** - Required for all queries used in pages. Tells Relay the
-query can be preloaded:
-
-```graphql
-query page_PostQuery($id: ID!) @preloadable {
-  post(id: $id) {
-    title
-  }
-}
-```
-
-**`@throwOnFieldError`** - Recommended. Throws errors if any field fails instead
-of silently returning null:
-
-```graphql
-query page_PostQuery($id: ID!) @preloadable @throwOnFieldError {
-  post(id: $id) {
-    title
-    content
-  }
-}
-```
-
-## Query Naming Convention
-
-Query names should follow this pattern:
-
-```
-<filename>_<Purpose>Query
-```
-
-Examples:
-
-- `page_PostsQuery` - For a page listing posts
-- `page_UserProfileQuery` - For a user profile page
-- `results_SearchResultsQuery` - For a search results nested entry point
-
-The filename prefix helps organize queries and avoid naming conflicts.
+- **Query name**: Must be unique across your app (e.g., `MyComponentQuery`)
+- **Variables**: Declared with `$` prefix and typed (e.g., `$userId: ID!`)
+- **`@preloadable`**: Required directive for entrypoint queries
+- **`@throwOnFieldError`**: Throws errors if any field fails (recommended)
 
 ## Using usePreloadedQuery
 
-Always use `usePreloadedQuery` for queries defined in the `queries` export:
+In Pastoria apps, always use `usePreloadedQuery` to consume queries that were
+preloaded by your entrypoint:
 
 ```tsx
-export default function PostPage({queries}: PageProps<'/posts/[id]'>) {
+export const UserProfile: EntryPointComponent<
+  {userQuery: UserProfileQuery},
+  {}
+> = ({queries}) => {
   const data = usePreloadedQuery(
     graphql`
-      query page_PostQuery($id: ID!) @preloadable {
-        post(id: $id) {
-          title
+      query UserProfileQuery($userId: ID!) @preloadable {
+        user(id: $userId) {
+          name
+          email
+          avatar
         }
       }
     `,
-    queries.postQuery, // Preloaded query reference
+    queries.userQuery, // Preloaded query reference
   );
 
-  return <h1>{data.post.title}</h1>;
-}
+  return <div>{data.user.name}</div>;
+};
 ```
 
 **Why `usePreloadedQuery`?**
 
-- Data is already fetched on the server before rendering
-- No loading states needed for initial render
-- Optimal Core Web Vitals
-- Works seamlessly with SSR and hydration
+- ✅ Data is already fetched on the server before rendering
+- ✅ No loading states needed for initial render
+- ✅ Optimal Core Web Vitals
+- ✅ Works seamlessly with SSR and hydration
 
-**Don't use `useLazyLoadQuery`** in page components—it fetches data on the
-client and defeats server-side rendering benefits.
+**Don't use `useLazyLoadQuery`** in Pastoria apps—it fetches data on the client
+and defeats the purpose of server-side rendering.
 
-## Variable Mapping
+## Query Structure
 
-Route parameters and search parameters are automatically mapped to query
-variables:
+### Selecting Fields
 
-| Source           | Example URL           | Variable    |
-| ---------------- | --------------------- | ----------- |
-| Route parameter  | `/posts/123`          | `$id: 123`  |
-| Search parameter | `/search?q=hello`     | `$q: hello` |
-| Multiple         | `/posts/123?sort=new` | Both mapped |
+Request the exact fields you need:
 
-Variable names must match between your route path and GraphQL query:
-
-```
-Route: /posts/[id]
-Query: query page_PostQuery($id: ID!)
-       ↑ Must match ↑
+```graphql
+query PostQuery($postId: ID!) @preloadable {
+  post(id: $postId) {
+    title
+    content
+    publishedAt
+  }
+}
 ```
 
-## Multiple Queries
+### Nested Objects
 
-A page can preload multiple queries:
+Query nested objects by selecting their fields:
+
+```graphql
+query PostQuery($postId: ID!) @preloadable {
+  post(id: $postId) {
+    title
+    author {
+      name
+      email
+    }
+  }
+}
+```
+
+### Lists
+
+Query lists and map over them in your component:
+
+**From `examples/nested_entrypoints/src/search_results.tsx`:**
 
 ```tsx
-import userQuery from '#genfiles/queries/page_DashboardUserQuery.graphql';
-import statsQuery from '#genfiles/queries/page_DashboardStatsQuery.graphql';
-
-export const queries = {
-  userQuery: userQuery,
-  statsQuery: statsQuery,
-};
-
-export default function DashboardPage({queries}: PageProps<'/dashboard'>) {
-  const userData = usePreloadedQuery(
+export const SearchResults: EntryPointComponent<
+  {citiesQueryRef: searchResults_SearchResultsQuery},
+  {}
+> = ({queries}) => {
+  const {cities} = usePreloadedQuery(
     graphql`
-      query page_DashboardUserQuery @preloadable {
-        me {
+      query searchResults_SearchResultsQuery($query: String!)
+      @preloadable
+      @throwOnFieldError {
+        cities(query: $query) {
           name
         }
       }
     `,
-    queries.userQuery,
-  );
-
-  const statsData = usePreloadedQuery(
-    graphql`
-      query page_DashboardStatsQuery @preloadable {
-        stats {
-          totalPosts
-        }
-      }
-    `,
-    queries.statsQuery,
+    queries.citiesQueryRef,
   );
 
   return (
-    <div>
-      <h1>Welcome, {userData.me.name}</h1>
-      <p>Total posts: {statsData.stats.totalPosts}</p>
-    </div>
-  );
-}
-```
-
-All queries are preloaded in parallel on the server.
-
-## Nested Entry Point Queries
-
-Nested entry points define their own queries using the same pattern:
-
-```tsx
-// pastoria/search/results.page.tsx
-import resultsQuery from '#genfiles/queries/results_SearchResultsQuery.graphql';
-import type {PageProps} from '#genfiles/router/types';
-
-export const queries = {
-  resultsQuery: resultsQuery,
-};
-
-export default function SearchResults({queries}: PageProps<'/search#results'>) {
-  const data = usePreloadedQuery(
-    graphql`
-      query results_SearchResultsQuery($q: String) @preloadable {
-        search(query: $q) {
-          id
-          title
-        }
-      }
-    `,
-    queries.resultsQuery,
-  );
-
-  return (
-    <ul>
-      {data.search.map((result) => (
-        <li key={result.id}>{result.title}</li>
-      ))}
-    </ul>
-  );
-}
-```
-
-Note the `PageProps` route includes `#results` for nested entry points.
-
-## Fragments
-
-Use fragments to co-locate data requirements with components:
-
-```tsx
-// components/PostCard.tsx
-import {graphql, useFragment} from 'react-relay';
-import type {PostCard_post$key} from '#genfiles/queries/PostCard_post.graphql';
-
-const PostCardFragment = graphql`
-  fragment PostCard_post on Post {
-    id
-    title
-    excerpt
-  }
-`;
-
-export function PostCard({post}: {post: PostCard_post$key}) {
-  const data = useFragment(PostCardFragment, post);
-  return (
-    <article>
-      <h2>{data.title}</h2>
-      <p>{data.excerpt}</p>
-    </article>
-  );
-}
-```
-
-Use the fragment in a page query:
-
-```tsx
-// pastoria/posts/page.tsx
-export const queries = {
-  postsQuery: postsQuery,
-};
-
-export default function PostsPage({queries}: PageProps<'/posts'>) {
-  const data = usePreloadedQuery(
-    graphql`
-      query page_PostsQuery @preloadable {
-        posts {
-          id
-          ...PostCard_post
-        }
-      }
-    `,
-    queries.postsQuery,
-  );
-
-  return (
-    <div>
-      {data.posts.map((post) => (
-        <PostCard key={post.id} post={post} />
+    <div className="grid w-full max-w-lg grid-cols-2">
+      {cities.map((c) => (
+        <div key={c.name}>{c.name}</div>
       ))}
     </div>
   );
-}
+};
 ```
 
-## Optional Variables
+### Variables
 
-Use nullable types for optional variables:
+Variables let you pass dynamic values to queries:
 
 ```graphql
-query page_SearchQuery($q: String, $limit: Int) @preloadable {
-  search(query: $q, limit: $limit) {
-    id
-    title
+query UserPostsQuery($userId: ID!, $limit: Int) @preloadable {
+  user(id: $userId) {
+    posts(limit: $limit) {
+      title
+      publishedAt
+    }
   }
 }
 ```
 
-Optional route/search parameters map to nullable query variables automatically.
+Variables are automatically passed from your route parameters when using
+resource-driven entrypoints. Pastoria analyzes your `EntryPointComponent` types
+to detect queries and automatically maps route params to query variables.
+
+## Relay Directives
+
+### @preloadable
+
+**Required** for all queries used in entrypoints. Tells Relay this query can be
+preloaded:
+
+```graphql
+query MyQuery($id: ID!) @preloadable {
+  # ...
+}
+```
+
+### @throwOnFieldError
+
+Throws an error if any field in the query fails. Recommended for catching data
+issues early:
+
+```graphql
+query MyQuery($id: ID!) @preloadable @throwOnFieldError {
+  # If any field fails, an error is thrown
+  user(id: $id) {
+    name
+  }
+}
+```
+
+Without this directive, field errors are silently ignored and return `null`.
 
 ## Type Safety
 
-Relay generates TypeScript types for every query. Import and use them:
+Relay generates TypeScript types for every query. Import and use them for type
+safety:
 
 ```tsx
-import type {page_PostQuery} from '#genfiles/queries/page_PostQuery.graphql';
+import {UserProfileQuery} from '#genfiles/queries/UserProfileQuery.graphql.js';
 
-// The query response is fully typed
-const data = usePreloadedQuery<page_PostQuery>(query, queries.postQuery);
-data.post.title; // TypeScript knows this is string | null
+export const UserProfile: EntryPointComponent<
+  {userQuery: UserProfileQuery}, // Type-safe query reference
+  {}
+> = ({queries}) => {
+  const data = usePreloadedQuery(/* ... */, queries.userQuery);
+  // `data` is fully typed!
+  console.log(data.user.name); // ✅ TypeScript knows this is a string
+};
 ```
 
 ## Compiling Queries
@@ -371,7 +249,7 @@ data.post.title; // TypeScript knows this is string | null
 After writing queries, compile them with the Relay compiler:
 
 ```bash
-relay-compiler
+$ pnpm generate:relay
 ```
 
 This:
@@ -381,22 +259,18 @@ This:
 3. Generates TypeScript types for query results
 4. Creates persisted query IDs for production
 
-Run this before `pastoria generate`:
-
-```bash
-relay-compiler && pastoria generate
-```
+The generated files appear in `__generated__/queries/`.
 
 ## Persisted Queries
 
 Pastoria automatically uses
-[persisted queries](https://relay.dev/docs/guides/persisted-queries/):
+[persisted queries](https://relay.dev/docs/guides/persisted-queries/), which:
 
-- Reduces bandwidth by sending query IDs instead of full query text
-- Improves security by only allowing known queries
-- Enables query allowlisting in production
+- ✅ Reduce bandwidth by sending query IDs instead of full query text
+- ✅ Improve security by only allowing known queries
+- ✅ Enable query allowlisting in production
 
-Configure in `relay.config.json`:
+Persisted queries are configured in `relay.config.json`:
 
 ```json
 {
@@ -406,82 +280,94 @@ Configure in `relay.config.json`:
 }
 ```
 
+The generated `persisted_queries.json` file maps query IDs to query text. No
+additional configuration needed—Pastoria handles this automatically.
+
+## Query Naming Conventions
+
+Follow these conventions for query names:
+
+- **Pattern**: `<componentName>_<QueryPurpose>Query`
+- **Examples**:
+  - `UserProfile_UserQuery`
+  - `PostList_PostsQuery`
+  - `searchResults_SearchResultsQuery`
+
+This helps organize queries and avoid naming conflicts.
+
 ## Common Patterns
 
-### Conditional Data
+### Query with Route Parameters
+
+Declare queries in your `EntryPointComponent` types to automatically pass route
+params:
 
 ```tsx
-const data = usePreloadedQuery(
-  graphql`
-    query page_PostQuery($id: ID!) @preloadable {
-      post(id: $id) {
-        title
-        author {
-          name
+/**
+ * @route /posts/:postId
+ * @resource m#post_page
+ * @param {string} postId
+ */
+export const PostPage: EntryPointComponent<{postQuery: PostPageQuery}, {}> = ({
+  queries,
+}) => {
+  const data = usePreloadedQuery(
+    graphql`
+      query PostPageQuery($postId: ID!) @preloadable {
+        post(id: $postId) {
+          title
+          content
         }
       }
-    }
-  `,
-  queries.postQuery,
-);
+    `,
+    queries.postQuery,
+  );
 
-// Handle potentially null data
-if (!data.post) {
-  return <NotFound />;
-}
-
-return <h1>{data.post.title}</h1>;
+  return <article>{data.post.title}</article>;
+};
 ```
 
-### Lists with Keys
+The `$postId` variable is automatically populated from the route parameter.
+Pastoria detects the `postQuery` property in your types and maps the `postId`
+route param to the `$postId` query variable.
 
-```tsx
-const data = usePreloadedQuery(query, queries.postsQuery);
+### Optional Variables
 
-return (
-  <ul>
-    {data.posts.map((post) => (
-      <li key={post.id}>{post.title}</li>
-    ))}
-  </ul>
-);
-```
-
-### Nested Objects
+Use nullable types for optional variables:
 
 ```graphql
-query page_PostQuery($id: ID!) @preloadable {
-  post(id: $id) {
+query SearchQuery($query: String) @preloadable {
+  # $query can be null/undefined
+  results(query: $query) {
     title
-    author {
-      name
-      avatar
-    }
-    comments {
-      id
-      text
-      author {
-        name
-      }
-    }
   }
 }
 ```
 
+Match this with optional route params:
+
+```tsx
+/**
+ * @route /search
+ * @param {string?} q
+ */
+```
+
 ## Learning More
 
-This covers Pastoria's query patterns. For advanced Relay features:
+This is a brief overview focused on Pastoria's usage patterns. For complete
+Relay documentation on:
 
-- [Fragments](https://relay.dev/docs/guided-tour/rendering/fragments/)
-- [Mutations](https://relay.dev/docs/guided-tour/updating-data/graphql-mutations/)
-- [Subscriptions](https://relay.dev/docs/guided-tour/updating-data/graphql-subscriptions/)
-- [Pagination](https://relay.dev/docs/guided-tour/list-data/pagination/)
-- [Optimistic Updates](https://relay.dev/docs/guided-tour/updating-data/graphql-mutations/#optimistic-updates)
+- Fragments and data masking
+- Mutations
+- Subscriptions
+- Pagination
+- Optimistic updates
+- Advanced query features
 
 Visit the official [Relay documentation](https://relay.dev/docs).
 
 ## Next Steps
 
-- Learn about [filesystem-based routing](../routing/filesystem-routing.md)
-- Understand [page components](../routing/pages.md)
-- Explore [nested entry points](../routing/nested-entrypoints.md)
+Now that you understand queries, learn how to connect them to routes using
+[entrypoints](../routing/manual-entrypoints.md).

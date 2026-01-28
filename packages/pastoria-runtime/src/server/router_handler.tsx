@@ -7,8 +7,8 @@ import {
   specifiedRules,
   validate,
 } from 'graphql';
+import {PastoriaConfig} from 'pastoria-config';
 import {ComponentType, PropsWithChildren} from 'react';
-import type {PastoriaEnvironment} from './environment.js';
 import {renderToPipeableStream} from 'react-dom/server';
 import {
   createOperationDescriptor,
@@ -47,6 +47,7 @@ type LoadEntryPointFn = (
   provider: EnvironmentProvider,
   initialPath?: string,
 ) => Promise<AnyPreloadedEntryPoint | null>;
+type CreateContextFn = (req: express.Request) => unknown | Promise<unknown>;
 
 const jsonSchema = z.record(z.string(), z.json());
 
@@ -72,8 +73,10 @@ function createAbortControllFromRes(res: express.Response): AbortController {
 }
 
 function createGraphqlHandler(
-  environment: PastoriaEnvironment,
+  schema: GraphQLSchema,
+  createContext: CreateContextFn,
   persistedQueries: Record<string, string>,
+  config: Required<PastoriaConfig>,
 ): express.Handler {
   const parsedPersistedQueries: Record<string, DocumentNode> = {};
   for (const [id, doc] of Object.entries(persistedQueries)) {
@@ -88,7 +91,7 @@ function createGraphqlHandler(
   return async (req, res) => {
     const allowGraphiQL =
       process.env.NODE_ENV !== 'production' ||
-      environment.enableGraphiQLInProduction;
+      config.enableGraphiQLInProduction;
 
     if (req.method === 'GET' && allowGraphiQL) {
       return res.status(200).send(graphiqlScript());
@@ -132,7 +135,7 @@ function createGraphqlHandler(
       // If persistedQueriesOnlyInProduction is enabled, reject plain text queries in production
       if (
         process.env.NODE_ENV === 'production' &&
-        environment.persistedQueriesOnlyInProduction
+        config.persistedQueriesOnlyInProduction
       ) {
         return res.status(200).send({
           errors: [
@@ -148,12 +151,7 @@ function createGraphqlHandler(
       }
     }
 
-    const validationErrors = validate(
-      environment.schema,
-      requestDocument,
-      specifiedRules,
-    );
-
+    const validationErrors = validate(schema, requestDocument, specifiedRules);
     if (validationErrors.length) {
       return res
         .status(200)
@@ -163,9 +161,9 @@ function createGraphqlHandler(
     const controller = createAbortControllFromRes(res);
     const graphqlResponse = await execute({
       document: requestDocument,
-      schema: environment.schema,
+      schema,
       operationName,
-      contextValue: await environment.createContext(req),
+      contextValue: await createContext(req),
       variableValues: variables,
       abortSignal: controller.signal,
     });
@@ -183,15 +181,16 @@ function createReactHandler(
   loadEntryPoint: LoadEntryPointFn,
   createAppFromEntryPoint: CreateRouterRootFn,
   App: AppComponent | null,
-  environment: PastoriaEnvironment,
+  schema: GraphQLSchema,
+  createContext: CreateContextFn,
   persistedQueries: Record<string, string>,
   manifest?: Manifest | null,
 ): express.Handler {
   return async (req, res) => {
-    const context = await environment.createContext(req);
+    const context = await createContext(req);
     const provider = createServerEnvironment(
       req,
-      environment.schema,
+      schema,
       persistedQueries,
       context,
     );
@@ -228,48 +227,40 @@ function createReactHandler(
   };
 }
 
-// Convert bracket format [param]/[[param]] to colon format for Express/path-to-regexp v8
-// Required params: [param] -> :param
-// Optional params: [[param]] -> {:param} (path-to-regexp v8 syntax for optional)
-function bracketToColon(path: string): string {
-  // First convert optional params [[param]] to {:param} (v8 optional syntax)
-  // We need to include the preceding slash in the optional group: /[[param]] -> {/:param}
-  let result = path.replace(/\/\[\[([^\]]+)\]\]/g, '{/:$1}');
-  // Handle case where optional param is at the start (no preceding slash)
-  result = result.replace(/\[\[([^\]]+)\]\]/g, '{:$1}');
-  // Then convert required params [param] to :param
-  result = result.replace(/\[([^\]]+)\]/g, ':$1');
-  return result;
-}
-
 export function createRouterHandler(
   routes: string[],
   srcOfModuleId: SrcOfModuleId,
   loadEntryPoint: LoadEntryPointFn,
   createAppFromEntryPoint: CreateRouterRootFn,
   App: AppComponent | null,
-  environment: PastoriaEnvironment,
+  schema: GraphQLSchema,
+  createContext: CreateContextFn,
   persistedQueries: Record<string, string>,
+  config: Required<PastoriaConfig>,
   manifest?: Manifest | null,
 ): express.Router {
-  const graphqlHandler = createGraphqlHandler(environment, persistedQueries);
+  const graphqlHandler = createGraphqlHandler(
+    schema,
+    createContext,
+    persistedQueries,
+    config,
+  );
+
   const reactHandler = createReactHandler(
     srcOfModuleId,
     loadEntryPoint,
     createAppFromEntryPoint,
     App,
-    environment,
+    schema,
+    createContext,
     persistedQueries,
     manifest,
   );
 
-  // Convert routes from bracket format to colon format for Express
-  const expressRoutes = routes.map(bracketToColon);
-
   return express
     .Router()
     .use('/api/graphql', express.json(), graphqlHandler)
-    .get(expressRoutes, reactHandler);
+    .get(routes, reactHandler);
 }
 
 async function loadQueries(entryPoint: AnyPreloadedEntryPoint) {
@@ -299,8 +290,7 @@ async function loadQueries(entryPoint: AnyPreloadedEntryPoint) {
     }
   }
 
-  for (const nestedEntry of Object.values(entryPoint?.entryPoints ?? {})) {
-    if (!nestedEntry) continue; // Skip undefined entry points
+  for (const nestedEntry of Object.values(entryPoint.entryPoints)) {
     preloadedQueryOps.push(...(await loadQueries(nestedEntry)));
   }
 
@@ -370,12 +360,11 @@ function bootstrapScripts(
   }
 
   if (process.env.NODE_ENV !== 'production') {
+    bootstrap.preloadStylesheets.push('/src/globals.css');
     bootstrap.bootstrapModules.push(
       '/@vite/client',
       '/@id/virtual:pastoria-entry-client.tsx',
     );
-    // TODO: Dynamically detect CSS files from Vite's module graph instead of hardcoding
-    bootstrap.preloadStylesheets.push('/globals.css');
   } else if (entryPoint != null) {
     crawlEntryPoint(entryPoint);
   }

@@ -3,8 +3,8 @@
  * Do not manually edit. Regenerate by running `npx grats`.
  */
 import { defaultFieldResolver, GraphQLSchema, GraphQLDirective, DirectiveLocation, GraphQLList, GraphQLInt, GraphQLObjectType, GraphQLNonNull, GraphQLString } from "graphql";
-import { cities as queryCitiesResolver } from "./../../schema/cities";
-import { greet as queryGreetResolver, helloMessage as queryHelloMessageResolver, optionalGreet as queryOptionalGreetResolver } from "./../../schema/hello";
+import { cities as queryCitiesResolver } from "./../../src/schema/cities";
+import { greet as queryGreetResolver, helloMessage as queryHelloMessageResolver } from "./../../src/schema/hello";
 async function assertNonNull<T>(value: T | Promise<T>): Promise<T> {
     const awaited = await value;
     if (awaited == null)
@@ -62,19 +62,6 @@ export function getSchema(): GraphQLSchema {
                     type: GraphQLString,
                     resolve(_source, _args, context) {
                         return assertNonNull(queryHelloMessageResolver(context));
-                    }
-                },
-                optionalGreet: {
-                    description: "Example query with an optional name argument.\nReturns a personalized or generic greeting.",
-                    name: "optionalGreet",
-                    type: GraphQLString,
-                    args: {
-                        name: {
-                            type: GraphQLString
-                        }
-                    },
-                    resolve(_source, args, context) {
-                        return assertNonNull(queryOptionalGreetResolver(args.name, context));
                     }
                 }
             };

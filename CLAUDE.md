@@ -9,7 +9,7 @@ Pastoria is a full-stack JavaScript framework for building data-driven
 applications. This repository contains only the framework itself - not an
 application built with it. The framework combines:
 
-- **Filesystem-based routing** under the `pastoria/` directory
+- **Type-safe routing** with JSDoc annotations
 - **React Relay** for GraphQL data fetching with persisted queries
 - **Vite** for build tooling and dev server
 - **Server-side rendering (SSR)** with React
@@ -19,8 +19,8 @@ application built with it. The framework combines:
 
 This is a pnpm workspace monorepo with the following packages:
 
-- **`packages/pastoria`**: Main CLI tool that provides `generate`, `dev`, and
-  `build` commands for framework users
+- **`packages/pastoria`**: Main CLI tool that provides `gen`, `dev`, and `build`
+  commands for framework users
 - **`packages/pastoria-runtime`**: Runtime utilities for routing, Relay
   environments, and server handlers
 - **`packages/pastoria-server`**: Standalone production server for framework
@@ -85,110 +85,47 @@ pnpm publish -r
 
 ## Architecture
 
-### Filesystem-Based Routing
-
-Pastoria v2 uses filesystem-based routing under the `pastoria/` directory.
-Routes are defined by the file structure:
-
-- `pastoria/page.tsx` → `/`
-- `pastoria/about/page.tsx` → `/about`
-- `pastoria/post/[slug]/page.tsx` → `/post/:slug`
-
 ### Code Generation System (`packages/pastoria/src/generate.ts`)
 
-The `pastoria generate` command scans the `pastoria/` directory to generate
-type-safe routing and resource loading code:
+The `pastoria gen` command scans TypeScript files for JSDoc annotations to
+generate type-safe routing and resource loading code for framework users:
 
-**Input files (in user's `pastoria/` directory):**
+- **`@route <route-name>`**: Marks a function/component as a route handler
+- **`@param <name> <type>`**: Documents route parameters (generates Zod schemas
+  for validation)
+- **`@resource <resource-name>`**: Marks exports for lazy loading
+- **`@appRoot`**: Designates a component as the application root wrapper
 
-- `page.tsx`: Page components with optional `queries` export
-- `*.page.tsx`: Nested entry points (e.g., `sidebar.page.tsx`)
-- `app.tsx`: Optional root layout component
-- `environment.ts`: Custom `PastoriaEnvironment` configuration
+Generated files (in user projects) are placed in `__generated__/router/`:
 
-**Generated files (in `__generated__/router/`):**
-
-- `router.tsx`: Client-side router with type-safe routes and entry points
 - `js_resource.ts`: Resource configuration for lazy loading
-- `types.ts`: `PageProps<Route>` and `PageQueryMap` type definitions
-- `app_root.ts`: Re-export of app root component (if `app.tsx` exists)
-
-**Key generation logic:**
-
-1. `scanFilesystemRoutes()`: Walks `pastoria/` directory to discover pages,
-   nested entry points, and their queries
-2. `generateRouter()`: Creates entry point functions with `getPreloadProps` that
-   wire up queries and nested entry points
-3. `generateJsResource()`: Creates lazy-loadable resource definitions for each
-   page component
-4. `generateTypes()`: Creates `PageQueryMap` interface and `PageProps<R>` type
-   helper
+- `router.tsx`: Client-side router with type-safe routes
+- `app_root.ts`: Re-export of app root component (only generated if `@appRoot`
+  tag is found)
 
 Templates for generation are in `packages/pastoria/templates/`.
 
-### Page Component Conventions
-
-Pages export a default React component and optionally a `queries` object:
-
-```tsx
-// pastoria/posts/page.tsx
-import {graphql, usePreloadedQuery} from 'react-relay';
-import type {PageProps} from '#genfiles/router/types';
-import type {page_PostsQuery} from '#genfiles/queries/page_PostsQuery.graphql';
-
-export const queries = {
-  postsQuery: {} as page_PostsQuery,
-};
-
-export default function Posts({queries}: PageProps<'/posts'>) {
-  const data = usePreloadedQuery(
-    graphql`
-      query page_PostsQuery {
-        posts {
-          id
-          title
-        }
-      }
-    `,
-    queries.postsQuery,
-  );
-  // ...
-}
-```
-
-### Nested Entry Points
-
-Nested entry points are defined by `*.page.tsx` files in the same directory as a
-`page.tsx`. They appear as preloaded entry points in the parent's props:
-
-```
-pastoria/
-  page.tsx           # Main page, receives entryPoints.sidebar
-  sidebar.page.tsx   # Nested entry point
-```
-
-The parent page renders nested entry points via `EntryPointContainer`:
-
-```tsx
-export default function Layout({entryPoints}: PageProps<'/'>) {
-  return (
-    <Suspense fallback="Loading...">
-      <EntryPointContainer
-        entryPointReference={entryPoints.sidebar}
-        props={{}}
-      />
-    </Suspense>
-  );
-}
-```
-
-### Pastoria CLI Commands
-
-- `pastoria generate`: Generate router artifacts from `pastoria/` directory
-- `pastoria dev`: Start development server with HMR
-- `pastoria build`: Build client and server bundles for production
-
 ### Build System
+
+The framework uses a combination of `just` (task runner) for build orchestration
+and Pastoria CLI commands for code generation and Vite builds.
+
+**Build Pipeline** (orchestrated by `packages/pastoria/justfile`):
+
+1. **Grats** (`just grats`): Generates GraphQL schema from JSDoc annotations
+2. **Relay** (`just relay`): Compiles Relay queries with persisted queries
+   (depends on Grats schema)
+3. **Router** (`just router`): Runs `pastoria gen` to generate type-safe router
+   artifacts (depends on Relay output for query variables)
+4. **Client/Server** (`just build`): Runs `pastoria build client` and
+   `pastoria build server` (depends on generated router)
+
+**Pastoria CLI Commands**:
+
+- `pastoria dev`: Start development server with HMR
+- `pastoria gen`: Generate router artifacts (runs both exports and artifacts
+  generation)
+- `pastoria build <target>`: Build client or server bundle with Vite
 
 **Vite Builds** (via `pastoria build`):
 
@@ -238,52 +175,48 @@ The `pastoria dev` command:
 - Serves both static assets and SSR routes
 - Reads persisted queries JSON on each request
 
-### User Project Setup
+### User Project Build Setup
 
-User projects using Pastoria typically have this structure:
+User projects using Pastoria need to:
 
-```
-my-app/
-  pastoria/
-    app.tsx              # Optional root layout
-    environment.ts       # PastoriaEnvironment config (schema + context)
-    page.tsx             # Home page (/)
-    about/
-      page.tsx           # About page (/about)
-    post/
-      [slug]/
-        page.tsx         # Dynamic route (/post/:slug)
-  __generated/
-    router/              # Generated by `pastoria generate`
-    queries/             # Generated by Relay compiler
-    schema/              # GraphQL schema
-  relay.config.json
-  package.json
-```
+1. **Install `just`** (command runner):
 
-**Build commands** (typically in `package.json` scripts):
+   ```bash
+   # macOS
+   brew install just
 
-```json
-{
-  "scripts": {
-    "generate": "relay-compiler && pastoria generate",
-    "dev": "pastoria dev",
-    "build": "pastoria build"
-  }
-}
-```
+   # Linux
+   cargo install just
+
+   # Windows
+   scoop install just
+   ```
+
+2. **Create `justfile`** in project root:
+
+   ```justfile
+   import './node_modules/pastoria/justfile'
+   ```
+
+3. **Run build commands** via `just`:
+   - `just grats` - Generate GraphQL schema
+   - `just relay` - Compile Relay queries
+   - `just router` - Generate router artifacts
+   - `just build` - Full production build (client + server)
+   - `just dev` or `pastoria dev` - Start dev server
 
 ### Framework User Project Conventions
 
 User projects are expected to have:
 
-- `pastoria/environment.ts`: Exports `PastoriaEnvironment` instance with schema
-  and context factory
-- `pastoria/app.tsx`: Optional root layout component wrapping all pages
-- `pastoria/**/page.tsx`: Page components with optional `queries` export
-- `pastoria/**/*.page.tsx`: Nested entry points
+- Component with `@appRoot` JSDoc tag: Optional root app wrapper component
+  (replaces hardcoded `src/pages/_app.tsx`)
+- `src/lib/server/context.ts`: GraphQL context factory
+- `__generated__/schema/schema.ts`: GraphQL schema (from Relay compiler)
 - `__generated__/router/persisted_queries.json`: Persisted query map (from Relay
   compiler)
+- Route components with JSDoc annotations (`@route`, `@param`)
+- Resource exports with JSDoc annotation (`@resource`)
 
 ### Key Configuration
 
@@ -295,19 +228,6 @@ User projects are expected to have:
 - Development requires building packages first since CLI references compiled
   code
 
-## Code Generation Guidelines
-
-When working on code generation (`packages/pastoria/src/generate.ts` and
-`packages/pastoria/templates/`):
-
-- **NEVER use `any` in generated code unless absolutely necessary.** Generated
-  code should be fully type-safe. Use `unknown` if you need a placeholder type,
-  or generate proper types based on the route's queries and entry points.
-- Generated types should leverage TypeScript's type inference and mapped types
-  to provide accurate typing for each route.
-- Template files in `packages/pastoria/templates/` are copied and modified
-  during generation - keep them as type-safe as possible.
-
 ## Development Notes
 
 - Always build packages before testing CLI functionality: `pnpm -r build`
@@ -318,40 +238,13 @@ When working on code generation (`packages/pastoria/src/generate.ts` and
   command)
 - When modifying templates (`packages/pastoria/templates/`), the changes affect
   code generation for user projects
+- When modifying the justfile (`packages/pastoria/justfile`), test changes in a
+  user project by importing it
 - The virtual module system in `vite_plugin.ts` generates entry points at build
   time by checking for `app_root.ts` existence
 - Entry point generation uses static imports (not dynamic) - the code is
   generated differently based on file existence
 - Client and server builds must coordinate on serialization format for Relay
   operations
-
-## Known Issues / Future Work
-
-### Manually Defined Entry Points
-
-The PASTORIA_2.md spec describes support for manually defined `entrypoint.ts`
-files as an alternative to `page.tsx` files. These offer more flexibility for
-custom `getPreloadProps` logic but require more boilerplate. This feature is not
-yet implemented.
-
-See PASTORIA_2.md section "Manually Defined Entry Points" for the proposed API.
-
-### CSS Injection in Dev Mode
-
-Currently, the dev server hardcodes `/globals.css` as the stylesheet path in
-`router_handler.tsx`. This should be improved to dynamically detect CSS files
-from Vite's module graph.
-
-### Update Documentation Site for Pastoria v2
-
-The documentation site (`website/`) still documents the v1 JSDoc-based routing
-system with `@route`, `@resource`, and `@param` tags. It needs to be updated to
-reflect Pastoria v2's filesystem-based routing:
-
-- Update routing docs to cover `pastoria/` directory conventions
-- Document `page.tsx`, `*.page.tsx`, `app.tsx`, and `environment.ts` files
-- Remove references to JSDoc annotations for routing (`@route`, `@resource`)
-- Update code examples to use `PageProps<'/route'>` instead of
-  `EntryPointComponent`
-- Document the `queries` export pattern for preloading GraphQL queries
-- Update the "Getting Started" guide for the new project structure
+- Build orchestration is handled by `just` - no smart incremental builds, all
+  steps run on each invocation

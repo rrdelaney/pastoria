@@ -13,88 +13,81 @@ type FeatureItem = {
 
 const features: FeatureItem[] = [
   {
-    title: 'Filesystem-Based Routing with GraphQL',
+    title: 'GraphQL-integrated Router',
     description: (
       <>
-        Define routes by creating <code>page.tsx</code> files in the{' '}
-        <code>pastoria/</code> directory. Pastoria generates type-safe routing
-        code automatically, giving you full IDE autocomplete and type checking
-        without manual configuration.
+        Define routes using simple JSDoc annotations. Pastoria generates
+        type-safe routing code automatically, giving you full IDE autocomplete
+        and type checking without manual configuration.
       </>
     ),
-    code: `// pastoria/users/[userId]/page.tsx
-import {graphql, usePreloadedQuery} from 'react-relay';
-import userQuery from '#genfiles/queries/page_UserQuery.graphql';
-import type {PageProps} from '#genfiles/router/types';
-
-export const queries = {
-  userQuery: userQuery,
-};
-
-export default function UserPage({queries}: PageProps<'/users/[userId]'>) {
-  // Queries are preloaded on the server during SSR
-  const {user} = usePreloadedQuery(
-    graphql\`
-      query page_UserQuery($userId: ID!) @preloadable {
-        user(id: $userId) { name }
+    code: `/** @route /users/:userId */
+export const UserPage: EntryPointComponent<
+  { userQuery: UserQuery }, {}
+> = ({ queries }) => {
+  // Queries are loaded on the server during SSR,
+  // subsequent navigations suspend the page.
+  const { user } = usePreloadedQuery(graphql\`
+    query UserQuery($userId: String!) {
+      user(id: $userId) {
+        ...user_UserCard
       }
-    \`,
-    queries.userQuery,
-  );
+    }
+  \`, queries.userQuery);
 
-  return <h1>Hello {user.name}!</h1>;
-}`,
+  // Type-safe data fetching using Relay.
+  return (
+    <>
+      Hello {user.name}!
+      <UserCard user={user} />
+    </>
+  );
+};`,
   },
   {
-    title: 'Type-safe Navigation and Data Fetching',
+    title: 'Type-safe Navigation and Routing',
     description: (
       <>
         Built on React Relay for efficient data fetching with automatic query
         optimization, persisted queries, and seamless server-side rendering.
-        Route links are fully type-checked with parameters validated at compile
-        time.
+        Queries are preloaded on the server and hydrated on the client.
       </>
     ),
-    code: `import {RouteLink} from '#genfiles/router/router.jsx';
-import {graphql, useFragment} from 'react-relay';
-
-function UserCard(props: {user: user_UserCard$key}) {
+    code: `function UserCard(props: { user: user_UserCard$key }) {
   const user = useFragment(
-    graphql\`
-      fragment user_UserCard on User {
-        id
-        name
-      }
-    \`,
-    props.user,
+    graphql\`fragment user_UserCard on User {
+      id
+      name
+    }\`,
+    props.user
   );
 
   return (
-    <RouteLink route="/users/[userId]" params={{userId: user.id}}>
+    <RouteLink route="/users/:userId" params={{ userId: userId }}>
       {user.name}
     </RouteLink>
   );
 }`,
   },
   {
-    title: 'Simple CLI Workflow',
+    title: 'Unified Code Generation',
     description: (
       <>
         Server-side rendering out of the box with automatic code splitting and
-        lazy loading. Run <code>pastoria generate</code> to generate your
-        router, then <code>pastoria dev</code> to start developing with hot
-        module replacement.
+        lazy loading. Run <code>pastoria gen</code> to generate your router,
+        then <code>pastoria dev</code> to start developing with hot module
+        replacement.
       </>
     ),
     lang: 'bash',
-    code: `# Generate router from pastoria/ directory
-$ pastoria generate
+    code: `# Generate GraphQL queries and router
+$ pastoria make
 
-# Start dev server with hot reload
+# Start dev server backed by Vite
 $ pastoria dev
 
 # Build for production
-$ pastoria build
+$ pastoria make --release
 
 # Deploy with the standalone server
 $ pastoria-server`,

@@ -1,10 +1,8 @@
-import type {ComponentType} from 'react';
 import type {JSResourceReference} from 'react-relay/hooks';
-import type {PageProps} from './types';
 
 type ResourceConf = typeof RESOURCE_CONF;
 const RESOURCE_CONF = {
-  noop: {src: '', loader: (): Promise<any> => Promise.reject()},
+  noop: {src: '', loader: () => Promise.reject()},
 } as const;
 
 type ModuleId = keyof ResourceConf;
@@ -49,10 +47,6 @@ export class JSResource<M extends ModuleId>
         .then((m) => {
           this.moduleCache = m as ModuleType<M>;
           return this.moduleCache;
-        })
-        .catch((err) => {
-          console.error(`JSResource.load() failed for: ${this.moduleId}`, err);
-          throw err;
         });
     }
 

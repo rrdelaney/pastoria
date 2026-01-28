@@ -1,6 +1,6 @@
 {
   "name": "pastoria",
-  "version": "2.0.2",
+  "version": "1.1.0",
   "description": "Pastoria Development CLI",
   "license": "MIT",
   "type": "module",
@@ -11,7 +11,8 @@
   },
   "files": [
     "dist",
-    "templates"
+    "templates",
+    "justfile"
   ],
   "scripts": {
     "build": "tsc",
@@ -25,7 +26,6 @@
     "commander": "catalog:",
     "cookie-parser": "catalog:",
     "dotenv": "catalog:",
-    "graphql": "catalog:",
     "picocolors": "catalog:",
     "tailwindcss": "^4.1.15",
     "ts-morph": "^26.0.0",
@@ -40,6 +40,7 @@
     "@types/react-dom": "catalog:",
     "@types/react-relay": "catalog:",
     "@types/relay-compiler": "^14.0.4",
+    "pastoria-config": "workspace:*",
     "pastoria-runtime": "workspace:*",
     "radix3": "^1.1.2",
     "relay-compiler": "catalog:",
@@ -50,6 +51,7 @@
     "babel-plugin-react-compiler": "^1.0.0",
     "express": "catalog:",
     "grats": "catalog:",
+    "pastoria-config": "workspace:*",
     "relay-compiler": "catalog:",
     "tailwindcss": "catalog:"
   },

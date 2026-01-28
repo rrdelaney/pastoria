@@ -4,222 +4,71 @@ sidebar_position: 1
 
 # CLI Commands
 
-Pastoria provides a simple command-line interface for managing your
-application's code generation, development server, and production builds.
+Pastoria provides a powerful command-line interface for managing your
+application's build process, code generation, and development server. The CLI is
+installed when you create a new Pastoria project and is available through your
+package manager.
 
 ## Available Commands
 
-### `pastoria generate`
+### `pastoria make`
 
-Generates router artifacts from your `pastoria/` directory.
+The main build and code generation command. This orchestrates all the necessary
+code generation steps for your Pastoria application, including GraphQL schema
+generation, Relay compilation, and router configuration.
 
-```bash
-pastoria generate
-```
-
-Options:
-
-- `--skip-schema` - Skip GraphQL schema generation (useful if using Grats or
-  other schema tools that generate their own schema file)
-
-This command scans your filesystem routes and generates:
-
-- `__generated__/router/router.tsx` - Client-side router configuration
-- `__generated__/router/js_resource.ts` - Resource loaders for code splitting
-- `__generated__/router/types.ts` - `PageProps<Route>` type definitions
-- `__generated__/router/app_root.ts` - Re-export of root layout (if `app.tsx`
-  exists)
-
-**When to run:** After modifying the `pastoria/` directory structure (adding,
-renaming, or removing pages and entry points).
+**Learn more:** [pastoria make](./make.md)
 
 ### `pastoria dev`
 
-Starts the development server with hot module reloading.
+Starts the development server with hot module reloading. This command runs your
+application locally with Vite middleware for fast refresh and server-side
+rendering.
 
 ```bash
-pastoria dev
+$ pastoria dev
 ```
-
-Options:
-
-- `--port <port>` - Port to listen on (default: `3000`)
-
-Features:
-
-- Vite-powered development with fast refresh
-- Server-side rendering during development
-- Automatic reloading when files change
-
-The dev server runs at `http://localhost:3000` by default.
 
 ### `pastoria build`
 
-Creates optimized production bundles.
+_(Deprecated: Use `pastoria make --release` instead)_
+
+Creates production builds of your application, including client and server
+bundles optimized for deployment.
+
+## Quick Start
+
+After creating a new Pastoria project, you'll typically use these commands:
 
 ```bash
-pastoria build
-```
-
-This generates:
-
-- `dist/client/` - Client-side JavaScript, CSS, and assets
-- `dist/server/` - Server-side rendering bundle
-
-### `pastoria-server`
-
-Starts the production server (after running `pastoria build`).
-
-```bash
-pastoria-server
-```
-
-This serves your built application in production mode.
-
-## Typical Workflow
-
-### Development
-
-```bash
-# Generate code (run Relay first, then Pastoria)
-pnpm generate    # relay-compiler && pastoria generate
+# Generate all code artifacts (schema, queries, router)
+$ pastoria make
 
 # Start development server
-pnpm dev         # pastoria dev
-```
+$ pastoria dev
 
-### Production
-
-```bash
-# Generate code and build
-pnpm generate
-pnpm build       # pastoria build
-
-# Start production server
-pnpm start       # pastoria-server
+# Build for production
+$ pastoria make --release
 ```
 
 ## Package Scripts
 
-Most Pastoria projects include these npm/pnpm scripts:
+Most Pastoria projects include these npm/pnpm scripts in `package.json`:
 
 ```json
 {
   "scripts": {
-    "generate": "relay-compiler && pastoria generate",
     "dev": "pastoria dev",
-    "build": "pastoria build",
-    "start": "pastoria-server"
+    "build": "pastoria make --release",
+    "generate": "pastoria make"
   }
 }
 ```
 
-## Code Generation Order
-
-The generation step typically combines Relay compiler and Pastoria generate:
+This allows you to use familiar commands like:
 
 ```bash
-relay-compiler && pastoria generate
+$ pnpm dev
+$ pnpm build
+$ pnpm generate
 ```
-
-**Order matters:**
-
-1. **Relay compiler** runs first to generate query types and persisted queries
-2. **Pastoria generate** runs second to generate router artifacts that reference
-   the Relay-generated files
-
-## Generated Files
-
-After running `pnpm generate`, you'll have:
-
-```
-__generated__/
-├── router/
-│   ├── router.tsx              # Router configuration
-│   ├── js_resource.ts          # Resource loaders
-│   ├── types.ts                # PageProps types
-│   ├── app_root.ts             # Root layout re-export
-│   └── persisted_queries.json  # Relay persisted queries
-└── queries/
-    ├── page_PostQuery.graphql.ts
-    ├── page_PostQuery$parameters.ts
-    └── ...                     # More Relay artifacts
-```
-
-**Important:** Never edit files in `__generated__/` manually—they're overwritten
-on each generation.
-
-## Development Tips
-
-### Watch Mode
-
-Run generation and dev server in separate terminals for the best experience:
-
-```bash
-# Terminal 1: Watch for changes and regenerate
-pnpm generate --watch  # If using Relay watch mode
-
-# Terminal 2: Run dev server
-pnpm dev
-```
-
-Or use a single command with concurrently:
-
-```bash
-# In package.json
-"dev": "concurrently \"relay-compiler --watch\" \"pastoria dev\""
-```
-
-### Debugging Build Issues
-
-If you encounter issues:
-
-1. **Clear generated files:**
-
-   ```bash
-   rm -rf __generated__
-   pnpm generate
-   ```
-
-2. **Check for TypeScript errors:**
-
-   ```bash
-   pnpm tsc --noEmit
-   ```
-
-3. **Verify file structure:**
-   ```bash
-   ls -la pastoria/
-   ```
-
-### Common Issues
-
-**"Cannot find module '#genfiles/...'**
-
-Run `pnpm generate` to create the generated files. Make sure your
-`tsconfig.json` has the correct path mapping:
-
-```json
-{
-  "compilerOptions": {
-    "paths": {
-      "#genfiles/*": ["./__generated__/*"]
-    }
-  }
-}
-```
-
-**"Query not found in persisted queries"**
-
-Run `relay-compiler` to generate the persisted queries file, then run
-`pastoria generate`.
-
-**"No routes found"**
-
-Ensure your `pastoria/` directory contains at least one `page.tsx` file.
-
-## Next Steps
-
-- Learn about [filesystem-based routing](../routing/filesystem-routing.md)
-- Understand [page components](../routing/pages.md)
-- Set up your [GraphQL schema](../graphql/graphql-schema.md)

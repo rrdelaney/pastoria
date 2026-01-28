@@ -1,23 +1,24 @@
 <?xml version="1.0" encoding="UTF-8"?>
-<svg width="100px" height="100px" viewBox="0 0 100 100" version="1.1" xmlns="http://www.w3.org/2000/svg">
-    <title>Pastoria Logo</title>
+<svg width="100px" height="100px" viewBox="0 0 100 100" version="1.1" xmlns="http://www.w3.org/2000/svg" xmlns:xlink="http://www.w3.org/1999/xlink">
+    <title>Logo</title>
     <defs>
-        <linearGradient x1="0%" y1="0%" x2="100%" y2="100%" id="gradient1">
-            <stop stop-color="#6d9afb" offset="0%"></stop>
-            <stop stop-color="#a855f7" offset="100%"></stop>
+        <linearGradient x1="50%" y1="0%" x2="50%" y2="100%" id="linearGradient-1">
+            <stop stop-color="#7B3434" offset="0%"></stop>
+            <stop stop-color="#4A82FA" offset="100%"></stop>
         </linearGradient>
+        <radialGradient cx="50%" cy="8.94470215%" fx="50%" fy="8.94470215%" r="101.559648%" gradientTransform="translate(0.500000,0.089447),scale(1.000000,0.896570),rotate(90.000000),translate(-0.500000,-0.089447)" id="radialGradient-2">
+            <stop stop-color="#3876FA" offset="0%"></stop>
+            <stop stop-color="#A82E06" offset="100%"></stop>
+        </radialGradient>
+        <path d="M21.7773438,47.7109375 L36.9140625,12.5546875 L31.5429688,12.5546875 L16.40625,47.7109375 L21.7773438,47.7109375 Z M53.3789062,39.5664062 L57.8125,36.265625 L53.864,31.69 L59.765625,30.0742188 L58.046875,24.8398438 L52.435,27.148 L52.7539062,21.03125 L47.2460938,21.03125 L47.674,27.072 L41.9726562,24.8398438 L40.234375,30.0742188 L46.095,31.568 L42.1875,36.265625 L46.6210938,39.5664062 L49.934,34.387 L53.3789062,39.5664062 Z M76.8164062,39.5664062 L81.25,36.265625 L77.302,31.69 L83.203125,30.0742188 L81.484375,24.8398438 L75.873,27.148 L76.1914062,21.03125 L70.6835938,21.03125 L71.111,27.072 L65.4101562,24.8398438 L63.671875,30.0742188 L69.533,31.569 L65.625,36.265625 L70.0585938,39.5664062 L73.371,34.386 L76.8164062,39.5664062 Z M53.3789062,79.5664062 L57.8125,76.265625 L53.864,71.69 L59.765625,70.0742188 L58.046875,64.8398438 L52.435,67.148 L52.7539062,61.03125 L47.2460938,61.03125 L47.674,67.072 L41.9726562,64.8398438 L40.234375,70.0742188 L46.095,71.568 L42.1875,76.265625 L46.6210938,79.5664062 L49.934,74.387 L53.3789062,79.5664062 Z M68.6523438,87.7109375 L83.7890625,52.5546875 L78.4179688,52.5546875 L63.28125,87.7109375 L68.6523438,87.7109375 Z" id="path-3"></path>
     </defs>
-    <g stroke="none" stroke-width="1" fill="none" fill-rule="evenodd">
-        <!-- Connection - super chunky -->
-        <path d="M25,30 L75,70" stroke="url(#gradient1)" stroke-width="10" stroke-linecap="round"></path>
-
-        <!-- Two chunky nodes -->
-        <circle cx="25" cy="30" r="16" fill="url(#gradient1)"></circle>
-        <circle cx="75" cy="70" r="16" fill="url(#gradient1)"></circle>
-
-        <!-- White centers -->
-        <circle cx="25" cy="30" r="7" fill="#ffffff"></circle>
-        <circle cx="75" cy="70" r="7" fill="#ffffff"></circle>
-
+    <g id="Page-1" stroke="none" stroke-width="1" fill="none" fill-rule="evenodd">
+        <g id="Logo">
+            <rect id="Rectangle" stroke="url(#linearGradient-1)" stroke-width="6" fill="#FFFFFF" x="3" y="3" width="94" height="94" rx="4"></rect>
+            <g id="/***/" fill-rule="nonzero">
+                <use fill="#FFFFFF" xlink:href="#path-3"></use>
+                <use fill="url(#radialGradient-2)" xlink:href="#path-3"></use>
+            </g>
+        </g>
     </g>
 </svg>

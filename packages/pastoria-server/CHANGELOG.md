@@ -1,30 +1,5 @@
 # pastoria-server
 
-## 2.0.2
-
-### Patch Changes
-
-- Updated dependencies [cef9171]
-  - pastoria-runtime@1.1.1
-
-## 2.0.1
-
-### Patch Changes
-
-- 41357d1: Add logging for http requests and debug logging for excessive CPU
-  usage
-
-## 2.0.0
-
-### Minor Changes
-
-- ca35f9e: Update routing to new file-based conventions
-
-### Patch Changes
-
-- Updated dependencies [ca35f9e]
-  - pastoria-runtime@1.1.0
-
 ## 1.0.15
 
 ### Patch Changes

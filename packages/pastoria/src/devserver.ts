@@ -2,6 +2,7 @@ import cookieParser from 'cookie-parser';
 import dotenv from 'dotenv';
 import express from 'express';
 import {readFile} from 'node:fs/promises';
+import {loadConfig, PastoriaConfig} from 'pastoria-config';
 import pc from 'picocolors';
 import {createServer as createViteServer, type Manifest} from 'vite';
 import {logInfo} from './logger.js';
@@ -14,6 +15,7 @@ interface PersistedQueries {
 interface ServerEntry {
   createHandler(
     persistedQueries: PersistedQueries,
+    config: Required<PastoriaConfig>,
     manifest?: Manifest,
   ): express.Router;
 }
@@ -28,6 +30,8 @@ export async function startDevserver(opts: {port: string}) {
     server: {middlewareMode: true},
   });
 
+  const config = await loadConfig();
+
   const app = express();
   app.use(cookieParser());
   app.use(vite.middlewares);
@@ -40,7 +44,7 @@ export async function startDevserver(opts: {port: string}) {
       'virtual:pastoria-entry-server.tsx',
     )) as ServerEntry;
 
-    const handler = createHandler(persistedQueries);
+    const handler = createHandler(persistedQueries, config);
     handler(req, res, next);
   });
 

@@ -5,13 +5,13 @@
   "type": "module",
   "scripts": {
     "format": "prettier -w .",
-    "generate": "grats && relay-compiler && pastoria generate --skip-schema",
-    "build": "pnpm generate && pastoria build",
+    "build": "just build",
     "dev": "pastoria dev",
     "start": "NODE_ENV=production pastoria-server",
     "check": "tsc"
   },
   "imports": {
+    "#src/*": "./src/*",
     "#genfiles/*": "./__generated__/*"
   },
   "dependencies": {

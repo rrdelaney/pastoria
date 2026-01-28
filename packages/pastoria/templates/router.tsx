@@ -5,7 +5,7 @@ import {
   RouterOps,
 } from 'pastoria-runtime';
 import {createRouter} from 'radix3';
-import React, {
+import {
   AnchorHTMLAttributes,
   createContext,
   PropsWithChildren,
@@ -16,7 +16,6 @@ import React, {
   useEffect,
   useMemo,
   useState,
-  useTransition,
 } from 'react';
 import {preinit, preloadModule} from 'react-dom';
 import {
@@ -26,17 +25,12 @@ import {
   RelayEnvironmentProvider,
   useEntryPointLoader,
 } from 'react-relay/hooks';
-import {PreloadableQueryRegistry} from 'relay-runtime';
 import * as z from 'zod/v4-mini';
 
 type RouterConf = typeof ROUTER_CONF;
-type AnyRouteParams = z.infer<RouterConf[keyof RouterConf]['schema']>;
-type AnyRouteEntryPoint = RouterConf[keyof RouterConf]['entrypoint'];
-type LoadEntryPointFn = (params: {params: AnyRouteParams}) => void;
-
 const ROUTER_CONF = {
   noop: {
-    entrypoint: null! as EntryPoint<any, any>,
+    entrypoint: null! as EntryPoint<any>,
     schema: z.object({}),
   },
 } as const;
@@ -45,77 +39,12 @@ export type RouteId = keyof RouterConf;
 export type NavigationDirection = string | URL | ((nextUrl: URL) => void);
 
 export interface EntryPointParams<R extends RouteId> {
-  params: z.infer<RouterConf[R]['schema']>;
-  queries: QueryHelpersForRoute<R>;
-  entryPoints: EntryPointHelpersForRoute<R>;
+  params: Record<string, any>;
+  schema: RouterConf[R]['schema'];
 }
 
-/**
- * Load a route entry point with proper typing.
- *
- * This wrapper exists because TypeScript struggles with union type inference
- * when calling loadEntryPoint with a union of entry point types. All route
- * entry points accept {params: Record<string, unknown>}, so this is safe.
- */
-function loadRouteEntryPoint(
-  provider: EnvironmentProvider,
-  entrypoint: AnyRouteEntryPoint,
-  params: {params: AnyRouteParams},
-) {
-  // Cast needed because Relay's loadEntryPoint infers params from the entry point type.
-  // When entrypoint is a union, the inferred params become an intersection (contravariance),
-  // which resolves to `never`. Our entry points all accept the same params shape, so this is safe.
-  return loadEntryPoint(
-    provider,
-    entrypoint as unknown as EntryPoint<unknown, {params: AnyRouteParams}>,
-    params,
-  );
-}
-
-// Convert bracket format [param] to colon format :param for radix3 router
-function bracketToColon(path: string): string {
-  // Convert required params [param] to :param
-  // Note: optional params [[param]] are handled separately by expandOptionalRoutes
-  return path.replace(/\[([^\]]+)\]/g, ':$1');
-}
-
-// Expand routes with optional params into multiple routes
-// e.g., /greet/[[name]] becomes ['/greet', '/greet/:name']
-function expandOptionalRoutes(
-  routePath: string,
-  config: RouterConf[keyof RouterConf],
-): Array<[string, RouterConf[keyof RouterConf]]> {
-  // Check if route has optional params
-  const optionalMatch = routePath.match(/\/\[\[([^\]]+)\]\]/g);
-  if (!optionalMatch) {
-    // No optional params, just convert brackets to colons
-    return [[bracketToColon(routePath), config]];
-  }
-
-  // For routes with optional params, create two routes:
-  // 1. Without the optional segment (e.g., /greet)
-  // 2. With the optional segment as required (e.g., /greet/:name)
-  const withoutOptional = routePath.replace(/\/\[\[([^\]]+)\]\]/g, '');
-  const withOptional = routePath.replace(/\[\[([^\]]+)\]\]/g, '[$1]');
-
-  const routes: Array<[string, RouterConf[keyof RouterConf]]> = [];
-
-  // Add the route without optional param (handles /greet)
-  const pathWithout = bracketToColon(withoutOptional) || '/';
-  routes.push([pathWithout, config]);
-
-  // Add the route with optional param as required (handles /greet/:name)
-  routes.push([bracketToColon(withOptional), config]);
-
-  return routes;
-}
-
-// Create radix3 router with colon-format paths (radix3 uses :param syntax)
-// Routes with optional params are expanded into multiple routes
 const ROUTER = createRouter<RouterConf[keyof RouterConf]>({
-  routes: Object.fromEntries(
-    Object.entries(ROUTER_CONF).flatMap(([k, v]) => expandOptionalRoutes(k, v)),
-  ) as Record<string, RouterConf[keyof RouterConf]>,
+  routes: ROUTER_CONF,
 });
 
 class RouterLocation {
@@ -137,7 +66,7 @@ class RouterLocation {
     return ROUTER.lookup(this.pathname);
   }
 
-  params(): AnyRouteParams {
+  params() {
     const matchedRoute = this.route();
     const params = {
       ...matchedRoute?.params,
@@ -147,7 +76,7 @@ class RouterLocation {
     if (matchedRoute?.schema) {
       return matchedRoute.schema.parse(params);
     } else {
-      return params as AnyRouteParams;
+      return params;
     }
   }
 
@@ -198,15 +127,6 @@ export function router__hydrateStore(provider: EnvironmentProvider) {
   if ('__router_ops' in window) {
     const ops = (window as any).__router_ops as RouterOps;
     for (const [op, payload] of ops) {
-      // Register the ConcreteRequest with PreloadableQueryRegistry so that
-      // loadQuery can find it and check store availability instead of
-      // immediately fetching. This is critical for nested entry points whose
-      // query modules haven't been loaded yet.
-      const concreteRequest = op.request?.node;
-      const queryId = concreteRequest?.params?.id;
-      if (queryId && concreteRequest) {
-        PreloadableQueryRegistry.set(queryId, concreteRequest);
-      }
       env.commitPayload(op, payload);
     }
   }
@@ -222,17 +142,11 @@ export async function router__loadEntryPoint(
   if (!initialRoute) return null;
 
   await initialRoute.entrypoint?.root.load();
-  const ep = loadRouteEntryPoint(provider, initialRoute.entrypoint, {
+  return loadEntryPoint(provider, initialRoute.entrypoint, {
     params: initialLocation.params(),
+    schema: initialRoute.schema,
   });
-
-  return ep;
 }
-
-/**
- * Recursively load all nested entry point modules so their queries
- * get registered in PreloadableQueryRegistry.
- */
 
 interface RouterContextValue {
   location: RouterLocation;
@@ -315,14 +229,13 @@ export function router__createAppFromEntryPoint(
       location.route()?.entrypoint,
     );
 
-    useMemo(() => {
-      // Skip during SSR - entry point is already loaded before rendering
-      if (typeof window === 'undefined') return;
-
-      const route = location.route();
-      if (route) {
-        // Cast needed for same reason as loadRouteEntryPoint - see that function's docs
-        (loadEntryPointRef as LoadEntryPointFn)({params: location.params()});
+    useEffect(() => {
+      const schema = location.route()?.schema;
+      if (schema) {
+        loadEntryPointRef({
+          params: location.params(),
+          schema,
+        });
       }
       // eslint-disable-next-line react-hooks/exhaustive-deps
     }, [location]);
@@ -383,7 +296,7 @@ export function useRouteParams<R extends RouteId>(
 
 function router__createPathForRoute(
   routeId: RouteId,
-  inputParams: Record<string, unknown>,
+  inputParams: Record<string, any>,
 ): string {
   const schema = ROUTER_CONF[routeId].schema;
   const params = schema.parse(inputParams);
@@ -392,46 +305,18 @@ function router__createPathForRoute(
   const searchParams = new URLSearchParams();
 
   Object.entries(params).forEach(([key, value]) => {
-    // Check for optional param pattern first: [[key]]
-    const optionalPattern = `[[${key}]]`;
-    if (pathname.includes(optionalPattern)) {
-      if (value != null) {
-        pathname = pathname.replace(
-          optionalPattern,
-          encodeURIComponent(String(value)),
-        );
-      } else {
-        // Remove the optional segment entirely (including the preceding slash if present)
-        pathname = pathname.replace(`/${optionalPattern}`, '');
-        pathname = pathname.replace(optionalPattern, '');
-      }
-      return;
-    }
-
-    // Check for required param pattern: [key]
-    const paramPattern = `[${key}]`;
-    if (pathname.includes(paramPattern)) {
-      if (value != null) {
+    if (value != null) {
+      const paramPattern = `:${key}`;
+      if (pathname.includes(paramPattern)) {
         pathname = pathname.replace(
           paramPattern,
           encodeURIComponent(String(value)),
         );
+      } else {
+        searchParams.set(key, String(value));
       }
-      return;
-    }
-
-    // Not a path param, add to search params if non-null
-    if (value != null) {
-      searchParams.set(key, String(value));
     }
   });
-
-  // Clean up any double slashes that might result
-  pathname = pathname.replace(/\/+/g, '/');
-  // Ensure we don't end up with empty path
-  if (pathname === '') {
-    pathname = '/';
-  }
 
   if (searchParams.size > 0) {
     return pathname + '?' + searchParams.toString();
@@ -499,10 +384,7 @@ export function useNavigation() {
     ) {
       setLocation((prevLoc) =>
         RouterLocation.parse(
-          router__createPathForRoute(routeId, {
-            ...prevLoc.params(),
-            ...params,
-          }),
+          router__createPathForRoute(routeId, {...prevLoc.params(), ...params}),
           'replace',
         ),
       );

@@ -2,55 +2,25 @@
 sidebar_position: 1
 ---
 
-# Creating Your GraphQL Schema
+# Creating your GraphQL schema
 
-Pastoria lets you bring your own GraphQL schema. You can use any schema library
-that produces a standard `GraphQLSchema` object, such as Grats, Pothos, Nexus,
-or plain graphql-js.
+Pastoria apps come out of the box with [Grats](https://grats.capt.dev) to
+generate GraphQL schemas. Grats lets you define your GraphQL schema using
+TypeScript code with JSDoc annotations—no separate schema files needed.
 
 ## Quick Overview
 
-Your GraphQL schema is configured in `pastoria/environment.ts`:
+With Grats, you write normal TypeScript functions and classes, then annotate
+them with JSDoc tags like `@gqlType`, `@gqlField`, and `@gqlQueryField`. Grats
+scans your code and generates a fully-typed GraphQL schema.
 
-```tsx
-// pastoria/environment.ts
-import {PastoriaEnvironment} from 'pastoria-runtime';
-import {getSchema} from '../src/schema';
-import {Context} from '../src/schema/context';
-
-export default new PastoriaEnvironment({
-  schema: getSchema(),
-  createContext: async (req) => new Context(),
-});
-```
-
-Pastoria uses this schema to:
-
-1. Create a GraphQL API endpoint at `/api/graphql`
-2. Execute queries during server-side rendering
-3. Validate queries at build time via Relay compiler
-
-## Using Grats (Recommended)
-
-[Grats](https://grats.capt.dev) lets you define your GraphQL schema using
-TypeScript code with JSDoc annotations—no separate schema files needed.
-
-### Setup
-
-```bash
-pnpm add grats
-```
-
-### Defining Query Fields
-
-Use `@gqlQueryField` to expose a function as a GraphQL query:
+**Example from `examples/starter/src/schema/hello.ts`:**
 
 ```ts
-// src/schema/hello.ts
-import {Context} from './context';
+import {Context} from './context.js';
 
 /**
- * A simple hello world query.
+ * A simple hello world query that returns a greeting message.
  *
  * @gqlQueryField
  */
@@ -59,16 +29,17 @@ export function hello(ctx: Context): string {
 }
 
 /**
- * Greets a user by name.
+ * Example query showing how to accept arguments.
+ * Try querying: { greet(name: "World") }
  *
  * @gqlQueryField
  */
 export function greet(name: string, ctx: Context): string {
-  return `Hello, ${name}!`;
+  return `Hello, ${name}! Welcome to Pastoria.`;
 }
 ```
 
-This generates:
+This generates a GraphQL schema with two query fields:
 
 ```graphql
 type Query {
@@ -77,230 +48,158 @@ type Query {
 }
 ```
 
-### Defining Types
+## Defining Query Fields
 
-Use `@gqlType` on a class to create a GraphQL object type:
+Use `@gqlQueryField` to expose a function as a GraphQL query. The function's
+parameters become GraphQL arguments, and the return type becomes the field type.
 
 ```ts
-// src/schema/types/city.ts
+/**
+ * @gqlQueryField
+ */
+export function greet(name: string, ctx: Context): string {
+  return `Hello, ${name}!`;
+}
+```
 
+**Key points:**
+
+- The **last parameter** should always be your context (`ctx: Context`)
+- All **other parameters** become GraphQL arguments
+- TypeScript types are automatically mapped to GraphQL types
+
+## Defining Types
+
+Use `@gqlType` on a class to create a GraphQL object type, and `@gqlField` to
+expose specific fields.
+
+**Example from `examples/nested_entrypoints/src/schema/cities.ts`:**
+
+```ts
 /** @gqlType */
 class City {
   constructor(
     /** @gqlField */
     readonly name: string,
-    /** @gqlField */
-    readonly population: number,
   ) {}
 }
 
 /**
+ * Searches for a city by name
+ *
  * @gqlQueryField
  */
 export function cities(query?: string | null): City[] {
-  return CITIES.filter((c) => !query || c.name.includes(query)).map(
-    (c) => new City(c.name, c.population),
-  );
+  const filteredCities = !query
+    ? CITY_NAMES
+    : CITY_NAMES.filter((c) => c.startsWith(query));
+
+  return filteredCities.map((c) => new City(c));
 }
 ```
 
-### Building the Schema
+This generates:
 
-```ts
-// src/schema/index.ts
-import {buildSchemaSync} from 'grats';
+```graphql
+type City {
+  name: String!
+}
 
-export function getSchema() {
-  return buildSchemaSync({
-    // Import all your schema files
-    emitSchemaFile: '__generated__/schema/schema.graphql',
-  });
+type Query {
+  cities(query: String): [City!]!
 }
 ```
 
-For complete Grats documentation, visit
-[grats.capt.dev](https://grats.capt.dev).
+**Key points:**
 
-## Using Pothos
-
-[Pothos](https://pothos-graphql.dev) is a code-first GraphQL schema builder with
-excellent TypeScript support.
-
-### Setup
-
-```bash
-pnpm add @pothos/core
-```
-
-### Example
-
-```ts
-// src/schema/builder.ts
-import SchemaBuilder from '@pothos/core';
-import {Context} from './context';
-
-export const builder = new SchemaBuilder<{
-  Context: Context;
-}>({});
-
-builder.queryType({
-  fields: (t) => ({
-    hello: t.string({
-      resolve: () => 'Hello from Pastoria!',
-    }),
-    greet: t.string({
-      args: {
-        name: t.arg.string({required: true}),
-      },
-      resolve: (_, {name}) => `Hello, ${name}!`,
-    }),
-  }),
-});
-
-// src/schema/index.ts
-import {builder} from './builder';
-import './types/user'; // Import type definitions
-
-export function getSchema() {
-  return builder.toSchema();
-}
-```
-
-For complete Pothos documentation, visit
-[pothos-graphql.dev](https://pothos-graphql.dev).
-
-## Using graphql-js Directly
-
-You can also build schemas with plain graphql-js:
-
-```ts
-// src/schema/index.ts
-import {
-  GraphQLObjectType,
-  GraphQLSchema,
-  GraphQLString,
-  GraphQLNonNull,
-} from 'graphql';
-
-export function getSchema() {
-  return new GraphQLSchema({
-    query: new GraphQLObjectType({
-      name: 'Query',
-      fields: {
-        hello: {
-          type: new GraphQLNonNull(GraphQLString),
-          resolve: () => 'Hello from Pastoria!',
-        },
-        greet: {
-          type: new GraphQLNonNull(GraphQLString),
-          args: {
-            name: {type: new GraphQLNonNull(GraphQLString)},
-          },
-          resolve: (_, {name}) => `Hello, ${name}!`,
-        },
-      },
-    }),
-  });
-}
-```
+- Classes with `@gqlType` become GraphQL object types
+- Properties with `@gqlField` become GraphQL fields
+- Optional parameters (`query?: string`) become nullable GraphQL arguments
+- Arrays automatically map to GraphQL lists
 
 ## Context
 
-The context object is passed to all resolvers and is created for each request:
+Every Pastoria app needs a GraphQL context class. This is where you define data
+available to all resolvers (like database connections, auth info, etc.).
+
+**Example from `examples/starter/src/schema/context.ts`:**
 
 ```ts
-// src/schema/context.ts
-import type {User} from '../types';
+import {PastoriaRootContext} from 'pastoria-runtime/server';
 
-export class Context {
-  user: User | null;
-
-  constructor(opts: {user?: User | null} = {}) {
-    this.user = opts.user ?? null;
-  }
-
-  requireUser(): User {
-    if (!this.user) {
-      throw new Error('Authentication required');
-    }
-    return this.user;
-  }
-}
+/**
+ * @gqlContext
+ */
+export class Context extends PastoriaRootContext {}
 ```
 
-Configure context creation in `environment.ts`:
+Your context must:
 
-```tsx
-// pastoria/environment.ts
-export default new PastoriaEnvironment({
-  schema: getSchema(),
-  createContext: async (req) => {
-    const token = req.headers.authorization?.replace('Bearer ', '');
-    const user = token ? await verifyToken(token) : null;
-    return new Context({user});
-  },
-});
-```
+- Extend `PastoriaRootContext` from `pastoria-runtime/server`
+- Be annotated with `@gqlContext`
+- Be exported from `src/lib/server/context.ts` (convention)
 
-## Type Mapping Reference
-
-Common TypeScript to GraphQL type mappings:
-
-| TypeScript           | GraphQL        |
-| -------------------- | -------------- |
-| `string`             | `String!`      |
-| `number`             | `Float!`       |
-| `boolean`            | `Boolean!`     |
-| `string \| null`     | `String`       |
-| `string?` (optional) | `String`       |
-| `string[]`           | `[String!]!`   |
-| `(string \| null)[]` | `[String]!`    |
-| Custom class         | Object type    |
-| `Promise<T>`         | `T` (resolved) |
-
-## Schema Output
-
-For debugging and tooling, output your schema as SDL:
+You can add custom properties to your context:
 
 ```ts
-import {printSchema} from 'graphql';
-import {getSchema} from './schema';
-
-const sdl = printSchema(getSchema());
-console.log(sdl);
-```
-
-Or write it to a file for GraphQL tooling:
-
-```ts
-import {writeFileSync} from 'fs';
-import {printSchema} from 'graphql';
-
-writeFileSync('schema.graphql', printSchema(getSchema()));
-```
-
-## Relay Compiler Integration
-
-Relay compiler needs your schema to validate queries. Configure it in
-`relay.config.json`:
-
-```json
-{
-  "src": "./",
-  "schema": "./__generated__/schema/schema.graphql",
-  "language": "typescript",
-  "artifactDirectory": "./__generated__/queries",
-  "eagerEsModules": true,
-  "persistConfig": {
-    "file": "./__generated__/router/persisted_queries.json"
+/**
+ * @gqlContext
+ */
+export class Context extends PastoriaRootContext {
+  get userId(): string | null {
+    // Return authenticated user ID from session
+    return this.req.session?.userId ?? null;
   }
 }
 ```
 
-Make sure your schema is output to a file that Relay can read.
+## Type Mapping
+
+Grats automatically maps TypeScript types to GraphQL types:
+
+| TypeScript            | GraphQL      |
+| --------------------- | ------------ |
+| `string`              | `String!`    |
+| `number`              | `Float!`     |
+| `boolean`             | `Boolean!`   |
+| `string \| null`      | `String`     |
+| `string?` (optional)  | `String`     |
+| `string[]`            | `[String!]!` |
+| `(string \| null)[]?` | `[String]`   |
+| Custom class          | Object type  |
+
+## Generating the Schema
+
+Run this command to generate your GraphQL schema:
+
+```bash
+$ pnpm generate:schema
+```
+
+Or use the Relay compiler which includes schema generation:
+
+```bash
+$ pnpm generate:relay
+```
+
+Grats outputs the schema to `__generated__/schema/schema.ts`, which Pastoria
+uses at runtime.
+
+## Learning More
+
+This is just a brief overview. For complete documentation on Grats features
+like:
+
+- Mutations and subscriptions
+- Interfaces and unions
+- Custom scalars
+- Field arguments
+- Descriptions and deprecations
+
+Visit the official [Grats documentation](https://grats.capt.dev).
 
 ## Next Steps
 
-- Learn how to [write GraphQL queries](./graphql-queries.md) in your components
-- Configure your [environment](../routing/environment-config.md) for GraphQL
-- Understand [pages](../routing/pages.md) and the query preloading pattern
+Now that you have a GraphQL schema, learn how to
+[write GraphQL queries](./graphql-queries.md) in your components using React
+Relay.

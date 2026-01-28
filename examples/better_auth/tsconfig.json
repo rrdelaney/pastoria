@@ -17,11 +17,16 @@
     "jsx": "preserve",
     "incremental": true,
     "paths": {
+      "#src/*": ["./src/*"],
       "#genfiles/*": ["./__generated__/*"]
     }
   },
-  "include": ["**/*.mts", "**/*.ts", "**/*.tsx"],
-  "exclude": ["node_modules", "dist"],
+  "include": [
+    "__generated__/**/*.ts",
+    "__generated__/**/*.tsx",
+    "src/**/*.ts",
+    "src/**/*.tsx"
+  ],
   "grats": {
     "graphqlSchema": "./__generated__/schema/schema.graphql",
     "tsSchema": "./__generated__/schema/schema.ts",

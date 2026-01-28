@@ -51,7 +51,6 @@ function createClientNetwork() {
 }
 
 let clientEnv: Environment | undefined;
-
 export const relayClientEnvironment: EnvironmentProvider = {
   getEnvironment() {
     if (typeof window === 'undefined') {
