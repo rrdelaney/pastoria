@@ -90,88 +90,6 @@ importers:
         specifier: ^0.6.14
         version: 0.6.14(prettier@3.6.2)
 
-  examples/better_auth:
-    dependencies:
-      dotenv:
-        specifier: 'catalog:'
-        version: 16.6.1
-      express:
-        specifier: 'catalog:'
-        version: 5.1.0
-      graphql:
-        specifier: 'catalog:'
-        version: 17.0.0-alpha.9
-      grats:
-        specifier: 'catalog:'
-        version: 0.0.33
-      pastoria-runtime:
-        specifier: workspace:*
-        version: link:../../packages/pastoria-runtime
-      pastoria-server:
-        specifier: workspace:*
-        version: link:../../packages/pastoria-server
-      radix3:
-        specifier: ^1.1.2
-        version: 1.1.2
-      react:
-        specifier: 'catalog:'
-        version: 19.2.0
-      react-dom:
-        specifier: 'catalog:'
-        version: 19.2.0(react@19.2.0)
-      react-relay:
-        specifier: 'catalog:'
-        version: 20.1.1(react@19.2.0)
-      relay-runtime:
-        specifier: 'catalog:'
-        version: 20.1.1
-      zod:
-        specifier: 'catalog:'
-        version: 3.25.76
-    devDependencies:
-      '@types/express':
-        specifier: 'catalog:'
-        version: 5.0.3
-      '@types/node':
-        specifier: 'catalog:'
-        version: 22.18.12
-      '@types/react':
-        specifier: 'catalog:'
-        version: 19.2.1
-      '@types/react-dom':
-        specifier: 'catalog:'
-        version: 19.2.0(@types/react@19.2.1)
-      '@types/react-relay':
-        specifier: 'catalog:'
-        version: 18.2.1
-      '@types/relay-runtime':
-        specifier: 'catalog:'
-        version: 19.0.3
-      babel-plugin-react-compiler:
-        specifier: ^1.0.0
-        version: 1.0.0
-      pastoria:
-        specifier: workspace:*
-        version: link:../../packages/pastoria
-      prettier:
-        specifier: ^3.6.2
-        version: 3.6.2
-      prettier-plugin-tailwindcss:
-        specifier: ^0.6.14
-        version: 0.6.14(prettier@3.6.2)
-      relay-compiler:
-        specifier: 'catalog:'
-        version: 20.1.1
-      relay-config:
-        specifier: ^12.0.1
-        version: 12.0.1
-      tailwindcss:
-        specifier: 'catalog:'
-        version: 4.1.14
-      typescript:
-        specifier: 'catalog:'
-        version: 5.9.3
-
   examples/nested_entrypoints:
     dependencies:
       dotenv:
@@ -427,9 +345,6 @@ importers:
       '@types/relay-compiler':
         specifier: ^14.0.4
         version: 14.0.4
-      pastoria-config:
-        specifier: workspace:*
-        version: link:../pastoria-config
       pastoria-runtime:
         specifier: workspace:*
         version: link:../pastoria-runtime
@@ -445,15 +360,6 @@ importers:
       zod:
         specifier: 'catalog:'
         version: 3.25.76
-
-  packages/pastoria-config:
-    devDependencies:
-      '@types/node':
-        specifier: 'catalog:'
-        version: 22.18.12
-      typescript:
-        specifier: 'catalog:'
-        version: 5.9.3
 
   packages/pastoria-runtime:
     dependencies:
@@ -494,9 +400,6 @@ importers:
       graphql:
         specifier: 'catalog:'
         version: 17.0.0-alpha.9
-      pastoria-config:
-        specifier: workspace:*
-        version: link:../pastoria-config
       react:
         specifier: 'catalog:'
         version: 19.2.0
@@ -543,9 +446,6 @@ importers:
       '@types/node':
         specifier: 'catalog:'
         version: 22.18.12
-      pastoria-config:
-        specifier: workspace:*
-        version: link:../pastoria-config
       pastoria-runtime:
         specifier: workspace:*
         version: link:../pastoria-runtime

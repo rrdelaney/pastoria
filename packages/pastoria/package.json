@@ -40,7 +40,6 @@
     "@types/react-dom": "catalog:",
     "@types/react-relay": "catalog:",
     "@types/relay-compiler": "^14.0.4",
-    "pastoria-config": "workspace:*",
     "pastoria-runtime": "workspace:*",
     "radix3": "^1.1.2",
     "relay-compiler": "catalog:",
@@ -51,7 +50,6 @@
     "babel-plugin-react-compiler": "^1.0.0",
     "express": "catalog:",
     "grats": "catalog:",
-    "pastoria-config": "workspace:*",
     "relay-compiler": "catalog:",
     "tailwindcss": "catalog:"
   },

@@ -7,7 +7,6 @@ import {
   specifiedRules,
   validate,
 } from 'graphql';
-import {PastoriaConfig} from 'pastoria-config';
 import {ComponentType, PropsWithChildren} from 'react';
 import {renderToPipeableStream} from 'react-dom/server';
 import {
@@ -30,6 +29,7 @@ import {
 } from '../relay_client_environment.js';
 import {graphiqlScript} from './graphiql.js';
 import {createServerEnvironment} from './relay_server_environment.js';
+import {PastoriaEnvironment} from './environment.js';
 
 type SrcOfModuleId = (id: string) => string | null;
 type AppComponent = ComponentType<PropsWithChildren<{}>>;
@@ -47,7 +47,6 @@ type LoadEntryPointFn = (
   provider: EnvironmentProvider,
   initialPath?: string,
 ) => Promise<AnyPreloadedEntryPoint | null>;
-type CreateContextFn = (req: express.Request) => unknown | Promise<unknown>;
 
 const jsonSchema = z.record(z.string(), z.json());
 
@@ -73,10 +72,8 @@ function createAbortControllFromRes(res: express.Response): AbortController {
 }
 
 function createGraphqlHandler(
-  schema: GraphQLSchema,
-  createContext: CreateContextFn,
+  environment: PastoriaEnvironment,
   persistedQueries: Record<string, string>,
-  config: Required<PastoriaConfig>,
 ): express.Handler {
   const parsedPersistedQueries: Record<string, DocumentNode> = {};
   for (const [id, doc] of Object.entries(persistedQueries)) {
@@ -91,7 +88,7 @@ function createGraphqlHandler(
   return async (req, res) => {
     const allowGraphiQL =
       process.env.NODE_ENV !== 'production' ||
-      config.enableGraphiQLInProduction;
+      environment.enableGraphiQLInProduction;
 
     if (req.method === 'GET' && allowGraphiQL) {
       return res.status(200).send(graphiqlScript());
@@ -135,7 +132,7 @@ function createGraphqlHandler(
       // If persistedQueriesOnlyInProduction is enabled, reject plain text queries in production
       if (
         process.env.NODE_ENV === 'production' &&
-        config.persistedQueriesOnlyInProduction
+        environment.persistedQueriesOnlyInProduction
       ) {
         return res.status(200).send({
           errors: [
@@ -151,7 +148,11 @@ function createGraphqlHandler(
       }
     }
 
-    const validationErrors = validate(schema, requestDocument, specifiedRules);
+    const validationErrors = validate(
+      environment.schema,
+      requestDocument,
+      specifiedRules,
+    );
     if (validationErrors.length) {
       return res
         .status(200)
@@ -161,9 +162,9 @@ function createGraphqlHandler(
     const controller = createAbortControllFromRes(res);
     const graphqlResponse = await execute({
       document: requestDocument,
-      schema,
+      schema: environment.schema,
       operationName,
-      contextValue: await createContext(req),
+      contextValue: await environment.createContext(req),
       variableValues: variables,
       abortSignal: controller.signal,
     });
@@ -181,16 +182,15 @@ function createReactHandler(
   loadEntryPoint: LoadEntryPointFn,
   createAppFromEntryPoint: CreateRouterRootFn,
   App: AppComponent | null,
-  schema: GraphQLSchema,
-  createContext: CreateContextFn,
+  environment: PastoriaEnvironment,
   persistedQueries: Record<string, string>,
   manifest?: Manifest | null,
 ): express.Handler {
   return async (req, res) => {
-    const context = await createContext(req);
+    const context = await environment.createContext(req);
     const provider = createServerEnvironment(
       req,
-      schema,
+      environment.schema,
       persistedQueries,
       context,
     );
@@ -233,26 +233,18 @@ export function createRouterHandler(
   loadEntryPoint: LoadEntryPointFn,
   createAppFromEntryPoint: CreateRouterRootFn,
   App: AppComponent | null,
-  schema: GraphQLSchema,
-  createContext: CreateContextFn,
+  environment: PastoriaEnvironment,
   persistedQueries: Record<string, string>,
-  config: Required<PastoriaConfig>,
   manifest?: Manifest | null,
 ): express.Router {
-  const graphqlHandler = createGraphqlHandler(
-    schema,
-    createContext,
-    persistedQueries,
-    config,
-  );
+  const graphqlHandler = createGraphqlHandler(environment, persistedQueries);
 
   const reactHandler = createReactHandler(
     srcOfModuleId,
     loadEntryPoint,
     createAppFromEntryPoint,
     App,
-    schema,
-    createContext,
+    environment,
     persistedQueries,
     manifest,
   );

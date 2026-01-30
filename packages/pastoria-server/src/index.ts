@@ -5,7 +5,6 @@ import dotenv from 'dotenv';
 import express from 'express';
 import {readFile} from 'node:fs/promises';
 import * as path from 'node:path';
-import {loadConfig, PastoriaConfig} from 'pastoria-config';
 import pc from 'picocolors';
 import type {Manifest} from 'vite';
 
@@ -16,7 +15,6 @@ interface PersistedQueries {
 interface ServerEntry {
   createHandler(
     persistedQueries: PersistedQueries,
-    config: Required<PastoriaConfig>,
     manifest?: Manifest,
   ): express.Router;
 }
@@ -28,13 +26,13 @@ const QUERIES_JSON = '__generated__/router/persisted_queries.json';
 async function createServer() {
   dotenv.config();
 
-  const [manifest, serverManifest, persistedQueries, config] =
-    await Promise.all([
-      JSON.parse(await readFile(MANIFEST_JSON, 'utf-8')) as Manifest,
-      JSON.parse(await readFile(SERVER_MANIFEST_JSON, 'utf-8')) as Manifest,
-      JSON.parse(await readFile(QUERIES_JSON, 'utf-8')),
-      loadConfig(),
-    ]);
+  const [manifest, serverManifest, persistedQueries] = await Promise.all([
+    readFile(MANIFEST_JSON, 'utf-8').then((f) => JSON.parse(f) as Manifest),
+    readFile(SERVER_MANIFEST_JSON, 'utf-8').then(
+      (f) => JSON.parse(f) as Manifest,
+    ),
+    readFile(QUERIES_JSON, 'utf-8').then((f) => JSON.parse(f)),
+  ]);
 
   const serverEntry = serverManifest['virtual:pastoria-entry-server.tsx']?.file;
   if (serverEntry == null) {
@@ -47,7 +45,7 @@ async function createServer() {
     path.join(process.cwd(), 'dist/server', serverEntry)
   )) as ServerEntry;
 
-  const handler = createHandler(persistedQueries, config, manifest);
+  const handler = createHandler(persistedQueries, manifest);
 
   const app = express();
   app.use(cookieParser());
