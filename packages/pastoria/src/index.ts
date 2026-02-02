@@ -10,27 +10,19 @@ import {generatePastoriaArtifacts} from './generate.js';
 import {logInfo} from './logger.js';
 import {CLIENT_BUILD, createBuildConfig, SERVER_BUILD} from './vite_plugin.js';
 
-async function runCodeGeneration() {
-  const project = new Project({
-    tsConfigFilePath: path.join(process.cwd(), 'tsconfig.json'),
-    manipulationSettings: {
-      indentationText: IndentationText.TwoSpaces,
-    },
-  });
-
+async function runCodeGeneration(project: Project) {
   logInfo('Generating Pastoria artifacts...');
   await generatePastoriaArtifacts(project);
-
   logInfo('Code generation complete!');
 }
 
-async function runViteBuild(target: 'client' | 'server') {
+async function runViteBuild(project: Project, target: 'client' | 'server') {
   const buildType = target === 'client' ? CLIENT_BUILD : SERVER_BUILD;
 
   logInfo(`Building ${target}...`);
 
   await build({
-    ...createBuildConfig(buildType),
+    ...createBuildConfig(project, buildType),
     configFile: false,
   });
 
@@ -42,6 +34,15 @@ async function main() {
     await readFile(path.join(import.meta.dirname, '../package.json'), 'utf-8'),
   );
 
+  logInfo('Initializing TypeScript project...');
+
+  const project = new Project({
+    tsConfigFilePath: path.join(process.cwd(), 'tsconfig.json'),
+    manipulationSettings: {
+      indentationText: IndentationText.TwoSpaces,
+    },
+  });
+
   program
     .name('pastoria')
     .description(packageData.description)
@@ -51,19 +52,23 @@ async function main() {
     .command('dev')
     .description('Start the pastoria development server')
     .option('--port <port>', 'Port the devserver will listen on', '3000')
-    .action(startDevserver);
+    .action(async (options) => {
+      await startDevserver(project, options);
+    });
 
   program
     .command('generate')
     .description('Generate Pastoria router artifacts')
-    .action(runCodeGeneration);
+    .action(async () => {
+      await runCodeGeneration(project);
+    });
 
   program
     .command('build')
     .description('Build for production')
     .action(async () => {
-      await runViteBuild('client');
-      await runViteBuild('server');
+      await runViteBuild(project, 'client');
+      await runViteBuild(project, 'server');
     });
 
   program.parseAsync();

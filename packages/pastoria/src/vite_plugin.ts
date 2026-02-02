@@ -1,5 +1,6 @@
 import tailwindcss from '@tailwindcss/vite';
 import react from '@vitejs/plugin-react';
+import {Project} from 'ts-morph';
 import {
   InlineConfig,
   PluginOption,
@@ -7,10 +8,14 @@ import {
   type Plugin,
 } from 'vite';
 import {cjsInterop} from 'vite-plugin-cjs-interop';
-import {generateClientEntry, generateServerEntry} from './generate.js';
-import {logger} from './logger.js';
+import {
+  generateClientEntry,
+  generatePastoriaArtifacts,
+  generateServerEntry,
+} from './generate.js';
+import {logger, logInfo} from './logger.js';
 
-function pastoriaEntryPlugin(): Plugin {
+function pastoriaEntryPlugin(project: Project): Plugin {
   const clientEntryModuleId = 'virtual:pastoria-entry-client.tsx';
   const serverEntryModuleId = 'virtual:pastoria-entry-server.tsx';
 
@@ -29,6 +34,24 @@ function pastoriaEntryPlugin(): Plugin {
       } else if (id === serverEntryModuleId) {
         return generateServerEntry();
       }
+    },
+    async buildStart() {
+      logInfo('Updating generated files');
+      await generatePastoriaArtifacts(project);
+    },
+    async watchChange(id, {event}) {
+      if (!id.match(/.tsx$/) || id.includes('__generated__')) return;
+
+      if (event === 'create') {
+        project.addSourceFileAtPath(id);
+      } else if (event === 'delete') {
+        project.getSourceFile(id)?.forget();
+      } else if (event === 'update') {
+        await project.getSourceFile(id)?.refreshFromFileSystem();
+      }
+
+      logInfo('Updating generated files');
+      await generatePastoriaArtifacts(project);
     },
   };
 }
@@ -49,6 +72,7 @@ export const SERVER_BUILD: BuildEnvironmentOptions = {
 };
 
 export function createBuildConfig(
+  project: Project,
   buildEnv: BuildEnvironmentOptions,
 ): InlineConfig {
   return {
@@ -61,7 +85,7 @@ export function createBuildConfig(
       ssrManifest: true,
     },
     plugins: [
-      pastoriaEntryPlugin(),
+      pastoriaEntryPlugin(project),
       tailwindcss() as PluginOption,
       react({
         babel: {

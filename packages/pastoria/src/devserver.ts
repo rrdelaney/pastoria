@@ -3,6 +3,7 @@ import dotenv from 'dotenv';
 import express from 'express';
 import {readFile} from 'node:fs/promises';
 import pc from 'picocolors';
+import {Project} from 'ts-morph';
 import {createServer as createViteServer, type Manifest} from 'vite';
 import {logInfo} from './logger.js';
 import {CLIENT_BUILD, createBuildConfig} from './vite_plugin.js';
@@ -18,10 +19,10 @@ interface ServerEntry {
   ): express.Router;
 }
 
-export async function startDevserver(opts: {port: string}) {
+export async function startDevserver(project: Project, opts: {port: string}) {
   dotenv.config();
 
-  const buildConfig = createBuildConfig(CLIENT_BUILD);
+  const buildConfig = createBuildConfig(project, CLIENT_BUILD);
   const vite = await createViteServer({
     ...buildConfig,
     configFile: false,
