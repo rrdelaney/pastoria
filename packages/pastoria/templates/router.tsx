@@ -10,7 +10,6 @@ import {
   createContext,
   PropsWithChildren,
   StrictMode,
-  Suspense,
   useCallback,
   useContext,
   useEffect,
