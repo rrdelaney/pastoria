@@ -123,30 +123,42 @@ async function loadRouterTemplate(project: Project, filename: string) {
   return loadSourceFile(output, template);
 }
 
-type RouterResource = {
+interface ExportedSymbol {
   sourceFile: SourceFile;
   symbol: Symbol;
+}
+
+interface RouterResource extends ExportedSymbol {
   queries: Map<string, string>;
   entryPoints: Map<string, string>;
-};
+}
 
-type RouterRoute = {
-  sourceFile: SourceFile;
-  symbol: Symbol;
+interface RouterRoute extends ExportedSymbol {
   params: Map<string, ts.Type>;
-};
+}
 
-type ExportedSymbol = {
-  sourceFile: SourceFile;
-  symbol: Symbol;
-};
+/**
+ * A Pastoria API routes, defined as a default export in a route.ts file.
+ */
+interface ServerRoute extends ExportedSymbol {
+  /**
+   * Name of the route as defined relative to pastoria/.
+   *
+   * For example, /api/greet/[name].
+   */
+  routeName: string;
+  /**
+   * Express-style path for the route.
+   *
+   * For example, /api/greet/:name
+   */
+  routePath: string;
+}
 
 export interface PastoriaMetadata {
   resources: Map<string, RouterResource>;
   routes: Map<string, RouterRoute>;
-  serverHandlers: Map<string, ExportedSymbol>;
-  appRoot: ExportedSymbol | null;
-  gqlContext: ExportedSymbol | null;
+  serverRoutes: ServerRoute[];
 }
 
 // Regex to quickly check if a file contains any Pastoria JSDoc tags
@@ -183,8 +195,8 @@ function collectQueryParameters(
   return vars;
 }
 
-function collectServerRouters(project: Project): Map<string, ExportedSymbol> {
-  const serverHandlers = new Map<string, ExportedSymbol>();
+function collectServerRoutes(project: Project): ServerRoute[] {
+  const serverRoutes: ServerRoute[] = [];
 
   function visitSourceFile(sourceFile: SourceFile) {
     if (sourceFile.getBaseName() !== 'route.ts') return;
@@ -192,18 +204,27 @@ function collectServerRouters(project: Project): Map<string, ExportedSymbol> {
     const defaultExport = sourceFile.getDefaultExportSymbol();
     if (defaultExport == null) return;
 
-    serverHandlers.set('/api/greet/:name', {sourceFile, symbol: defaultExport});
+    const routeName = project
+      .getDirectory('pastoria')
+      ?.getRelativePathTo(sourceFile.getDirectory());
+
+    if (!routeName) return;
+
+    serverRoutes.push({
+      routeName: '/' + routeName,
+      routePath: '/' + routeName.replace(/\[(\w+)\]/g, ':$1'),
+      sourceFile,
+      symbol: defaultExport,
+    });
   }
 
   project.getSourceFiles('pastoria/**').forEach(visitSourceFile);
-  return serverHandlers;
+  return serverRoutes;
 }
 
 function collectPastoriaMetadata(project: Project): PastoriaMetadata {
   const resources = new Map<string, RouterResource>();
   const routes = new Map<string, RouterRoute>();
-  let appRoot: ExportedSymbol | null = null;
-  let gqlContext: ExportedSymbol | null = null;
 
   function visitRouterNodes(sourceFile: SourceFile) {
     // Skip generated files
@@ -257,58 +278,6 @@ function collectPastoriaMetadata(project: Project): PastoriaMetadata {
               break;
             }
           }
-        } else {
-          // Handle tags without comments (like @ExportedSymbol, @gqlContext)
-          switch (tag.tagName.getText()) {
-            case 'appRoot': {
-              if (appRoot != null) {
-                logWarn('Multiple @appRoot tags found. Using the first one.');
-              } else {
-                appRoot = {
-                  sourceFile,
-                  symbol,
-                };
-              }
-              break;
-            }
-            case 'gqlContext': {
-              // Check if this class extends PastoriaRootContext
-              const declarations = symbol.getDeclarations();
-              let extendsPastoriaRootContext = false;
-
-              for (const decl of declarations) {
-                if (decl.isKind(SyntaxKind.ClassDeclaration)) {
-                  const classDecl = decl.asKindOrThrow(
-                    SyntaxKind.ClassDeclaration,
-                  );
-                  const extendsClause = classDecl.getExtends();
-                  if (extendsClause != null) {
-                    const baseClassName = extendsClause
-                      .getExpression()
-                      .getText();
-                    if (baseClassName === 'PastoriaRootContext') {
-                      extendsPastoriaRootContext = true;
-                      break;
-                    }
-                  }
-                }
-              }
-
-              if (extendsPastoriaRootContext) {
-                if (gqlContext != null) {
-                  logWarn(
-                    'Multiple classes with @gqlContext extending PastoriaRootContext found. Using the first one.',
-                  );
-                } else {
-                  gqlContext = {
-                    sourceFile,
-                    symbol,
-                  };
-                }
-              }
-              break;
-            }
-          }
         }
       }
 
@@ -352,9 +321,7 @@ function collectPastoriaMetadata(project: Project): PastoriaMetadata {
   return {
     resources,
     routes,
-    appRoot,
-    gqlContext,
-    serverHandlers: collectServerRouters(project),
+    serverRoutes: collectServerRoutes(project),
   };
 }
 
@@ -740,10 +707,12 @@ async function generateServer(project: Project, metadata: PastoriaMetadata) {
   const serverTemplate = await loadRouterTemplate(project, 'server.ts');
 
   let serverHandlerImportIndex = 0;
-  for (const [
+  for (const {
+    symbol,
+    sourceFile,
     routeName,
-    {symbol, sourceFile},
-  ] of metadata.serverHandlers.entries()) {
+    routePath,
+  } of metadata.serverRoutes) {
     const importAlias = `e${serverHandlerImportIndex++}`;
     const filePath = path.relative(process.cwd(), sourceFile.getFilePath());
     const moduleSpecifier = serverTemplate.getRelativePathAsModuleSpecifierTo(
@@ -755,14 +724,12 @@ async function generateServer(project: Project, metadata: PastoriaMetadata) {
       namedImports: [{name: symbol.getName(), alias: importAlias}],
     });
 
-    serverTemplate.addStatements(`router.use('${routeName}', ${importAlias})`);
+    serverTemplate.addStatements(`router.use('${routePath}', ${importAlias})`);
 
     logInfo(
-      'Created server handler',
+      'Created server route',
       pc.cyan(routeName),
       'for',
-      pc.green(symbol.getName()),
-      'exported from',
       pc.yellow(filePath),
     );
   }
@@ -800,6 +767,7 @@ import {
   router__createAppFromEntryPoint,
   router__loadEntryPoint,
 } from '#genfiles/router/router';
+import {router as serverRouter} from '#genfiles/router/server';
 import App from '#pastoria/app';
 import environment from '#pastoria/environment';
 import express from 'express';
@@ -823,6 +791,7 @@ export function createHandler(
 
   const router = express.Router();
   router.use(routeHandler);
+  router.use(serverRouter)
 
   return router;
 }

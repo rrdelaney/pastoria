@@ -11,9 +11,7 @@ import {logInfo} from './logger.js';
 import {CLIENT_BUILD, createBuildConfig, SERVER_BUILD} from './vite_plugin.js';
 
 async function runCodeGeneration(project: Project) {
-  logInfo('Generating Pastoria artifacts...');
   await generatePastoriaArtifacts(project);
-  logInfo('Code generation complete!');
 }
 
 async function runViteBuild(project: Project, target: 'client' | 'server') {
@@ -33,8 +31,6 @@ async function main() {
   const packageData = JSON.parse(
     await readFile(path.join(import.meta.dirname, '../package.json'), 'utf-8'),
   );
-
-  logInfo('Initializing TypeScript project...');
 
   const project = new Project({
     tsConfigFilePath: path.join(process.cwd(), 'tsconfig.json'),
