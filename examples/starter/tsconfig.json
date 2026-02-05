@@ -19,8 +19,9 @@
     "paths": {
       "#src/*": ["./src/*"],
       "#genfiles/*": ["./__generated__/*"],
-      "#pastoria/*": ["./pastoria/*"]
-    }
+      "#pastoria/*": ["./pastoria/*"],
+    },
+    "listFiles": true,
   },
   "include": [
     "__generated__/**/*.ts",
@@ -28,12 +29,12 @@
     "src/**/*.ts",
     "src/**/*.tsx",
     "pastoria/**/*.ts",
-    "pastoria/**/*.tsx"
+    "pastoria/**/*.tsx",
   ],
   "grats": {
     "graphqlSchema": "./__generated__/schema/schema.graphql",
     "tsSchema": "./__generated__/schema/schema.ts",
     "nullableByDefault": true,
-    "strictSemanticNullability": true
-  }
+    "strictSemanticNullability": true,
+  },
 }

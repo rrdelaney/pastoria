@@ -20,6 +20,7 @@ import {preinit, preloadModule} from 'react-dom';
 import {
   EntryPoint,
   EntryPointContainer,
+  EntryPointProps,
   loadEntryPoint,
   RelayEnvironmentProvider,
   useEntryPointLoader,
@@ -42,8 +43,10 @@ export interface EntryPointParams<R extends RouteId> {
   schema: RouterConf[R]['schema'];
 }
 
+const ROUTE_MAPPING = {};
+
 const ROUTER = createRouter<RouterConf[keyof RouterConf]>({
-  routes: ROUTER_CONF,
+  routes: ROUTE_MAPPING,
 });
 
 class RouterLocation {

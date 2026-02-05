@@ -156,14 +156,16 @@ interface ServerRoute extends ExportedSymbol {
 }
 
 export interface PastoriaMetadata {
+  /** Planned for future removal. */
   resources: Map<string, RouterResource>;
+  /** Planned for future removal. */
   routes: Map<string, RouterRoute>;
   serverRoutes: ServerRoute[];
+  entryPointRoutes: ServerRoute[];
 }
 
 // Regex to quickly check if a file contains any Pastoria JSDoc tags
-export const PASTORIA_TAG_REGEX =
-  /@(route|resource|appRoot|param|gqlContext|serverRoute)\b/;
+export const PASTORIA_TAG_REGEX = /@(route|resource|param)\b/;
 
 function collectQueryParameters(
   project: Project,
@@ -220,6 +222,33 @@ function collectServerRoutes(project: Project): ServerRoute[] {
 
   project.getSourceFiles('pastoria/**').forEach(visitSourceFile);
   return serverRoutes;
+}
+
+function collectEntryPointRoutes(project: Project): ServerRoute[] {
+  const routes: ServerRoute[] = [];
+
+  function visitSourceFile(sourceFile: SourceFile) {
+    if (sourceFile.getBaseName() !== 'page.tsx') return;
+
+    const defaultExport = sourceFile.getDefaultExportSymbol();
+    if (defaultExport == null) return;
+
+    const routeName = project
+      .getDirectory('pastoria')
+      ?.getRelativePathTo(sourceFile.getDirectory());
+
+    if (!routeName) return;
+
+    routes.push({
+      routeName: '/' + routeName,
+      routePath: '/' + routeName.replace(/\[(\w+)\]/g, ':$1'),
+      sourceFile,
+      symbol: defaultExport,
+    });
+  }
+
+  project.getSourceFiles('pastoria/**').forEach(visitSourceFile);
+  return routes;
 }
 
 function collectPastoriaMetadata(project: Project): PastoriaMetadata {
@@ -322,6 +351,7 @@ function collectPastoriaMetadata(project: Project): PastoriaMetadata {
     resources,
     routes,
     serverRoutes: collectServerRoutes(project),
+    entryPointRoutes: collectEntryPointRoutes(project),
   };
 }
 
@@ -528,6 +558,15 @@ function writeEntryPoint(
     });
 }
 
+function escapeRouteName(routeName: string): string {
+  return routeName
+    .replace(/\[(\w+)\]/g, '_$1_')
+    .replace(/\//g, '_')
+    .replace(/^_/, '')
+    .replace(/_$/, '')
+    .replace(/__+/g, '_');
+}
+
 async function generateRouter(project: Project, metadata: PastoriaMetadata) {
   const routerTemplate = await loadRouterTemplate(project, 'router.tsx');
   const tc = project.getTypeChecker().compilerObject;
@@ -538,7 +577,33 @@ async function generateRouter(project: Project, metadata: PastoriaMetadata) {
     .getInitializerIfKindOrThrow(SyntaxKind.AsExpression)
     .getExpressionIfKindOrThrow(SyntaxKind.ObjectLiteralExpression);
 
+  const routeMapping = routerTemplate
+    .getVariableDeclarationOrThrow('ROUTE_MAPPING')
+    .getInitializerIfKindOrThrow(SyntaxKind.ObjectLiteralExpression);
+
   routerConf.getPropertyOrThrow('noop').remove();
+
+  routerTemplate.addStatements(`
+declare global {
+  type PastoriaRouteName =
+    ${metadata.entryPointRoutes.map((r) => `| '${r.routeName}'`).join('    \n')};
+
+  type PastoriaPageQueries = {
+    ${metadata.entryPointRoutes.map((r) => `['${r.routeName}']: ${escapeRouteName(r.routeName)}_EP_Queries`)},
+  };
+
+  type PastoriaPageEntryPoints = {
+    ${metadata.entryPointRoutes.map((r) => `['${r.routeName}']: ${escapeRouteName(r.routeName)}_EP_EntryPoints`)},
+  };
+
+  type PastoriaPageProps<T extends PastoriaRouteName> = EntryPointProps<
+    PastoriaPageQueries[T],
+    PastoriaPageEntryPoints[T],
+    {},
+    {}
+  >
+}  
+`);
 
   let entryPointImportIndex = 0;
   for (let [
@@ -639,6 +704,11 @@ async function generateRouter(project: Project, metadata: PastoriaMetadata) {
       },
     });
 
+    routeMapping.addPropertyAssignment({
+      name: `"${routeName}"`,
+      initializer: `ROUTER_CONF["${routeName}"]`,
+    });
+
     logInfo(
       'Created route',
       pc.cyan(routeName),
@@ -647,6 +717,54 @@ async function generateRouter(project: Project, metadata: PastoriaMetadata) {
       'exported from',
       pc.yellow(filePath),
     );
+  }
+
+  for (const {routeName, routePath} of metadata.entryPointRoutes) {
+    const escapedRouteName = escapeRouteName(routeName);
+
+    routerTemplate.addImportDeclaration({
+      moduleSpecifier: `./${escapedRouteName}.entrypoint`,
+      namedImports: [
+        {
+          name: 'schema',
+          alias: `${escapedRouteName}_EP_schema`,
+        },
+        {
+          name: 'entrypoint',
+          alias: `${escapedRouteName}_EP_entrypoint`,
+        },
+        {
+          name: 'Queries',
+          alias: `${escapedRouteName}_EP_Queries`,
+        },
+        {
+          name: 'EntryPoints',
+          alias: `${escapedRouteName}_EP_EntryPoints`,
+        },
+      ],
+    });
+
+    routerConf.addPropertyAssignment({
+      name: `"${routeName}"`,
+      initializer: (writer) => {
+        writer
+          .write('{')
+          .indent(() => {
+            writer.writeLine(`entrypoint: ${escapedRouteName}_EP_entrypoint,`);
+            writer.writeLine(`schema: ${escapedRouteName}_EP_schema,`);
+          })
+          .write('} as const');
+      },
+    });
+
+    routeMapping.addPropertyAssignment({
+      name: `"${routePath}"`,
+      initializer: `ROUTER_CONF["${routeName}"]`,
+    });
+
+    // TODO(ryan): Generate the .entrypoint files.
+
+    logInfo('Created route', pc.cyan(routeName));
   }
 
   await saveWithChecksum(routerTemplate);
@@ -667,6 +785,7 @@ async function generateJsResource(
     .getExpressionIfKindOrThrow(SyntaxKind.ObjectLiteralExpression);
 
   resourceConf.getPropertyOrThrow('noop').remove();
+
   for (const [
     resourceName,
     {sourceFile, symbol},
@@ -698,6 +817,20 @@ async function generateJsResource(
       'exported from',
       pc.yellow(filePath),
     );
+  }
+
+  for (const {routeName} of metadata.entryPointRoutes) {
+    resourceConf.addPropertyAssignment({
+      name: `"route(${routeName})"`,
+      initializer: (writer) => {
+        writer.block(() => {
+          writer.writeLine(`src: "pastoria${routeName}/page.tsx",`);
+          writer.writeLine(
+            `loader: () => import("#pastoria${routeName}/page").then(m => m.default),`,
+          );
+        });
+      },
+    });
   }
 
   await saveWithChecksum(jsResourceTemplate);

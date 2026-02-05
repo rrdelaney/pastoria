@@ -34,11 +34,8 @@ This is a pnpm workspace monorepo with the following packages:
 ### Building the Framework
 
 ```bash
-# Build all packages in parallel
-pnpm -r --parallel build
-
-# Build specific package
-pnpm --filter pastoria build
+# Build the framework packages
+pnpm run --filter './packages/*' build
 
 # Type check all packages
 pnpm check:types
@@ -94,37 +91,23 @@ generate type-safe routing and resource loading code for framework users:
 - **`@param <name> <type>`**: Documents route parameters (generates Zod schemas
   for validation)
 - **`@resource <resource-name>`**: Marks exports for lazy loading
-- **`@appRoot`**: Designates a component as the application root wrapper
 
 Generated files (in user projects) are placed in `__generated__/router/`:
 
 - `js_resource.ts`: Resource configuration for lazy loading
 - `router.tsx`: Client-side router with type-safe routes
-- `app_root.ts`: Re-export of app root component (only generated if `@appRoot`
-  tag is found)
 
 Templates for generation are in `packages/pastoria/templates/`.
 
 ### Build System
 
-The framework uses a combination of `just` (task runner) for build orchestration
-and Pastoria CLI commands for code generation and Vite builds.
-
-**Build Pipeline** (orchestrated by `packages/pastoria/justfile`):
-
-1. **Grats** (`just grats`): Generates GraphQL schema from JSDoc annotations
-2. **Relay** (`just relay`): Compiles Relay queries with persisted queries
-   (depends on Grats schema)
-3. **Router** (`just router`): Runs `pastoria gen` to generate type-safe router
-   artifacts (depends on Relay output for query variables)
-4. **Client/Server** (`just build`): Runs `pastoria build client` and
-   `pastoria build server` (depends on generated router)
+The framework uses Pastoria CLI commands for code generation and Vite builds.
 
 **Pastoria CLI Commands**:
 
 - `pastoria dev`: Start development server with HMR
-- `pastoria gen`: Generate router artifacts (runs both exports and artifacts
-  generation)
+- `pastoria generate`: Generate router artifacts (runs both exports and
+  artifacts generation)
 - `pastoria build <target>`: Build client or server bundle with Vite
 
 **Vite Builds** (via `pastoria build`):
@@ -175,44 +158,10 @@ The `pastoria dev` command:
 - Serves both static assets and SSR routes
 - Reads persisted queries JSON on each request
 
-### User Project Build Setup
-
-User projects using Pastoria need to:
-
-1. **Install `just`** (command runner):
-
-   ```bash
-   # macOS
-   brew install just
-
-   # Linux
-   cargo install just
-
-   # Windows
-   scoop install just
-   ```
-
-2. **Create `justfile`** in project root:
-
-   ```justfile
-   import './node_modules/pastoria/justfile'
-   ```
-
-3. **Run build commands** via `just`:
-   - `just grats` - Generate GraphQL schema
-   - `just relay` - Compile Relay queries
-   - `just router` - Generate router artifacts
-   - `just build` - Full production build (client + server)
-   - `just dev` or `pastoria dev` - Start dev server
-
 ### Framework User Project Conventions
 
 User projects are expected to have:
 
-- Component with `@appRoot` JSDoc tag: Optional root app wrapper component
-  (replaces hardcoded `src/pages/_app.tsx`)
-- `src/lib/server/context.ts`: GraphQL context factory
-- `__generated__/schema/schema.ts`: GraphQL schema (from Relay compiler)
 - `__generated__/router/persisted_queries.json`: Persisted query map (from Relay
   compiler)
 - Route components with JSDoc annotations (`@route`, `@param`)
@@ -238,13 +187,7 @@ User projects are expected to have:
   command)
 - When modifying templates (`packages/pastoria/templates/`), the changes affect
   code generation for user projects
-- When modifying the justfile (`packages/pastoria/justfile`), test changes in a
-  user project by importing it
-- The virtual module system in `vite_plugin.ts` generates entry points at build
-  time by checking for `app_root.ts` existence
 - Entry point generation uses static imports (not dynamic) - the code is
   generated differently based on file existence
 - Client and server builds must coordinate on serialization format for Relay
   operations
-- Build orchestration is handled by `just` - no smart incremental builds, all
-  steps run on each invocation
