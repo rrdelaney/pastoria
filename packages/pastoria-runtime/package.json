@@ -17,8 +17,7 @@
   },
   "scripts": {
     "build": "tsc",
-    "check:types": "tsc --noEmit",
-    "test": "echo \"Error: no test specified\" && exit 1"
+    "check:types": "tsc --noEmit"
   },
   "keywords": [],
   "author": "",
