@@ -450,5 +450,5 @@ export function RouteLink<R extends RouteId>({
 }
 
 export function listRoutes() {
-  return Object.keys(ROUTER_CONF);
+  return Object.keys(ROUTE_MAPPING);
 }
