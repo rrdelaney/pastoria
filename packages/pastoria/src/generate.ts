@@ -628,7 +628,8 @@ async function generateRouter(
 
   routerConf.getPropertyOrThrow('noop').remove();
 
-  routerTemplate.addStatements(`
+  if (metadata.entryPointRoutes.length > 0) {
+    routerTemplate.addStatements(`
 declare global {
   type PastoriaRouteName =
     ${metadata.entryPointRoutes.map((r) => `| '${r.routeName}'`).join('    \n')};
@@ -649,6 +650,7 @@ declare global {
   >
 }
 `);
+  }
 
   let entryPointImportIndex = 0;
   for (let [
