@@ -10,8 +10,8 @@ import {
 import {cjsInterop} from 'vite-plugin-cjs-interop';
 import {
   generateClientEntry,
-  generatePastoriaArtifacts,
   generateServerEntry,
+  PastoriaExecutionContext,
 } from './generate.js';
 import {logger, logInfo} from './logger.js';
 
@@ -37,7 +37,7 @@ function pastoriaEntryPlugin(project: Project): Plugin {
     },
     async buildStart() {
       logInfo('Updating generated files');
-      await generatePastoriaArtifacts(project);
+      await new PastoriaExecutionContext(project).generatePastoriaArtifacts();
     },
     async watchChange(id, {event}) {
       if (!id.match(/.tsx$/) || id.includes('__generated__')) return;
@@ -51,7 +51,7 @@ function pastoriaEntryPlugin(project: Project): Plugin {
       }
 
       logInfo('Updating generated files');
-      await generatePastoriaArtifacts(project);
+      await new PastoriaExecutionContext(project).generatePastoriaArtifacts();
     },
   };
 }

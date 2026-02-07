@@ -2,7 +2,7 @@ import {readFileSync} from 'node:fs';
 import * as path from 'node:path';
 import {Project, ts} from 'ts-morph';
 import {describe, expect, it, vi} from 'vitest';
-import {generatePastoriaArtifacts} from '../generate.js';
+import {PastoriaExecutionContext} from '../generate.js';
 
 vi.mock('../logger.js', () => ({logInfo: vi.fn(), logWarn: vi.fn()}));
 
@@ -49,7 +49,11 @@ async function generate(files: Record<string, string>) {
     project.createSourceFile(filePath, content);
   }
 
-  await generatePastoriaArtifacts(project, TEMPLATES_DIR, PROJECT_DIR);
+  await new PastoriaExecutionContext(
+    project,
+    TEMPLATES_DIR,
+    PROJECT_DIR,
+  ).generatePastoriaArtifacts();
 
   function getFile(p: string) {
     const content = project.getSourceFile(p)?.getFullText();
