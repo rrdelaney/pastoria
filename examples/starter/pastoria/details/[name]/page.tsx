@@ -1,5 +1,5 @@
-import {graphql, usePreloadedQuery} from 'react-relay';
 import {page_DetailsQuery} from '#genfiles/queries/page_DetailsQuery.graphql.js';
+import {graphql, usePreloadedQuery} from 'react-relay';
 
 export type Queries = {
   details: page_DetailsQuery;
