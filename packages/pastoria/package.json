@@ -28,6 +28,7 @@
     "cookie-parser": "catalog:",
     "dotenv": "catalog:",
     "picocolors": "catalog:",
+    "prettier": "^3.6.2",
     "tailwindcss": "^4.1.15",
     "ts-morph": "^26.0.0",
     "vite": "catalog:",
@@ -41,11 +42,11 @@
     "@types/react-dom": "catalog:",
     "@types/react-relay": "catalog:",
     "@types/relay-compiler": "^14.0.4",
-    "vitest": "^3.1.1",
     "pastoria-runtime": "workspace:*",
     "radix3": "^1.1.2",
     "relay-compiler": "catalog:",
     "typescript": "catalog:",
+    "vitest": "^3.1.1",
     "zod": "catalog:"
   },
   "peerDependencies": {

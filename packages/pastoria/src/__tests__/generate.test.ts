@@ -125,13 +125,13 @@ export default function HomePage() {
       // Should reference the route resource
       expect(entrypoint).toContain('route(/home)');
       // Should export entrypoint and schema
-      expect(entrypoint).toContain('export {entrypoint, schema');
+      expect(entrypoint).toContain('export { entrypoint, schema');
 
       // Router should have a route for /home
-      expect(result.router).toContain('"/home"');
+      expect(result.router).toContain(`'/home'`);
 
       // js_resource should have a resource for route(/home)
-      expect(result.jsResource).toContain('"route(/home)"');
+      expect(result.jsResource).toContain(`'route(/home)'`);
 
       expect(entrypoint).toMatchSnapshot();
     });
@@ -230,12 +230,12 @@ export default function greet(req: any, res: any) {
       });
 
       // Router should have both page routes
-      expect(result.router).toContain('"/home"');
-      expect(result.router).toContain('"/about"');
+      expect(result.router).toContain(`'/home'`);
+      expect(result.router).toContain(`'/about'`);
 
       // js_resource should have both page resources
-      expect(result.jsResource).toContain('"route(/home)"');
-      expect(result.jsResource).toContain('"route(/about)"');
+      expect(result.jsResource).toContain(`'route(/home)'`);
+      expect(result.jsResource).toContain(`'route(/about)'`);
 
       // Server should have both API routes
       expect(result.server).toContain("'/api/health'");

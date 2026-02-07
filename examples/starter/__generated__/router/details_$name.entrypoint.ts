@@ -9,26 +9,27 @@ import { z } from "zod/v4-mini";
 import { JSResource, ModuleType } from "./js_resource";
 import page_DetailsQueryParameters from "#genfiles/queries/page_DetailsQuery$parameters";
 
-const schema = z.object({name: z.pipe(z.string(), z.transform(decodeURIComponent))});
-const entrypoint: EntryPoint<ModuleType<'route(/details/[name])'>, {params: Record<string, any>, schema: typeof schema}> = {
-    root: JSResource.fromModuleId('route(/details/[name])'),
-    getPreloadProps({params, schema}) {
-      const variables = schema.parse(params);
-      return {
-        queries: {
-          details: {
-            parameters: page_DetailsQueryParameters,
-            variables: {name: variables.name}
-          }
-          ,
-        }
-        ,
-        entryPoints: {
-        }
-      }
-    }
-  };
+const schema = z.object({
+  name: z.pipe(z.string(), z.transform(decodeURIComponent)),
+});
+const entrypoint: EntryPoint<
+  ModuleType<"route(/details/[name])">,
+  { params: Record<string, any>; schema: typeof schema }
+> = {
+  root: JSResource.fromModuleId("route(/details/[name])"),
+  getPreloadProps({ params, schema }) {
+    const variables = schema.parse(params);
+    return {
+      queries: {
+        details: {
+          parameters: page_DetailsQueryParameters,
+          variables: { name: variables.name },
+        },
+      },
+      entryPoints: {},
+    };
+  },
+};
 type EntryPoints = {};
 
-export {entrypoint, schema, type EntryPoints, type Queries};
-
+export { entrypoint, schema, type EntryPoints, type Queries };

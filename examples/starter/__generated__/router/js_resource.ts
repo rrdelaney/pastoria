@@ -4,27 +4,28 @@
  * Do not modify this file directly. Instead, edit the template at js_resource.ts.
  */
 
-import type {JSResourceReference} from 'react-relay/hooks';
+import type { JSResourceReference } from "react-relay/hooks";
 
 type ResourceConf = typeof RESOURCE_CONF;
 const RESOURCE_CONF = {
   "route(/hello/:name)": {
-      src: "src/hello_world.tsx",
-      loader: () => import("../../src/hello_world").then(m => m.HelloWorldPage)
-    },
+    src: "src/hello_world.tsx",
+    loader: () => import("../../src/hello_world").then((m) => m.HelloWorldPage),
+  },
   "m#home": {
-      src: "src/home.tsx",
-      loader: () => import("../../src/home").then(m => m.HomePage)
-    },
+    src: "src/home.tsx",
+    loader: () => import("../../src/home").then((m) => m.HomePage),
+  },
   "route(/details/[name])": {
-      src: "pastoria/details/[name]/page.tsx",
-      loader: () => import("#pastoria/details/[name]/page").then(m => m.default),
-    }
+    src: "pastoria/details/[name]/page.tsx",
+    loader: () =>
+      import("#pastoria/details/[name]/page").then((m) => m.default),
+  },
 } as const;
 
 type ModuleId = keyof ResourceConf;
 export type ModuleType<M extends ModuleId> = Awaited<
-  ReturnType<ResourceConf[M]['loader']>
+  ReturnType<ResourceConf[M]["loader"]>
 >;
 
 export class JSResource<M extends ModuleId>

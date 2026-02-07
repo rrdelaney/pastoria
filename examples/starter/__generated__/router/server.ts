@@ -4,8 +4,8 @@
  * Do not modify this file directly. Instead, edit the template at server.ts.
  */
 
-import express from 'express';
+import express from "express";
 import { default as e0 } from "../../pastoria/api/greet/[name]/route";
 
 export const router = express.Router();
-router.use('/api/greet/:name', e0)
+router.use("/api/greet/:name", e0);

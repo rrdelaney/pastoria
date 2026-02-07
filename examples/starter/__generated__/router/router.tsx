@@ -9,8 +9,8 @@ import {
   EnvironmentProvider,
   relayClientEnvironment,
   RouterOps,
-} from 'pastoria-runtime';
-import {createRouter} from 'radix3';
+} from "pastoria-runtime";
+import { createRouter } from "radix3";
 import {
   AnchorHTMLAttributes,
   createContext,
@@ -21,8 +21,8 @@ import {
   useEffect,
   useMemo,
   useState,
-} from 'react';
-import {preinit, preloadModule} from 'react-dom';
+} from "react";
+import { preinit, preloadModule } from "react-dom";
 import {
   EntryPoint,
   EntryPointContainer,
@@ -30,29 +30,34 @@ import {
   loadEntryPoint,
   RelayEnvironmentProvider,
   useEntryPointLoader,
-} from 'react-relay/hooks';
-import * as z from 'zod/v4-mini';
+} from "react-relay/hooks";
+import * as z from "zod/v4-mini";
 import { JSResource, ModuleType } from "./js_resource";
 import helloWorld_HelloQueryParameters from "#genfiles/queries/helloWorld_HelloQuery$parameters";
 import { entrypoint as e0 } from "../../src/home.entrypoint";
-import { schema as details_$name_EP_schema, entrypoint as details_$name_EP_entrypoint, Queries as details_$name_EP_Queries, EntryPoints as details_$name_EP_EntryPoints } from "./details_$name.entrypoint";
+import {
+  schema as details_$name_EP_schema,
+  entrypoint as details_$name_EP_entrypoint,
+  Queries as details_$name_EP_Queries,
+  EntryPoints as details_$name_EP_EntryPoints,
+} from "./details_$name.entrypoint";
 
 type RouterConf = typeof ROUTER_CONF;
 const ROUTER_CONF = {
   "/hello/:name": {
-      entrypoint: entrypoint_routehelloname(),
-      schema: z.object({
-        name: z.pipe(z.string(), z.transform(decodeURIComponent)),
-      })
-    } as const,
+    entrypoint: entrypoint_routehelloname(),
+    schema: z.object({
+      name: z.pipe(z.string(), z.transform(decodeURIComponent)),
+    }),
+  } as const,
   "/": {
-      entrypoint: e0,
-      schema: z.object({})
-    } as const,
+    entrypoint: e0,
+    schema: z.object({}),
+  } as const,
   "/details/[name]": {
-      entrypoint: details_$name_EP_entrypoint,
-      schema: details_$name_EP_schema,
-    } as const
+    entrypoint: details_$name_EP_entrypoint,
+    schema: details_$name_EP_schema,
+  } as const,
 } as const;
 
 export type RouteId = keyof RouterConf;
@@ -60,13 +65,13 @@ export type NavigationDirection = string | URL | ((nextUrl: URL) => void);
 
 export interface EntryPointParams<R extends RouteId> {
   params: Record<string, any>;
-  schema: RouterConf[R]['schema'];
+  schema: RouterConf[R]["schema"];
 }
 
 const ROUTE_MAPPING = {
   "/hello/:name": ROUTER_CONF["/hello/:name"],
   "/": ROUTER_CONF["/"],
-  "/details/:name": ROUTER_CONF["/details/[name]"]
+  "/details/:name": ROUTER_CONF["/details/[name]"],
 };
 
 const ROUTER = createRouter<RouterConf[keyof RouterConf]>({
@@ -77,12 +82,12 @@ class RouterLocation {
   private constructor(
     readonly pathname: string,
     readonly searchParams: URLSearchParams,
-    readonly method?: 'push' | 'replace' | 'popstate',
+    readonly method?: "push" | "replace" | "popstate",
   ) {}
 
   href() {
     if (this.searchParams.size > 0) {
-      return this.pathname + '?' + this.searchParams.toString();
+      return this.pathname + "?" + this.searchParams.toString();
     }
 
     return this.pathname;
@@ -106,9 +111,9 @@ class RouterLocation {
     }
   }
 
-  static parse(path: string, method?: 'push' | 'replace' | 'popstate') {
-    if (path.startsWith('/')) {
-      path = 'router:' + path;
+  static parse(path: string, method?: "push" | "replace" | "popstate") {
+    if (path.startsWith("/")) {
+      path = "router:" + path;
     }
 
     try {
@@ -127,21 +132,21 @@ function useLocation(initialPath?: string) {
 
   useEffect(() => {
     function listener(e: PopStateEvent) {
-      setLocation(RouterLocation.parse(window.location.href, 'popstate'));
+      setLocation(RouterLocation.parse(window.location.href, "popstate"));
     }
 
-    window.addEventListener('popstate', listener);
+    window.addEventListener("popstate", listener);
     return () => {
-      window.removeEventListener('popstate', listener);
+      window.removeEventListener("popstate", listener);
     };
   }, []);
 
   useEffect(() => {
-    if (location.method === 'push') {
-      window.history.pushState({}, '', location.href());
+    if (location.method === "push") {
+      window.history.pushState({}, "", location.href());
       window.scrollTo(0, 0);
-    } else if (location.method === 'replace') {
-      window.history.replaceState({}, '', location.href());
+    } else if (location.method === "replace") {
+      window.history.replaceState({}, "", location.href());
     }
   }, [location]);
 
@@ -150,7 +155,7 @@ function useLocation(initialPath?: string) {
 
 export function router__hydrateStore(provider: EnvironmentProvider) {
   const env = provider.getEnvironment(null);
-  if ('__router_ops' in window) {
+  if ("__router_ops" in window) {
     const ops = (window as any).__router_ops as RouterOps;
     for (const [op, payload] of ops) {
       env.commitPayload(op, payload);
@@ -180,7 +185,7 @@ interface RouterContextValue {
 }
 
 const RouterContext = createContext<RouterContextValue>({
-  location: RouterLocation.parse('/'),
+  location: RouterLocation.parse("/"),
   setLocation: () => {},
 });
 
@@ -207,11 +212,11 @@ export function router__createAppFromEntryPoint(
     preloadStylesheets?: string[];
   }>) {
     for (const m of preloadModules ?? []) {
-      preloadModule(m, {as: 'script'});
+      preloadModule(m, { as: "script" });
     }
 
     for (const s of preloadStylesheets ?? []) {
-      preinit(s, {as: 'style'});
+      preinit(s, { as: "style" });
     }
 
     return (
@@ -225,10 +230,10 @@ export function router__createAppFromEntryPoint(
                 content="width=device-width, initial-scale=1"
               />
 
-              {process.env.NODE_ENV !== 'production' && (
+              {process.env.NODE_ENV !== "production" && (
                 <script
                   type="module"
-                  dangerouslySetInnerHTML={{__html: REACT_REFRESH_SCRIPT}}
+                  dangerouslySetInnerHTML={{ __html: REACT_REFRESH_SCRIPT }}
                 />
               )}
             </head>
@@ -307,17 +312,17 @@ export async function createRouterApp() {
 }
 
 export function usePath() {
-  const {location} = useContext(RouterContext);
+  const { location } = useContext(RouterContext);
   return location.pathname;
 }
 
 export function useRouteParams<R extends RouteId>(
   routeId: R,
-): z.infer<RouterConf[R]['schema']> {
+): z.infer<RouterConf[R]["schema"]> {
   const schema = ROUTER_CONF[routeId].schema;
-  const {location} = useContext(RouterContext);
+  const { location } = useContext(RouterContext);
 
-  return schema.parse(location.params()) as z.infer<RouterConf[R]['schema']>;
+  return schema.parse(location.params()) as z.infer<RouterConf[R]["schema"]>;
 }
 
 function router__createPathForRoute(
@@ -345,7 +350,7 @@ function router__createPathForRoute(
   });
 
   if (searchParams.size > 0) {
-    return pathname + '?' + searchParams.toString();
+    return pathname + "?" + searchParams.toString();
   } else {
     return pathname;
   }
@@ -353,7 +358,7 @@ function router__createPathForRoute(
 
 function router__evaluateNavigationDirection(nav: NavigationDirection) {
   let nextUrl: URL;
-  if (typeof nav === 'string') {
+  if (typeof nav === "string") {
     nextUrl = new URL(nav, window.location.origin);
   } else if (nav instanceof URL) {
     nextUrl = nav;
@@ -363,23 +368,23 @@ function router__evaluateNavigationDirection(nav: NavigationDirection) {
   }
 
   if (window.location.origin !== nextUrl.origin) {
-    throw new Error('Cannot navigate to a different origin.');
+    throw new Error("Cannot navigate to a different origin.");
   }
 
   if (nextUrl.searchParams.size > 0) {
-    return nextUrl.pathname + '?' + nextUrl.searchParams.toString();
+    return nextUrl.pathname + "?" + nextUrl.searchParams.toString();
   } else {
     return nextUrl.pathname;
   }
 }
 
 export function useNavigation() {
-  const {setLocation} = useContext(RouterContext);
+  const { setLocation } = useContext(RouterContext);
 
   return useMemo(() => {
     function push(nav: NavigationDirection) {
       setLocation(
-        RouterLocation.parse(router__evaluateNavigationDirection(nav), 'push'),
+        RouterLocation.parse(router__evaluateNavigationDirection(nav), "push"),
       );
     }
 
@@ -387,36 +392,39 @@ export function useNavigation() {
       setLocation(
         RouterLocation.parse(
           router__evaluateNavigationDirection(nav),
-          'replace',
+          "replace",
         ),
       );
     }
 
     function pushRoute<R extends RouteId>(
       routeId: R,
-      params: z.input<RouterConf[R]['schema']>,
+      params: z.input<RouterConf[R]["schema"]>,
     ) {
       setLocation(
         RouterLocation.parse(
           router__createPathForRoute(routeId, params),
-          'push',
+          "push",
         ),
       );
     }
 
     function replaceRoute<R extends RouteId>(
       routeId: R,
-      params: z.input<RouterConf[R]['schema']>,
+      params: z.input<RouterConf[R]["schema"]>,
     ) {
       setLocation((prevLoc) =>
         RouterLocation.parse(
-          router__createPathForRoute(routeId, {...prevLoc.params(), ...params}),
-          'replace',
+          router__createPathForRoute(routeId, {
+            ...prevLoc.params(),
+            ...params,
+          }),
+          "replace",
         ),
       );
     }
 
-    return {push, replace, pushRoute, replaceRoute} as const;
+    return { push, replace, pushRoute, replaceRoute } as const;
   }, [setLocation]);
 }
 
@@ -426,7 +434,7 @@ export function Link({
   onClick,
   ...props
 }: AnchorHTMLAttributes<HTMLAnchorElement>) {
-  const {push} = useNavigation();
+  const { push } = useNavigation();
 
   const handleClick = useCallback(
     (e: React.MouseEvent<HTMLAnchorElement, MouseEvent>) => {
@@ -436,7 +444,7 @@ export function Link({
       // See https://github.com/remix-run/react-router/blob/main/packages/react-router/lib/dom/dom.ts#L34
       const shouldHandle =
         e.button === 0 &&
-        (!target || target === '_self') &&
+        (!target || target === "_self") &&
         !(e.metaKey || e.altKey || e.ctrlKey || e.shiftKey);
 
       if (!shouldHandle) return;
@@ -456,7 +464,7 @@ export function Link({
 export interface LinkProps<R extends RouteId>
   extends AnchorHTMLAttributes<HTMLAnchorElement> {
   route: R;
-  params: z.input<RouterConf[R]['schema']>;
+  params: z.input<RouterConf[R]["schema"]>;
   href?: never;
 }
 
@@ -478,15 +486,14 @@ export function listRoutes() {
 }
 
 declare global {
-  type PastoriaRouteName =
-    | '/details/[name]';
+  type PastoriaRouteName = "/details/[name]";
 
   type PastoriaPageQueries = {
-    ['/details/[name]']: details_$name_EP_Queries,
+    ["/details/[name]"]: details_$name_EP_Queries;
   };
 
   type PastoriaPageEntryPoints = {
-    ['/details/[name]']: details_$name_EP_EntryPoints,
+    ["/details/[name]"]: details_$name_EP_EntryPoints;
   };
 
   type PastoriaPageProps<T extends PastoriaRouteName> = EntryPointProps<
@@ -494,26 +501,26 @@ declare global {
     PastoriaPageEntryPoints[T],
     {},
     {}
-  >
+  >;
 }
 
-function entrypoint_routehelloname(): EntryPoint<ModuleType<'route(/hello/:name)'>, EntryPointParams<'/hello/:name'>> {
+function entrypoint_routehelloname(): EntryPoint<
+  ModuleType<"route(/hello/:name)">,
+  EntryPointParams<"/hello/:name">
+> {
   return {
-    root: JSResource.fromModuleId('route(/hello/:name)'),
-    getPreloadProps({params, schema}) {
+    root: JSResource.fromModuleId("route(/hello/:name)"),
+    getPreloadProps({ params, schema }) {
       const variables = schema.parse(params);
       return {
         queries: {
           nameQuery: {
             parameters: helloWorld_HelloQueryParameters,
-            variables: {name: variables.name}
-          }
-          ,
-        }
-        ,
-        entryPoints: {
-        }
-      }
-    }
-  }
+            variables: { name: variables.name },
+          },
+        },
+        entryPoints: {},
+      };
+    },
+  };
 }

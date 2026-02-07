@@ -6,35 +6,36 @@ exports[`generatePastoriaArtifacts > dynamic page route with queries > generates
  * @generated-checksum <STRIPPED>
  * Do not modify this file directly.
  */
-import type { Queries } from "#pastoria/details/[name]/page";
-import { EntryPoint } from "react-relay/hooks";
-import { z } from "zod/v4-mini";
-import { JSResource, ModuleType } from "./js_resource";
-import page_DetailsQueryParameters from "#genfiles/queries/page_DetailsQuery$parameters";
+import type { Queries } from '#pastoria/details/[name]/page';
+import { EntryPoint } from 'react-relay/hooks';
+import { z } from 'zod/v4-mini';
+import { JSResource, ModuleType } from './js_resource';
+import page_DetailsQueryParameters from '#genfiles/queries/page_DetailsQuery$parameters';
 
-const schema = z.object({name: z.pipe(z.string(), z.transform(decodeURIComponent))});
-const entrypoint: EntryPoint<ModuleType<'route(/details/[name])'>, {params: Record<string, any>, schema: typeof schema}> = {
-        root: JSResource.fromModuleId('route(/details/[name])'),
-        getPreloadProps({params, schema}) {
-            const variables = schema.parse(params);
-            return {
-                queries: {
-                    details: {
-                        parameters: page_DetailsQueryParameters,
-                        variables: {name: variables.name}
-                    }
-                    ,
-                }
-                ,
-                entryPoints: {
-                }
-            }
-        }
+const schema = z.object({
+  name: z.pipe(z.string(), z.transform(decodeURIComponent)),
+});
+const entrypoint: EntryPoint<
+  ModuleType<'route(/details/[name])'>,
+  { params: Record<string, any>; schema: typeof schema }
+> = {
+  root: JSResource.fromModuleId('route(/details/[name])'),
+  getPreloadProps({ params, schema }) {
+    const variables = schema.parse(params);
+    return {
+      queries: {
+        details: {
+          parameters: page_DetailsQueryParameters,
+          variables: { name: variables.name },
+        },
+      },
+      entryPoints: {},
     };
+  },
+};
 type EntryPoints = {};
 
-export {entrypoint, schema, type EntryPoints, type Queries};
-
+export { entrypoint, schema, type EntryPoints, type Queries };
 "
 `;
 
@@ -51,7 +52,7 @@ import {
   relayClientEnvironment,
   RouterOps,
 } from 'pastoria-runtime';
-import {createRouter} from 'radix3';
+import { createRouter } from 'radix3';
 import {
   AnchorHTMLAttributes,
   createContext,
@@ -63,7 +64,7 @@ import {
   useMemo,
   useState,
 } from 'react';
-import {preinit, preloadModule} from 'react-dom';
+import { preinit, preloadModule } from 'react-dom';
 import {
   EntryPoint,
   EntryPointContainer,
@@ -75,8 +76,7 @@ import {
 import * as z from 'zod/v4-mini';
 
 type RouterConf = typeof ROUTER_CONF;
-const ROUTER_CONF = {
-} as const;
+const ROUTER_CONF = {} as const;
 
 export type RouteId = keyof RouterConf;
 export type NavigationDirection = string | URL | ((nextUrl: URL) => void);
@@ -226,11 +226,11 @@ export function router__createAppFromEntryPoint(
     preloadStylesheets?: string[];
   }>) {
     for (const m of preloadModules ?? []) {
-      preloadModule(m, {as: 'script'});
+      preloadModule(m, { as: 'script' });
     }
 
     for (const s of preloadStylesheets ?? []) {
-      preinit(s, {as: 'style'});
+      preinit(s, { as: 'style' });
     }
 
     return (
@@ -247,7 +247,7 @@ export function router__createAppFromEntryPoint(
               {process.env.NODE_ENV !== 'production' && (
                 <script
                   type="module"
-                  dangerouslySetInnerHTML={{__html: REACT_REFRESH_SCRIPT}}
+                  dangerouslySetInnerHTML={{ __html: REACT_REFRESH_SCRIPT }}
                 />
               )}
             </head>
@@ -326,7 +326,7 @@ export async function createRouterApp() {
 }
 
 export function usePath() {
-  const {location} = useContext(RouterContext);
+  const { location } = useContext(RouterContext);
   return location.pathname;
 }
 
@@ -334,7 +334,7 @@ export function useRouteParams<R extends RouteId>(
   routeId: R,
 ): z.infer<RouterConf[R]['schema']> {
   const schema = ROUTER_CONF[routeId].schema;
-  const {location} = useContext(RouterContext);
+  const { location } = useContext(RouterContext);
 
   return schema.parse(location.params()) as z.infer<RouterConf[R]['schema']>;
 }
@@ -393,7 +393,7 @@ function router__evaluateNavigationDirection(nav: NavigationDirection) {
 }
 
 export function useNavigation() {
-  const {setLocation} = useContext(RouterContext);
+  const { setLocation } = useContext(RouterContext);
 
   return useMemo(() => {
     function push(nav: NavigationDirection) {
@@ -429,13 +429,16 @@ export function useNavigation() {
     ) {
       setLocation((prevLoc) =>
         RouterLocation.parse(
-          router__createPathForRoute(routeId, {...prevLoc.params(), ...params}),
+          router__createPathForRoute(routeId, {
+            ...prevLoc.params(),
+            ...params,
+          }),
           'replace',
         ),
       );
     }
 
-    return {push, replace, pushRoute, replaceRoute} as const;
+    return { push, replace, pushRoute, replaceRoute } as const;
   }, [setLocation]);
 }
 
@@ -445,7 +448,7 @@ export function Link({
   onClick,
   ...props
 }: AnchorHTMLAttributes<HTMLAnchorElement>) {
-  const {push} = useNavigation();
+  const { push } = useNavigation();
 
   const handleClick = useCallback(
     (e: React.MouseEvent<HTMLAnchorElement, MouseEvent>) => {
@@ -505,11 +508,10 @@ exports[`generatePastoriaArtifacts > empty project > generates router, js_resour
  * Do not modify this file directly. Instead, edit the template at js_resource.ts.
  */
 
-import type {JSResourceReference} from 'react-relay/hooks';
+import type { JSResourceReference } from 'react-relay/hooks';
 
 type ResourceConf = typeof RESOURCE_CONF;
-const RESOURCE_CONF = {
-} as const;
+const RESOURCE_CONF = {} as const;
 
 type ModuleId = keyof ResourceConf;
 export type ModuleType<M extends ModuleId> = Awaited<
@@ -588,7 +590,7 @@ import {
   relayClientEnvironment,
   RouterOps,
 } from 'pastoria-runtime';
-import {createRouter} from 'radix3';
+import { createRouter } from 'radix3';
 import {
   AnchorHTMLAttributes,
   createContext,
@@ -600,7 +602,7 @@ import {
   useMemo,
   useState,
 } from 'react';
-import {preinit, preloadModule} from 'react-dom';
+import { preinit, preloadModule } from 'react-dom';
 import {
   EntryPoint,
   EntryPointContainer,
@@ -610,19 +612,29 @@ import {
   useEntryPointLoader,
 } from 'react-relay/hooks';
 import * as z from 'zod/v4-mini';
-import { schema as about_EP_schema, entrypoint as about_EP_entrypoint, Queries as about_EP_Queries, EntryPoints as about_EP_EntryPoints } from "./about.entrypoint";
-import { schema as home_EP_schema, entrypoint as home_EP_entrypoint, Queries as home_EP_Queries, EntryPoints as home_EP_EntryPoints } from "./home.entrypoint";
+import {
+  schema as about_EP_schema,
+  entrypoint as about_EP_entrypoint,
+  Queries as about_EP_Queries,
+  EntryPoints as about_EP_EntryPoints,
+} from './about.entrypoint';
+import {
+  schema as home_EP_schema,
+  entrypoint as home_EP_entrypoint,
+  Queries as home_EP_Queries,
+  EntryPoints as home_EP_EntryPoints,
+} from './home.entrypoint';
 
 type RouterConf = typeof ROUTER_CONF;
 const ROUTER_CONF = {
-    "/about": {
-            entrypoint: about_EP_entrypoint,
-            schema: about_EP_schema,
-        } as const,
-    "/home": {
-            entrypoint: home_EP_entrypoint,
-            schema: home_EP_schema,
-        } as const
+  '/about': {
+    entrypoint: about_EP_entrypoint,
+    schema: about_EP_schema,
+  } as const,
+  '/home': {
+    entrypoint: home_EP_entrypoint,
+    schema: home_EP_schema,
+  } as const,
 } as const;
 
 export type RouteId = keyof RouterConf;
@@ -634,8 +646,8 @@ export interface EntryPointParams<R extends RouteId> {
 }
 
 const ROUTE_MAPPING = {
-    "/about": ROUTER_CONF["/about"],
-    "/home": ROUTER_CONF["/home"]
+  '/about': ROUTER_CONF['/about'],
+  '/home': ROUTER_CONF['/home'],
 };
 
 const ROUTER = createRouter<RouterConf[keyof RouterConf]>({
@@ -776,11 +788,11 @@ export function router__createAppFromEntryPoint(
     preloadStylesheets?: string[];
   }>) {
     for (const m of preloadModules ?? []) {
-      preloadModule(m, {as: 'script'});
+      preloadModule(m, { as: 'script' });
     }
 
     for (const s of preloadStylesheets ?? []) {
-      preinit(s, {as: 'style'});
+      preinit(s, { as: 'style' });
     }
 
     return (
@@ -797,7 +809,7 @@ export function router__createAppFromEntryPoint(
               {process.env.NODE_ENV !== 'production' && (
                 <script
                   type="module"
-                  dangerouslySetInnerHTML={{__html: REACT_REFRESH_SCRIPT}}
+                  dangerouslySetInnerHTML={{ __html: REACT_REFRESH_SCRIPT }}
                 />
               )}
             </head>
@@ -876,7 +888,7 @@ export async function createRouterApp() {
 }
 
 export function usePath() {
-  const {location} = useContext(RouterContext);
+  const { location } = useContext(RouterContext);
   return location.pathname;
 }
 
@@ -884,7 +896,7 @@ export function useRouteParams<R extends RouteId>(
   routeId: R,
 ): z.infer<RouterConf[R]['schema']> {
   const schema = ROUTER_CONF[routeId].schema;
-  const {location} = useContext(RouterContext);
+  const { location } = useContext(RouterContext);
 
   return schema.parse(location.params()) as z.infer<RouterConf[R]['schema']>;
 }
@@ -943,7 +955,7 @@ function router__evaluateNavigationDirection(nav: NavigationDirection) {
 }
 
 export function useNavigation() {
-  const {setLocation} = useContext(RouterContext);
+  const { setLocation } = useContext(RouterContext);
 
   return useMemo(() => {
     function push(nav: NavigationDirection) {
@@ -979,13 +991,16 @@ export function useNavigation() {
     ) {
       setLocation((prevLoc) =>
         RouterLocation.parse(
-          router__createPathForRoute(routeId, {...prevLoc.params(), ...params}),
+          router__createPathForRoute(routeId, {
+            ...prevLoc.params(),
+            ...params,
+          }),
           'replace',
         ),
       );
     }
 
-    return {push, replace, pushRoute, replaceRoute} as const;
+    return { push, replace, pushRoute, replaceRoute } as const;
   }, [setLocation]);
 }
 
@@ -995,7 +1010,7 @@ export function Link({
   onClick,
   ...props
 }: AnchorHTMLAttributes<HTMLAnchorElement>) {
-  const {push} = useNavigation();
+  const { push } = useNavigation();
 
   const handleClick = useCallback(
     (e: React.MouseEvent<HTMLAnchorElement, MouseEvent>) => {
@@ -1047,16 +1062,16 @@ export function listRoutes() {
 }
 
 declare global {
-  type PastoriaRouteName =
-    | '/about'    
-| '/home';
+  type PastoriaRouteName = '/about' | '/home';
 
   type PastoriaPageQueries = {
-    ['/about']: about_EP_Queries,['/home']: home_EP_Queries,
+    ['/about']: about_EP_Queries;
+    ['/home']: home_EP_Queries;
   };
 
   type PastoriaPageEntryPoints = {
-    ['/about']: about_EP_EntryPoints,['/home']: home_EP_EntryPoints,
+    ['/about']: about_EP_EntryPoints;
+    ['/home']: home_EP_EntryPoints;
   };
 
   type PastoriaPageProps<T extends PastoriaRouteName> = EntryPointProps<
@@ -1064,9 +1079,8 @@ declare global {
     PastoriaPageEntryPoints[T],
     {},
     {}
-  >
+  >;
 }
-
 "
 `;
 
@@ -1077,18 +1091,18 @@ exports[`generatePastoriaArtifacts > multiple routes > generates output with mul
  * Do not modify this file directly. Instead, edit the template at js_resource.ts.
  */
 
-import type {JSResourceReference} from 'react-relay/hooks';
+import type { JSResourceReference } from 'react-relay/hooks';
 
 type ResourceConf = typeof RESOURCE_CONF;
 const RESOURCE_CONF = {
-    "route(/about)": {
-            src: "pastoria/about/page.tsx",
-            loader: () => import("#pastoria/about/page").then(m => m.default),
-        },
-    "route(/home)": {
-            src: "pastoria/home/page.tsx",
-            loader: () => import("#pastoria/home/page").then(m => m.default),
-        }
+  'route(/about)': {
+    src: 'pastoria/about/page.tsx',
+    loader: () => import('#pastoria/about/page').then((m) => m.default),
+  },
+  'route(/home)': {
+    src: 'pastoria/home/page.tsx',
+    loader: () => import('#pastoria/home/page').then((m) => m.default),
+  },
 } as const;
 
 type ModuleId = keyof ResourceConf;
@@ -1150,12 +1164,12 @@ exports[`generatePastoriaArtifacts > multiple routes > generates output with mul
  */
 
 import express from 'express';
-import { default as e0 } from "../../pastoria/api/health/route";
-import { default as e1 } from "../../pastoria/api/greet/[name]/route";
+import { default as e0 } from '../../pastoria/api/health/route';
+import { default as e1 } from '../../pastoria/api/greet/[name]/route';
 
 export const router = express.Router();
-router.use('/api/health', e0)
-router.use('/api/greet/:name', e1)
+router.use('/api/health', e0);
+router.use('/api/greet/:name', e1);
 "
 `;
 
@@ -1167,10 +1181,10 @@ exports[`generatePastoriaArtifacts > server route > generates a server.ts with e
  */
 
 import express from 'express';
-import { default as e0 } from "../../pastoria/api/greet/[name]/route";
+import { default as e0 } from '../../pastoria/api/greet/[name]/route';
 
 export const router = express.Router();
-router.use('/api/greet/:name', e0)
+router.use('/api/greet/:name', e0);
 "
 `;
 
@@ -1180,28 +1194,27 @@ exports[`generatePastoriaArtifacts > simple page route > generates an entrypoint
  * @generated-checksum <STRIPPED>
  * Do not modify this file directly.
  */
-import { EntryPoint } from "react-relay/hooks";
-import { z } from "zod/v4-mini";
-import { JSResource, ModuleType } from "./js_resource";
+import { EntryPoint } from 'react-relay/hooks';
+import { z } from 'zod/v4-mini';
+import { JSResource, ModuleType } from './js_resource';
 
 const schema = z.object({});
-const entrypoint: EntryPoint<ModuleType<'route(/home)'>, {params: Record<string, any>, schema: typeof schema}> = {
-        root: JSResource.fromModuleId('route(/home)'),
-        getPreloadProps({params, schema}) {
-            const variables = schema.parse(params);
-            return {
-                queries: {
-                }
-                ,
-                entryPoints: {
-                }
-            }
-        }
+const entrypoint: EntryPoint<
+  ModuleType<'route(/home)'>,
+  { params: Record<string, any>; schema: typeof schema }
+> = {
+  root: JSResource.fromModuleId('route(/home)'),
+  getPreloadProps({ params, schema }) {
+    const variables = schema.parse(params);
+    return {
+      queries: {},
+      entryPoints: {},
     };
+  },
+};
 type Queries = {};
 type EntryPoints = {};
 
-export {entrypoint, schema, type EntryPoints, type Queries};
-
+export { entrypoint, schema, type EntryPoints, type Queries };
 "
 `;

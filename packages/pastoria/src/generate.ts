@@ -29,6 +29,7 @@
 import {createHash} from 'node:crypto';
 import * as path from 'node:path';
 import pc from 'picocolors';
+import * as prettier from 'prettier';
 import {
   CodeBlockWriter,
   Project,
@@ -39,7 +40,7 @@ import {
   TypeFlags,
   VariableDeclarationKind,
 } from 'ts-morph';
-import {logInfo, logWarn} from './logger.js';
+import {logger, logInfo, logWarn} from './logger.js';
 
 /**
  * Regex to extract the checksum from a generated file's header comment.
@@ -71,7 +72,11 @@ async function saveWithChecksum(sourceFile: SourceFile): Promise<boolean> {
   const filePath = sourceFile.getFilePath();
 
   // Get the generated content (without checksum line yet)
-  const generatedContent = sourceFile.getFullText();
+  const rawGeneratedContent = sourceFile.getFullText();
+  const generatedContent = await prettier.format(rawGeneratedContent, {
+    parser: 'typescript',
+    singleQuote: true,
+  });
 
   // Compute checksum of the content
   const newChecksum = computeChecksum(generatedContent);
