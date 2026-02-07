@@ -6,12 +6,12 @@ import * as path from 'node:path';
 import {IndentationText, Project} from 'ts-morph';
 import {build} from 'vite';
 import {startDevserver} from './devserver.js';
-import {generatePastoriaArtifacts} from './generate.js';
+import {PastoriaExecutionContext} from './generate.js';
 import {logInfo} from './logger.js';
 import {CLIENT_BUILD, createBuildConfig, SERVER_BUILD} from './vite_plugin.js';
 
 async function runCodeGeneration(project: Project) {
-  await generatePastoriaArtifacts(project);
+  await new PastoriaExecutionContext(project).generatePastoriaArtifacts();
 }
 
 async function runViteBuild(project: Project, target: 'client' | 'server') {
