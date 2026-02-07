@@ -6,29 +6,31 @@ exports[`generatePastoriaArtifacts > dynamic page route with queries > generates
  * @generated-checksum <STRIPPED>
  * Do not modify this file directly.
  */
-import page_DetailsQueryParameters from "#genfiles/queries/page_DetailsQuery$parameters";
 import type { Queries } from "#pastoria/details/[name]/page";
 import { EntryPoint } from "react-relay/hooks";
 import { z } from "zod/v4-mini";
 import { JSResource, ModuleType } from "./js_resource";
+import page_DetailsQueryParameters from "#genfiles/queries/page_DetailsQuery$parameters";
 
 const schema = z.object({name: z.pipe(z.string(), z.transform(decodeURIComponent))});
-
-const entrypoint: EntryPoint<ModuleType<'route(/details/[name])'>, {params: unknown}> = {
-  root: JSResource.fromModuleId('route(/details/[name])'),
-  getPreloadProps({params}) {
-    const variables = schema.parse(params);
-    return {
-      queries: {
-        details: {
-          parameters: page_DetailsQueryParameters,
-          variables: {name: variables.name},
-        },
-      },
-      entryPoints: undefined,
+const entrypoint: EntryPoint<ModuleType<'route(/details/[name])'>, {params: Record<string, any>, schema: typeof schema}> = {
+        root: JSResource.fromModuleId('route(/details/[name])'),
+        getPreloadProps({params, schema}) {
+            const variables = schema.parse(params);
+            return {
+                queries: {
+                    details: {
+                        parameters: page_DetailsQueryParameters,
+                        variables: {name: variables.name}
+                    }
+                    ,
+                }
+                ,
+                entryPoints: {
+                }
+            }
+        }
     };
-  },
-};
 type EntryPoints = {};
 
 export {entrypoint, schema, type EntryPoints, type Queries};
@@ -493,27 +495,6 @@ export function RouteLink<R extends RouteId>({
 export function listRoutes() {
   return Object.keys(ROUTE_MAPPING);
 }
-
-declare global {
-  type PastoriaRouteName =
-    ;
-
-  type PastoriaPageQueries = {
-    ,
-  };
-
-  type PastoriaPageEntryPoints = {
-    ,
-  };
-
-  type PastoriaPageProps<T extends PastoriaRouteName> = EntryPointProps<
-    PastoriaPageQueries[T],
-    PastoriaPageEntryPoints[T],
-    {},
-    {}
-  >
-}
-
 "
 `;
 
@@ -1204,17 +1185,19 @@ import { z } from "zod/v4-mini";
 import { JSResource, ModuleType } from "./js_resource";
 
 const schema = z.object({});
-
-const entrypoint: EntryPoint<ModuleType<'route(/home)'>, {params: unknown}> = {
-  root: JSResource.fromModuleId('route(/home)'),
-  getPreloadProps({params}) {
-    const variables = schema.parse(params);
-    return {
-      queries: undefined,
-      entryPoints: undefined,
+const entrypoint: EntryPoint<ModuleType<'route(/home)'>, {params: Record<string, any>, schema: typeof schema}> = {
+        root: JSResource.fromModuleId('route(/home)'),
+        getPreloadProps({params, schema}) {
+            const variables = schema.parse(params);
+            return {
+                queries: {
+                }
+                ,
+                entryPoints: {
+                }
+            }
+        }
     };
-  },
-};
 type Queries = {};
 type EntryPoints = {};
 

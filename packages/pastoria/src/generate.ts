@@ -963,6 +963,7 @@ function getSchemaCode(
 
 async function generateSingleEntryPointFile(
   project: Project,
+  metadata: PastoriaMetadata,
   route: ServerRoute,
 ) {
   const escapedRouteName = escapeRouteName(route.routeName);
@@ -1003,14 +1004,6 @@ async function generateSingleEntryPointFile(
   // Collect parameters from query variables
   const params = collectQueryParameters(project, Array.from(queries.values()));
 
-  // Add imports
-  for (const queryName of queries.values()) {
-    sourceFile.addImportDeclaration({
-      moduleSpecifier: `#genfiles/queries/${queryName}$parameters`,
-      defaultImport: `${queryName}Parameters`,
-    });
-  }
-
   const exportedDecls = route.sourceFile.getExportedDeclarations();
   const hasQueriesExport = exportedDecls.has('Queries');
   const hasEntryPointsExport = exportedDecls.has('EntryPoints');
@@ -1045,6 +1038,7 @@ async function generateSingleEntryPointFile(
 
   // Generate schema - prefer copying from page.tsx if exported
   const tc = project.getTypeChecker().compilerObject;
+  // TODO: Copy the original page file and remove everything but `schema` and the variables it uses.
   const schemaCode = getSchemaCode(route.sourceFile, sourceFile, tc, params);
   sourceFile.addVariableStatement({
     declarations: [
@@ -1057,40 +1051,45 @@ async function generateSingleEntryPointFile(
     declarationKind: VariableDeclarationKind.Const,
   });
 
-  // Generate entrypoint - build query entries
-  const queryEntries: string[] = [];
-  for (const [queryRef, queryName] of queries) {
-    const queryVars = collectQueryParameters(project, [queryName]);
-    const varsCode =
-      queryVars.size > 0
-        ? `{${Array.from(queryVars.keys())
-            .map((v) => `${v}: variables.${v}`)
-            .join(', ')}}`
-        : '{}';
-    queryEntries.push(`${queryRef}: {
-          parameters: ${queryName}Parameters,
-          variables: ${varsCode},
-        }`);
-  }
+  // Build a RouterResource for writeEntryPoint
+  const resource: RouterResource = {
+    sourceFile: route.sourceFile,
+    symbol: route.symbol,
+    queries,
+    entryPoints: new Map(),
+  };
 
-  const entrypointCode = `
-const entrypoint: EntryPoint<ModuleType<'${resourceName}'>, {params: unknown}> = {
-  root: JSResource.fromModuleId('${resourceName}'),
-  getPreloadProps({params}) {
-    const variables = schema.parse(params);
-    return {
-      queries: ${
-        queryEntries.length > 0
-          ? `{
-        ${queryEntries.join(',\n        ')},
-      }`
-          : 'undefined'
+  // Generate entrypoint using writeEntryPoint
+  const consumedQueries = new Set<string>();
+  sourceFile.addVariableStatement({
+    declarations: [
+      {
+        name: 'entrypoint',
+        type: `EntryPoint<ModuleType<'${resourceName}'>, {params: Record<string, any>, schema: typeof schema}>`,
+        initializer: (writer) => {
+          writer.block(() => {
+            writeEntryPoint(
+              writer,
+              project,
+              metadata,
+              consumedQueries,
+              resourceName,
+              resource,
+            );
+          });
+        },
       },
-      entryPoints: undefined,
-    };
-  },
-};`;
-  sourceFile.addStatements(entrypointCode);
+    ],
+    declarationKind: VariableDeclarationKind.Const,
+  });
+
+  // Add query parameter imports after writeEntryPoint populates consumedQueries
+  for (const queryName of consumedQueries) {
+    sourceFile.addImportDeclaration({
+      moduleSpecifier: `#genfiles/queries/${queryName}$parameters`,
+      defaultImport: `${queryName}Parameters`,
+    });
+  }
 
   // Generate fallback types for any missing exports
   if (!hasQueriesExport) {
@@ -1121,7 +1120,7 @@ async function generateEntryPointFiles(
   );
 
   for (const route of metadata.entryPointRoutes) {
-    await generateSingleEntryPointFile(project, route);
+    await generateSingleEntryPointFile(project, metadata, route);
   }
 
   // Delete stale entrypoint files that no longer correspond to a route
@@ -1148,6 +1147,7 @@ export async function generatePastoriaArtifacts(
   templatesDir: string = path.join(import.meta.dirname, '../templates'),
   projectDir: string = process.cwd(),
 ) {
+  // TODO: Add sanity checks that #pastoria/app.tsx and #pastoria/environment.ts exist.
   const metadata = collectPastoriaMetadata(project, projectDir);
   await generateRouter(project, metadata, templatesDir, projectDir);
   await generateJsResource(project, metadata, templatesDir, projectDir);
