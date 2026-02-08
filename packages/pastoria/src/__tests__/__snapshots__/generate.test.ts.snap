@@ -17,10 +17,10 @@ const schema = z.object({
 });
 const entrypoint: EntryPoint<
   ModuleType<'route(/details/[name])'>,
-  { params: Record<string, any>; schema: typeof schema }
+  { params: Record<string, unknown> }
 > = {
   root: JSResource.fromModuleId('route(/details/[name])'),
-  getPreloadProps({ params, schema }) {
+  getPreloadProps({ params }) {
     const variables = schema.parse(params);
     return {
       queries: {
@@ -1201,10 +1201,10 @@ import { JSResource, ModuleType } from './js_resource';
 const schema = z.object({});
 const entrypoint: EntryPoint<
   ModuleType<'route(/home)'>,
-  { params: Record<string, any>; schema: typeof schema }
+  { params: Record<string, unknown> }
 > = {
   root: JSResource.fromModuleId('route(/home)'),
-  getPreloadProps({ params, schema }) {
+  getPreloadProps({ params }) {
     const variables = schema.parse(params);
     return {
       queries: {},
