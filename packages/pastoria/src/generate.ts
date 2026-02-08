@@ -298,12 +298,13 @@ declare global {
         const consumedQueries = new Set<string>();
         routerTemplate.addFunction({
           name: entryPointFunctionName,
-          returnType: `EntryPoint<ModuleType<'${resourceName}'>, EntryPointParams<'${routeName}'>>`,
+          returnType: `EntryPoint<ModuleType<'${resourceName}'>, { params: Record<string, unknown> }>`,
           statements: (writer) => {
             writer.write('return ').block(() => {
               this.writeLegacyEntryPoint(
                 writer,
                 consumedQueries,
+                routeName,
                 resourceName,
                 resource,
               );
@@ -744,6 +745,7 @@ declare global {
   private writeLegacyEntryPoint(
     writer: CodeBlockWriter,
     consumedQueries: Set<string>,
+    routeName: string,
     resourceName: string,
     resource: RouterResource,
     isRootEntryPoint = true,
@@ -751,9 +753,10 @@ declare global {
     writer.writeLine(`root: JSResource.fromModuleId('${resourceName}'),`);
 
     writer
-      .write(`getPreloadProps(${isRootEntryPoint ? '{params, schema}' : ''})`)
+      .write(`getPreloadProps(${isRootEntryPoint ? '{params}' : ''})`)
       .block(() => {
         if (isRootEntryPoint) {
+          writer.writeLine(`const { schema } = ROUTER_CONF['${routeName}']`);
           writer.writeLine('const variables = schema.parse(params);');
         }
 
@@ -807,6 +810,7 @@ declare global {
                       this.writeLegacyEntryPoint(
                         writer,
                         consumedQueries,
+                        routeName,
                         subresourceName,
                         subresource,
                         false,

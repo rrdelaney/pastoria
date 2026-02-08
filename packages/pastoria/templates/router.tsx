@@ -38,11 +38,6 @@ const ROUTER_CONF = {
 export type RouteId = keyof RouterConf;
 export type NavigationDirection = string | URL | ((nextUrl: URL) => void);
 
-export interface EntryPointParams<R extends RouteId> {
-  params: Record<string, any>;
-  schema: RouterConf[R]['schema'];
-}
-
 const ROUTE_MAPPING = {};
 
 const ROUTER = createRouter<RouterConf[keyof RouterConf]>({
@@ -146,7 +141,6 @@ export async function router__loadEntryPoint(
   await initialRoute.entrypoint?.root.load();
   return loadEntryPoint(provider, initialRoute.entrypoint, {
     params: initialLocation.params(),
-    schema: initialRoute.schema,
   });
 }
 
@@ -232,13 +226,7 @@ export function router__createAppFromEntryPoint(
     );
 
     useEffect(() => {
-      const schema = location.route()?.schema;
-      if (schema) {
-        loadEntryPointRef({
-          params: location.params(),
-          schema,
-        });
-      }
+      loadEntryPointRef({params: location.params()});
       // eslint-disable-next-line react-hooks/exhaustive-deps
     }, [location]);
 
@@ -451,4 +439,10 @@ export function RouteLink<R extends RouteId>({
 
 export function listRoutes() {
   return Object.keys(ROUTE_MAPPING);
+}
+
+export function getSchemaForRoute<R extends RouteId>(
+  routeId: R,
+): RouterConf[R]['schema'] {
+  return ROUTER_CONF[routeId].schema;
 }
