@@ -261,7 +261,10 @@ export class PastoriaExecutionContext {
     const routerTemplate = await this.loadRouterTemplate('router.tsx');
     const tc = this.getTypeChecker();
 
-    let didAddJsResourceImport = false;
+    const routerSchema = routerTemplate
+      .getVariableDeclarationOrThrow('ROUTER_SCHEMA')
+      .getInitializerIfKindOrThrow(SyntaxKind.ObjectLiteralExpression);
+
     const routerConf = routerTemplate
       .getVariableDeclarationOrThrow('ROUTER_CONF')
       .getInitializerIfKindOrThrow(SyntaxKind.AsExpression)
@@ -271,6 +274,7 @@ export class PastoriaExecutionContext {
       .getVariableDeclarationOrThrow('ROUTE_MAPPING')
       .getInitializerIfKindOrThrow(SyntaxKind.ObjectLiteralExpression);
 
+    routerSchema.getPropertyOrThrow('noop').remove();
     routerConf.getPropertyOrThrow('noop').remove();
 
     if (entryPointRoutes.length > 0) {
@@ -312,18 +316,10 @@ declare global {
         const [resourceName, resource] = isResourceRoute;
         const entryPointFunctionName = `entrypoint_${resourceName.replace(/\W/g, '')}`;
 
-        if (!didAddJsResourceImport) {
-          didAddJsResourceImport = true;
-          routerTemplate.addImportDeclaration({
-            moduleSpecifier: './js_resource',
-            namedImports: ['JSResource', 'ModuleType'],
-          });
-        }
-
         const consumedQueries = new Set<string>();
         routerTemplate.addFunction({
           name: entryPointFunctionName,
-          returnType: `EntryPoint<ModuleType<'${resourceName}'>, { params: Record<string, unknown> }>`,
+          returnType: `EntryPoint<ModuleType<'${resourceName}'>, EntryPointParams<'${routeName}'>>`,
           statements: (writer) => {
             writer.write('return ').block(() => {
               this.writeLegacyEntryPoint(
@@ -372,6 +368,24 @@ declare global {
         entryPointExpression = importAlias;
       }
 
+      routerSchema.addPropertyAssignment({
+        name: `"${routeName}"`,
+        initializer: (writer) => {
+          if (params.size === 0) {
+            writer.write(`z.object({})`);
+          } else {
+            writer.writeLine(`z.object({`);
+            for (const [paramName, paramType] of Array.from(params)) {
+              writer.writeLine(
+                `  ${paramName}: ${zodSchemaOfType(routerTemplate, tc, paramType)},`,
+              );
+            }
+
+            writer.writeLine('})');
+          }
+        },
+      });
+
       routerConf.addPropertyAssignment({
         name: `"${routeName}"`,
         initializer: (writer) => {
@@ -379,18 +393,7 @@ declare global {
             .write('{')
             .indent(() => {
               writer.writeLine(`entrypoint: ${entryPointExpression},`);
-              if (params.size === 0) {
-                writer.writeLine(`schema: z.object({})`);
-              } else {
-                writer.writeLine(`schema: z.object({`);
-                for (const [paramName, paramType] of Array.from(params)) {
-                  writer.writeLine(
-                    `  ${paramName}: ${zodSchemaOfType(routerTemplate, tc, paramType)},`,
-                  );
-                }
-
-                writer.writeLine('})');
-              }
+              writer.writeLine(`schema: ROUTER_SCHEMA["${routeName}"]`);
             })
             .write('} as const');
         },
@@ -690,7 +693,7 @@ declare global {
       declarations: [
         {
           name: 'entrypoint',
-          type: `EntryPoint<ModuleType<'${resourceName}'>, {params: Record<string, unknown>}>`,
+          type: `EntryPoint<ModuleType<'${resourceName}'>, z.output<typeof schema>>`,
           initializer: (writer) => {
             writer.block(() => {
               this.writeStandaloneEntryPoint(writer, resourceName, queries);
@@ -741,8 +744,7 @@ declare global {
     queries: Map<string, string>,
   ) {
     writer.writeLine(`root: JSResource.fromModuleId('${resourceName}'),`);
-    writer.write('getPreloadProps({params})').block(() => {
-      writer.writeLine('const variables = schema.parse(params);');
+    writer.write('getPreloadProps(variables)').block(() => {
       writer.write('return').block(() => {
         // Write the queries used by the entry point.
         writer.write('queries:').block(() => {
@@ -791,13 +793,8 @@ declare global {
     writer.writeLine(`root: JSResource.fromModuleId('${resourceName}'),`);
 
     writer
-      .write(`getPreloadProps(${isRootEntryPoint ? '{params}' : ''})`)
+      .write(`getPreloadProps(${isRootEntryPoint ? 'variables' : ''})`)
       .block(() => {
-        if (isRootEntryPoint) {
-          writer.writeLine(`const { schema } = ROUTER_CONF['${routeName}']`);
-          writer.writeLine('const variables = schema.parse(params);');
-        }
-
         writer.write('return').block(() => {
           writer
             .write('queries:')

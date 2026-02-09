@@ -14,9 +14,15 @@ import {logger, logInfo} from './logger.js';
 function pastoriaEntryPlugin(project: Project): Plugin {
   const clientEntryModuleId = 'virtual:pastoria-entry-client.tsx';
   const serverEntryModuleId = 'virtual:pastoria-entry-server.tsx';
+  let shouldGenerateOnBuildStart = false;
 
   return {
     name: 'pastoria-entry',
+    configResolved(config) {
+      if (config.command === 'serve') {
+        shouldGenerateOnBuildStart = true;
+      }
+    },
     resolveId(id) {
       if (id === clientEntryModuleId) {
         return clientEntryModuleId; // Return without \0 prefix so React plugin can see .tsx extension
@@ -32,6 +38,10 @@ function pastoriaEntryPlugin(project: Project): Plugin {
       }
     },
     async buildStart() {
+      if (!shouldGenerateOnBuildStart) {
+        return;
+      }
+
       logInfo('Updating generated files');
       await new PastoriaExecutionContext(project).generatePastoriaArtifacts();
     },

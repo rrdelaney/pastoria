@@ -8,9 +8,7 @@ export const entrypoint: EntryPoint<
   EntryPointParams<'/'>
 > = {
   root: JSResource.fromModuleId('m#home'),
-  getPreloadProps({}) {
-    return {
-      queries: {},
-    };
+  getPreloadProps(_variables) {
+    return {queries: {}};
   },
 };

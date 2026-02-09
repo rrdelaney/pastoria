@@ -26,12 +26,23 @@ import {
   useEntryPointLoader,
 } from 'react-relay/hooks';
 import * as z from 'zod/v4-mini';
+import {JSResource, ModuleType} from './js_resource';
+
+/** Mapping of route name to Zod schema for parsing URL params. */
+const ROUTER_SCHEMA = {
+  noop: z.object({}),
+};
+
+/** Type of URL params for a route's EntryPoint type. */
+export type EntryPointParams<R extends keyof typeof ROUTER_SCHEMA> = z.output<
+  (typeof ROUTER_SCHEMA)[R]
+>;
 
 type RouterConf = typeof ROUTER_CONF;
 const ROUTER_CONF = {
   noop: {
     entrypoint: null! as EntryPoint<any>,
-    schema: z.object({}),
+    schema: ROUTER_SCHEMA['noop'],
   },
 } as const;
 
@@ -73,7 +84,7 @@ class RouterLocation {
     if (matchedRoute?.schema) {
       return matchedRoute.schema.parse(params);
     } else {
-      return params;
+      throw new Error(`Could not parse params for route: ${this.pathname}`);
     }
   }
 
@@ -139,9 +150,11 @@ export async function router__loadEntryPoint(
   if (!initialRoute) return null;
 
   await initialRoute.entrypoint?.root.load();
-  return loadEntryPoint(provider, initialRoute.entrypoint, {
-    params: initialLocation.params(),
-  });
+  return loadEntryPoint(
+    provider,
+    initialRoute.entrypoint,
+    initialLocation.params(),
+  );
 }
 
 interface RouterContextValue {
@@ -226,7 +239,7 @@ export function router__createAppFromEntryPoint(
     );
 
     useEffect(() => {
-      loadEntryPointRef({params: location.params()});
+      loadEntryPointRef(location.params());
       // eslint-disable-next-line react-hooks/exhaustive-deps
     }, [location]);
 
@@ -439,10 +452,4 @@ export function RouteLink<R extends RouteId>({
 
 export function listRoutes() {
   return Object.keys(ROUTE_MAPPING);
-}
-
-export function getSchemaForRoute<R extends RouteId>(
-  routeId: R,
-): RouterConf[R]['schema'] {
-  return ROUTER_CONF[routeId].schema;
 }

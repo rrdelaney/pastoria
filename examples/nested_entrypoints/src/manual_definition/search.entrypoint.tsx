@@ -1,6 +1,6 @@
 import searchResults_SearchResultsQueryParameters from '#genfiles/queries/searchResults_SearchResultsQuery$parameters';
 import {JSResource, ModuleType} from '#genfiles/router/js_resource';
-import {getSchemaForRoute} from '#genfiles/router/router';
+import {EntryPointParams} from '#genfiles/router/router';
 import {EntryPoint} from 'react-relay/hooks';
 
 /**
@@ -9,12 +9,10 @@ import {EntryPoint} from 'react-relay/hooks';
  */
 export const entrypoint: EntryPoint<
   ModuleType<'m#search'>,
-  {params: Record<string, unknown>}
+  EntryPointParams<'/'>
 > = {
   root: JSResource.fromModuleId('m#search'),
-  getPreloadProps({params}) {
-    const {q} = getSchemaForRoute('/').parse(params);
-
+  getPreloadProps({q}) {
     return {
       queries: {},
       entryPoints: {
