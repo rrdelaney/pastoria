@@ -56,9 +56,9 @@ export async function saveWithChecksum(
   }
 
   // If checksums match, skip writing
-  if (existingChecksum === newChecksum) {
-    return false;
-  }
+  // if (existingChecksum === newChecksum) {
+  //   return false;
+  // }
 
   // Insert the checksum into the header comment
   // The header comment is the first thing in the file, we insert the checksum on line 2

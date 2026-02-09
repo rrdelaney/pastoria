@@ -77,7 +77,7 @@ async function generate(files: Record<string, string>) {
       return getFile('/__generated__/router/server.ts');
     },
     entrypoint(routeName: string) {
-      return getFile(`/__generated__/router/${routeName}.entrypoint.ts`);
+      return getFile(`/__generated__/router/${routeName}_page.entrypoint.ts`);
     },
   };
 }
@@ -123,7 +123,7 @@ export default function HomePage() {
       // Should have an empty schema since no params
       expect(entrypoint).toContain('z.object({})');
       // Should reference the route resource
-      expect(entrypoint).toContain('route(/home)');
+      expect(entrypoint).toContain('#pastoria/home/page');
       // Should export entrypoint and schema
       expect(entrypoint).toContain('export { entrypoint, schema');
 
@@ -131,7 +131,7 @@ export default function HomePage() {
       expect(result.router).toContain(`'/home'`);
 
       // js_resource should have a resource for route(/home)
-      expect(result.jsResource).toContain(`'route(/home)'`);
+      expect(result.jsResource).toContain(`'#pastoria/home/page'`);
 
       expect(entrypoint).toMatchSnapshot();
     });
@@ -234,8 +234,8 @@ export default function greet(req: any, res: any) {
       expect(result.router).toContain(`'/about'`);
 
       // js_resource should have both page resources
-      expect(result.jsResource).toContain(`'route(/home)'`);
-      expect(result.jsResource).toContain(`'route(/about)'`);
+      expect(result.jsResource).toContain(`'#pastoria/home/page'`);
+      expect(result.jsResource).toContain(`'#pastoria/about/page'`);
 
       // Server should have both API routes
       expect(result.server).toContain("'/api/health'");

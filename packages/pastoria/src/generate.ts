@@ -219,8 +219,33 @@ export class PastoriaExecutionContext {
     return this.project.getFileSystem();
   }
 
-  private relativePathTo(sourceFile: SourceFile) {
+  /** Returns relative path of a file from the project root. */
+  private relativePathFromRoot(sourceFile: SourceFile) {
     return path.relative(this.projectDir, sourceFile.getFilePath());
+  }
+
+  /** Returns relative path of a file from the #pastoria root. */
+  private relativePathFromPastoria(sourceFile: SourceFile) {
+    return path.relative(
+      path.join(this.projectDir, 'pastoria'),
+      sourceFile.getFilePath(),
+    );
+  }
+
+  /** Returns the name of a resource for a source file under #pastoria. */
+  private resourceNameForFile(sourceFile: SourceFile) {
+    const pastoriaPath = this.relativePathFromPastoria(sourceFile);
+    return path.join(
+      '#pastoria',
+      path.dirname(pastoriaPath),
+      path.basename(pastoriaPath, path.extname(pastoriaPath)),
+    );
+  }
+
+  private entryPointFileNameForRoute(sourceFile: SourceFile) {
+    const resourceName = this.resourceNameForFile(sourceFile);
+    const escapedName = escapeRouteName(resourceName.replace('#pastoria/', ''));
+    return escapedName + '.entrypoint.ts';
   }
 
   async generatePastoriaArtifacts() {
@@ -274,7 +299,7 @@ declare global {
 
     let entryPointImportIndex = 0;
     for (let [routeName, {sourceFile, symbol, params}] of routes.entries()) {
-      const filePath = this.relativePathTo(sourceFile);
+      const filePath = this.relativePathFromRoot(sourceFile);
       let entryPointExpression: string;
 
       // Resource-routes are combined declarations of a resource and a route
@@ -386,11 +411,12 @@ declare global {
       );
     }
 
-    for (const {routeName, routePath} of entryPointRoutes) {
+    for (const {routeName, routePath, sourceFile} of entryPointRoutes) {
       const escapedRouteName = escapeRouteName(routeName);
-
       routerTemplate.addImportDeclaration({
-        moduleSpecifier: `./${escapedRouteName}.entrypoint`,
+        moduleSpecifier: routerTemplate.getRelativePathAsModuleSpecifierTo(
+          this.entryPointFileNameForRoute(sourceFile),
+        ),
         namedImports: [
           {
             name: 'schema',
@@ -449,7 +475,7 @@ declare global {
     resourceConf.getPropertyOrThrow('noop').remove();
 
     for (const [resourceName, {sourceFile, symbol}] of resources.entries()) {
-      const filePath = this.relativePathTo(sourceFile);
+      const filePath = this.relativePathFromRoot(sourceFile);
       const moduleSpecifier =
         jsResourceTemplate.getRelativePathAsModuleSpecifierTo(
           sourceFile.getFilePath(),
@@ -478,9 +504,9 @@ declare global {
       );
     }
 
-    for (const {routeName} of entryPointRoutes) {
+    for (const {routeName, sourceFile} of entryPointRoutes) {
       resourceConf.addPropertyAssignment({
-        name: `"route(${routeName})"`,
+        name: `"${this.resourceNameForFile(sourceFile)}"`,
         initializer: (writer) => {
           writer.block(() => {
             writer.writeLine(`src: "pastoria${routeName}/page.tsx",`);
@@ -502,7 +528,7 @@ declare global {
     let serverHandlerImportIndex = 0;
     for (const {symbol, sourceFile, routeName, routePath} of serverRoutes) {
       const importAlias = `e${serverHandlerImportIndex++}`;
-      const filePath = this.relativePathTo(sourceFile);
+      const filePath = this.relativePathFromRoot(sourceFile);
       const moduleSpecifier = serverTemplate.getRelativePathAsModuleSpecifierTo(
         sourceFile.getFilePath(),
       );
@@ -529,17 +555,17 @@ declare global {
 
   private async generateEntryPointFiles() {
     const {entryPointRoutes} = this.metadata;
-    const expectedFiles = new Set(
-      entryPointRoutes.map(
-        (route) => `${escapeRouteName(route.routeName)}.entrypoint.ts`,
-      ),
-    );
 
+    const expectedFiles = new Set<string>();
     for (const route of entryPointRoutes) {
-      await this.generateSingleEntryPointFile(route);
+      const createdFile = await this.generateSingleEntryPointFile(
+        route.sourceFile,
+      );
+
+      expectedFiles.add(createdFile);
     }
 
-    // Delete stale entrypoint files that no longer correspond to a route
+    // Delete stale entrypoint files that no longer correspond to a resource
     const generatedDir = path.resolve(this.projectDir, '__generated__/router');
     try {
       const entries = this.getFileSystem().readDirSync(generatedDir);
@@ -561,10 +587,9 @@ declare global {
     }
   }
 
-  private async generateSingleEntryPointFile(route: ServerRoute) {
-    const escapedRouteName = escapeRouteName(route.routeName);
-    const resourceName = `route(${route.routeName})`;
-    const fileName = `__generated__/router/${escapedRouteName}.entrypoint.ts`;
+  private async generateSingleEntryPointFile(entryPointSourceFile: SourceFile) {
+    const resourceName = this.resourceNameForFile(entryPointSourceFile);
+    const fileName = this.entryPointFileNameForRoute(entryPointSourceFile);
 
     // Create source file with header comment
     const warningComment = `/*
@@ -573,12 +598,14 @@ declare global {
  */
 
 `;
-    const sourceFile = this.project.createSourceFile(fileName, warningComment, {
-      overwrite: true,
-    });
+    const sourceFile = this.project.createSourceFile(
+      path.join('__generated__/router', fileName),
+      warningComment,
+      {overwrite: true},
+    );
 
     // Extract Queries type from page.tsx to get query names
-    const queriesType = route.sourceFile
+    const queriesType = entryPointSourceFile
       .getExportedDeclarations()
       .get('Queries')
       ?.at(0)
@@ -603,7 +630,7 @@ declare global {
       Array.from(queries.values()),
     );
 
-    const exportedDecls = route.sourceFile.getExportedDeclarations();
+    const exportedDecls = entryPointSourceFile.getExportedDeclarations();
     const hasQueriesExport = exportedDecls.has('Queries');
     const hasEntryPointsExport = exportedDecls.has('EntryPoints');
 
@@ -613,8 +640,11 @@ declare global {
     if (hasQueriesExport) pageTypeImports.push('Queries');
 
     if (pageTypeImports.length > 0) {
+      const moduleSpecifier =
+        sourceFile.getRelativePathAsModuleSpecifierTo(entryPointSourceFile);
+
       sourceFile.addImportDeclaration({
-        moduleSpecifier: `#pastoria${route.routeName}/page`,
+        moduleSpecifier,
         namedImports: pageTypeImports,
         isTypeOnly: true,
       });
@@ -638,7 +668,13 @@ declare global {
     // Generate schema - prefer copying from page.tsx if exported
     const tc = this.getTypeChecker();
     // TODO: Copy the original page file and remove everything but `schema` and the variables it uses.
-    const schemaCode = getSchemaCode(route.sourceFile, sourceFile, tc, params);
+    const schemaCode = getSchemaCode(
+      entryPointSourceFile,
+      sourceFile,
+      tc,
+      params,
+    );
+
     sourceFile.addVariableStatement({
       declarations: [
         {
@@ -687,7 +723,9 @@ declare global {
     );
 
     await saveWithChecksum(sourceFile);
-    logInfo('Created entrypoint', pc.cyan(route.routeName));
+    logInfo('Created entrypoint for', pc.cyan(resourceName));
+
+    return fileName;
   }
 
   /**
