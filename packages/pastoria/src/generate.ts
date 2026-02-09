@@ -512,7 +512,9 @@ declare global {
         name: `"${this.resourceNameForFile(sourceFile)}"`,
         initializer: (writer) => {
           writer.block(() => {
-            writer.writeLine(`src: "pastoria${routeName}/page.tsx",`);
+            writer.writeLine(
+              `src: "${this.relativePathFromRoot(sourceFile)}",`,
+            );
             writer.writeLine(
               `loader: () => import("#pastoria${routeName}/page").then(m => m.default),`,
             );

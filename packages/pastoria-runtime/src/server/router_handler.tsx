@@ -359,12 +359,7 @@ function bootstrapScripts(
     );
   } else if (entryPoint != null) {
     crawlEntryPoint(entryPoint);
-  }
-
-  if (manifest?.['virtual:pastoria-entry-client.tsx']) {
-    bootstrap.bootstrapModules.push(
-      '/' + manifest['virtual:pastoria-entry-client.tsx'].file,
-    );
+    crawlImports('virtual:pastoria-entry-client.tsx');
   }
 
   return bootstrap;
