@@ -112,11 +112,15 @@ export class PastoriaMetadata {
       const defaultExport = sourceFile.getDefaultExportSymbol();
       if (defaultExport == null) return;
 
-      const routeName = project
+      let routeName = project
         .getDirectory('pastoria')
         ?.getRelativePathTo(sourceFile.getDirectory());
 
-      if (!routeName) return;
+      if (routeName === '../pastoria') {
+        routeName = '';
+      } else if (!routeName) {
+        return;
+      }
 
       routes.push({
         routeName: '/' + routeName,
