@@ -300,11 +300,15 @@ declare global {
   >;
 
   type PastoriaPreloadPropsParams = {
-    ${entryPointRoutes.map((r) => `['${r.routeName}']: ${escapeRouteName(r.routeName)}_EP_PreloadPropParams`)}
+    ${entryPointRoutes.map((r) => `['${r.routeName}']: z.output<typeof ${escapeRouteName(r.routeName)}_EP_schema>`)},
   };
 
-  type GetPreloadProps<R extends PastoriaRouteName> = (params: PastoriaPreloadPropsParams[R]) =>
-    PreloadProps<z.output<RouterConf[R]['schema']>, PastoriaPageQueries[R], PastoriaPageEntryPoints[R], {}>
+  type PastoriaPreloadPropsHelpers = {
+    ${entryPointRoutes.map((r) => `['${r.routeName}']: ${escapeRouteName(r.routeName)}_EP_PreloadPropsHelpers`)}
+  };
+
+  type GetPreloadProps<R extends PastoriaRouteName> = (params: PastoriaPreloadPropsHelpers[R]) =>
+    PreloadProps<PastoriaPreloadPropsParams[R], PastoriaPageQueries[R], PastoriaPageEntryPoints[R], {}>
 }
 `);
     }
@@ -448,8 +452,8 @@ declare global {
             alias: `${escapedRouteName}_EP_EntryPoints`,
           },
           {
-            name: 'PreloadPropParams',
-            alias: `${escapedRouteName}_EP_PreloadPropParams`,
+            name: 'PreloadPropsHelpers',
+            alias: `${escapedRouteName}_EP_PreloadPropsHelpers`,
             isTypeOnly: true,
           },
         ],
@@ -752,9 +756,9 @@ declare global {
       sourceFile.addStatements('\ntype EntryPoints = {};\n');
     }
 
-    // PreloadPropParams exports is used by PastoriaPreloadPropsParams in router.tsx as a helper
+    // PreloadPropsHelpers exports is used by PastoriaPreloadPropsParams in router.tsx as a helper
     // type for routes that overload and export getPreloadProps.
-    sourceFile.addStatements(`\ntype PreloadPropParams = {
+    sourceFile.addStatements(`\ntype PreloadPropsHelpers = {
   variables: z.output<typeof schema>,
   queries: {
     ${Array.from(queries.entries()).map(([queryAlias, queryName]) => {
@@ -771,7 +775,7 @@ declare global {
 
     // Re-export the normalized types and schemas.
     sourceFile.addStatements(
-      `\nexport {entrypoint, schema, type EntryPoints, type Queries, type PreloadPropParams};\n`,
+      `\nexport {entrypoint, schema, type EntryPoints, type Queries, type PreloadPropsHelpers};\n`,
     );
 
     await saveWithChecksum(sourceFile);
@@ -865,7 +869,7 @@ declare global {
       })`;
     })}
   }
-} satisfies PreloadPropParams);`,
+} satisfies PreloadPropsHelpers);`,
       );
     });
   }

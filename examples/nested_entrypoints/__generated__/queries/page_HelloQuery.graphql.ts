@@ -1,6 +1,6 @@
 /**
- * @generated SignedSource<<688500ab1d469e62a37d54b4f880a087>>
- * @relayHash a21287b6dcc6ef6400fe8857e1ed2a58
+ * @generated SignedSource<<6654e188b082a53c1fdc8d7a390d62ae>>
+ * @relayHash f3c9f8095b88d8ae99732233554f7fa1
  * @lightSyntaxTransform
  * @nogrep
  */
@@ -9,18 +9,18 @@
 /* eslint-disable */
 // @ts-nocheck
 
-// @relayRequestID a21287b6dcc6ef6400fe8857e1ed2a58
+// @relayRequestID f3c9f8095b88d8ae99732233554f7fa1
 
 import { ConcreteRequest } from 'relay-runtime';
-export type helloWorld_HelloQuery$variables = {
+export type page_HelloQuery$variables = {
   name: string;
 };
-export type helloWorld_HelloQuery$data = {
+export type page_HelloQuery$data = {
   readonly greet: string;
 };
-export type helloWorld_HelloQuery = {
-  response: helloWorld_HelloQuery$data;
-  variables: helloWorld_HelloQuery$variables;
+export type page_HelloQuery = {
+  response: page_HelloQuery$data;
+  variables: page_HelloQuery$variables;
 };
 
 const node: ConcreteRequest = (function(){
@@ -53,7 +53,7 @@ return {
     "metadata": {
       "throwOnFieldError": true
     },
-    "name": "helloWorld_HelloQuery",
+    "name": "page_HelloQuery",
     "selections": (v1/*: any*/),
     "type": "Query",
     "abstractKey": null
@@ -62,20 +62,20 @@ return {
   "operation": {
     "argumentDefinitions": (v0/*: any*/),
     "kind": "Operation",
-    "name": "helloWorld_HelloQuery",
+    "name": "page_HelloQuery",
     "selections": (v1/*: any*/)
   },
   "params": {
-    "id": "a21287b6dcc6ef6400fe8857e1ed2a58",
+    "id": "f3c9f8095b88d8ae99732233554f7fa1",
     "metadata": {},
-    "name": "helloWorld_HelloQuery",
+    "name": "page_HelloQuery",
     "operationKind": "query",
     "text": null
   }
 };
 })();
 
-(node as any).hash = "007441579a01808cd643834407fdedc0";
+(node as any).hash = "c40f3dac746aff09c77dfd5912e4f66e";
 
 import { PreloadableQueryRegistry } from 'relay-runtime';
 PreloadableQueryRegistry.set(node.params.id, node);
