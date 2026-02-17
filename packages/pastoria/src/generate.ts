@@ -760,7 +760,7 @@ declare global {
     ${Array.from(queries.entries()).map(([queryAlias, queryName]) => {
       sourceFile.addImportDeclaration({
         moduleSpecifier: `#genfiles/queries/${queryName}.graphql`,
-        namedImports: [{name: queryName}, {name: `${queryName}$variables`}],
+        namedImports: [queryName, `${queryName}$variables`],
         isTypeOnly: true,
       });
 
