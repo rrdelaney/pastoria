@@ -28,6 +28,7 @@ import * as path from 'node:path';
 import pc from 'picocolors';
 import {
   CodeBlockWriter,
+  ExportedDeclarations,
   Project,
   SourceFile,
   SyntaxKind,
@@ -713,7 +714,20 @@ declare global {
           type: `EntryPoint<ModuleType<'${resourceName}'>, z.output<typeof schema>>`,
           initializer: (writer) => {
             writer.block(() => {
-              this.writeStandaloneEntryPoint(writer, resourceName, queries);
+              const getPreloadProps = exportedDecls
+                .get('getPreloadProps')
+                ?.at(0);
+
+              if (getPreloadProps != null) {
+                this.writeStandaloneEntryPointWithPreloadProps(
+                  writer,
+                  resourceName,
+                  getPreloadProps,
+                  queries,
+                );
+              } else {
+                this.writeStandaloneEntryPoint(writer, resourceName, queries);
+              }
             });
           },
         },
@@ -814,6 +828,45 @@ declare global {
         // TODO(ryan): Add the logic for this.
         writer.write('entryPoints:').block(() => {});
       });
+    });
+  }
+
+  /**
+   * Creates an entrypoint body for a route that has an exported getPreloadProps we should
+   * use instead of the default generated one.
+   */
+  private writeStandaloneEntryPointWithPreloadProps(
+    writer: CodeBlockWriter,
+    resourceName: string,
+    getPreloadProps: ExportedDeclarations,
+    queries: Map<string, string>,
+  ) {
+    const getPreloadPropsFunctionExpression = getPreloadProps
+      .asKind(SyntaxKind.VariableDeclaration)
+      ?.getInitializer()
+      ?.getText();
+
+    if (getPreloadPropsFunctionExpression == null) {
+      throw new Error(
+        `Found exported getPreloadProps but wasn't a function expression.`,
+      );
+    }
+
+    writer.writeLine(`root: JSResource.fromModuleId('${resourceName}'),`);
+    writer.writeLine(`getPreloadProps($variables)`).block(() => {
+      writer.writeLine(
+        `return (${getPreloadPropsFunctionExpression})({
+  variables: $variables,
+  queries: {
+    ${Array.from(queries).map(([queryAlias, queryName]) => {
+      return `['${queryAlias}']: (variables) => ({
+        parameters: ${queryName}Parameters,
+        variables,
+      })`;
+    })}
+  }
+} satisfies PreloadPropParams);`,
+      );
     });
   }
 
