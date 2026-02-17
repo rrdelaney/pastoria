@@ -7,10 +7,14 @@ exports[`generatePastoriaArtifacts > dynamic page route with queries > generates
  * Do not modify this file directly.
  */
 import type { Queries } from '../../pastoria/details/[name]/page';
-import { EntryPoint } from 'react-relay/hooks';
+import { EntryPoint, ThinQueryParams } from 'react-relay/hooks';
 import { z } from 'zod/v4-mini';
 import { JSResource, ModuleType } from './js_resource';
 import page_DetailsQueryParameters from '#genfiles/queries/page_DetailsQuery$parameters';
+import type {
+  page_DetailsQuery,
+  page_DetailsQuery$variables,
+} from '#genfiles/queries/page_DetailsQuery.graphql';
 
 const schema = z.object({
   name: z.pipe(z.string(), z.transform(decodeURIComponent)),
@@ -32,9 +36,25 @@ const entrypoint: EntryPoint<
     };
   },
 };
+
 type EntryPoints = {};
 
-export { entrypoint, schema, type EntryPoints, type Queries };
+type PreloadPropParams = {
+  variables: z.output<typeof schema>;
+  queries: {
+    details: (
+      variables: page_DetailsQuery$variables,
+    ) => ThinQueryParams<page_DetailsQuery>;
+  };
+};
+
+export {
+  entrypoint,
+  schema,
+  type EntryPoints,
+  type Queries,
+  type PreloadPropParams,
+};
 "
 `;
 
@@ -68,6 +88,7 @@ import {
   EntryPoint,
   EntryPointContainer,
   EntryPointProps,
+  PreloadProps,
   loadEntryPoint,
   RelayEnvironmentProvider,
   useEntryPointLoader,
@@ -605,6 +626,7 @@ import {
   EntryPoint,
   EntryPointContainer,
   EntryPointProps,
+  PreloadProps,
   loadEntryPoint,
   RelayEnvironmentProvider,
   useEntryPointLoader,
@@ -616,12 +638,14 @@ import {
   entrypoint as about_EP_entrypoint,
   Queries as about_EP_Queries,
   EntryPoints as about_EP_EntryPoints,
+  type PreloadPropParams as about_EP_PreloadPropParams,
 } from './about_page.entrypoint';
 import {
   schema as home_EP_schema,
   entrypoint as home_EP_entrypoint,
   Queries as home_EP_Queries,
   EntryPoints as home_EP_EntryPoints,
+  type PreloadPropParams as home_EP_PreloadPropParams,
 } from './home_page.entrypoint';
 
 /** Mapping of route name to Zod schema for parsing URL params. */
@@ -1077,6 +1101,20 @@ declare global {
     {},
     {}
   >;
+
+  type PastoriaPreloadPropsParams = {
+    ['/about']: about_EP_PreloadPropParams;
+    ['/home']: home_EP_PreloadPropParams;
+  };
+
+  type GetPreloadProps<R extends PastoriaRouteName> = (
+    params: PastoriaPreloadPropsParams[R],
+  ) => PreloadProps<
+    z.output<RouterConf[R]['schema']>,
+    PastoriaPageQueries[R],
+    PastoriaPageEntryPoints[R],
+    {}
+  >;
 }
 "
 `;
@@ -1191,7 +1229,7 @@ exports[`generatePastoriaArtifacts > simple page route > generates an entrypoint
  * @generated-checksum <STRIPPED>
  * Do not modify this file directly.
  */
-import { EntryPoint } from 'react-relay/hooks';
+import { EntryPoint, ThinQueryParams } from 'react-relay/hooks';
 import { z } from 'zod/v4-mini';
 import { JSResource, ModuleType } from './js_resource';
 
@@ -1208,9 +1246,22 @@ const entrypoint: EntryPoint<
     };
   },
 };
+
 type Queries = {};
+
 type EntryPoints = {};
 
-export { entrypoint, schema, type EntryPoints, type Queries };
+type PreloadPropParams = {
+  variables: z.output<typeof schema>;
+  queries: {};
+};
+
+export {
+  entrypoint,
+  schema,
+  type EntryPoints,
+  type Queries,
+  type PreloadPropParams,
+};
 "
 `;

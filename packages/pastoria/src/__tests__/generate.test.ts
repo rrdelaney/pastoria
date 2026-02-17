@@ -125,7 +125,9 @@ export default function HomePage() {
       // Should reference the route resource
       expect(entrypoint).toContain('#pastoria/home/page');
       // Should export entrypoint and schema
-      expect(entrypoint).toContain('export { entrypoint, schema');
+      expect(entrypoint).toContain(`export {
+  entrypoint,
+  schema`);
 
       // Router should have a route for /home
       expect(result.router).toContain(`'/home'`);
