@@ -21,6 +21,7 @@ import {
   EntryPoint,
   EntryPointContainer,
   EntryPointProps,
+  PreloadProps,
   loadEntryPoint,
   RelayEnvironmentProvider,
   useEntryPointLoader,

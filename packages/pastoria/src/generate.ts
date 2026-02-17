@@ -296,11 +296,19 @@ declare global {
     PastoriaPageEntryPoints[T],
     {},
     {}
-  >
+  >;
+
+  type PastoriaPreloadPropsParams = {
+    ${entryPointRoutes.map((r) => `['${r.routeName}']: ${escapeRouteName(r.routeName)}_EP_PreloadPropParams`)}
+  };
+
+  type GetPreloadProps<R extends PastoriaRouteName> = (params: PastoriaPreloadPropsParams[R]) =>
+    PreloadProps<z.output<RouterConf[R]['schema']>, PastoriaPageQueries[R], PastoriaPageEntryPoints[R], {}>
 }
 `);
     }
 
+    // Legacy @route entry point generation.
     let entryPointImportIndex = 0;
     for (let [routeName, {sourceFile, symbol, params}] of routes.entries()) {
       const filePath = this.relativePathFromRoot(sourceFile);
@@ -414,6 +422,7 @@ declare global {
       );
     }
 
+    // Newer file-based routing generation.
     for (const {routeName, routePath, sourceFile} of entryPointRoutes) {
       const escapedRouteName = escapeRouteName(routeName);
       routerTemplate.addImportDeclaration({
@@ -436,6 +445,11 @@ declare global {
           {
             name: 'EntryPoints',
             alias: `${escapedRouteName}_EP_EntryPoints`,
+          },
+          {
+            name: 'PreloadPropParams',
+            alias: `${escapedRouteName}_EP_PreloadPropParams`,
+            isTypeOnly: true,
           },
         ],
       });
@@ -657,7 +671,7 @@ declare global {
 
     sourceFile.addImportDeclaration({
       moduleSpecifier: 'react-relay/hooks',
-      namedImports: ['EntryPoint'],
+      namedImports: ['EntryPoint', 'ThinQueryParams'],
     });
 
     sourceFile.addImportDeclaration({
@@ -689,6 +703,7 @@ declare global {
       ],
       isExported: false,
       declarationKind: VariableDeclarationKind.Const,
+      trailingTrivia: '\n\n',
     });
 
     sourceFile.addVariableStatement({
@@ -704,6 +719,7 @@ declare global {
         },
       ],
       declarationKind: VariableDeclarationKind.Const,
+      trailingTrivia: '\n\n',
     });
 
     // Add query parameter imports after writeEntryPoint populates consumedQueries
@@ -716,15 +732,32 @@ declare global {
 
     // Generate fallback types for any missing exports
     if (!hasQueriesExport) {
-      sourceFile.addStatements('type Queries = {};');
+      sourceFile.addStatements('\ntype Queries = {};\n');
     }
     if (!hasEntryPointsExport) {
-      sourceFile.addStatements('type EntryPoints = {};');
+      sourceFile.addStatements('\ntype EntryPoints = {};\n');
     }
 
-    // Export statement
+    // PreloadPropParams exports is used by PastoriaPreloadPropsParams in router.tsx as a helper
+    // type for routes that overload and export getPreloadProps.
+    sourceFile.addStatements(`\ntype PreloadPropParams = {
+  variables: z.output<typeof schema>,
+  queries: {
+    ${Array.from(queries.entries()).map(([queryAlias, queryName]) => {
+      sourceFile.addImportDeclaration({
+        moduleSpecifier: `#genfiles/queries/${queryName}.graphql`,
+        namedImports: [{name: queryName}, {name: `${queryName}$variables`}],
+        isTypeOnly: true,
+      });
+
+      return `${queryAlias}: (variables: ${queryName}$variables) => ThinQueryParams<${queryName}>`;
+    })}
+  },
+};\n`);
+
+    // Re-export the normalized types and schemas.
     sourceFile.addStatements(
-      `\nexport {entrypoint, schema, type EntryPoints, type Queries};\n`,
+      `\nexport {entrypoint, schema, type EntryPoints, type Queries, type PreloadPropParams};\n`,
     );
 
     await saveWithChecksum(sourceFile);
