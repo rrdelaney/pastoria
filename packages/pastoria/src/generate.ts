@@ -242,7 +242,11 @@ export class PastoriaExecutionContext {
   /** Returns a human-friendly generated abstract resource name for a source file under #pastoria. */
   private resourceNameForPastoriaSourceFile(sourceFile: SourceFile) {
     const pastoriaPath = this.relativePathFromPastoria(sourceFile);
-    const routableName = '/' + path.dirname(pastoriaPath);
+    let routableName = '/' + path.dirname(pastoriaPath);
+
+    // Handle #pastoria/page.tsx as just /.
+    if (routableName === '/.') routableName = '/';
+
     if (this.isRoutablePageFile(sourceFile)) {
       return routableName;
     } else {
