@@ -5,7 +5,9 @@ export type Queries = {
   citiesQuery: results_HelloCityResultsQuery;
 };
 
-export default function HelloWorldCityResults({queries}) {
+export default function HelloWorldCityResults({
+  queries,
+}: PastoriaPageProps<'/hello/[name]#results'>) {
   const {cities} = usePreloadedQuery(
     graphql`
       query results_HelloCityResultsQuery($q: String)

@@ -1,10 +1,13 @@
+import {banner_HelloBannerQuery} from '#genfiles/queries/banner_HelloBannerQuery.graphql.js';
 import {graphql, usePreloadedQuery} from 'react-relay';
 
 export type Queries = {
   helloBannerRef: banner_HelloBannerQuery;
 };
 
-export default function HelloBanner({queries}) {
+export default function HelloBanner({
+  queries,
+}: PastoriaPageProps<'/hello/[name]#banner'>) {
   const {helloMessage} = usePreloadedQuery(
     graphql`
       query banner_HelloBannerQuery @preloadable @throwOnFieldError {

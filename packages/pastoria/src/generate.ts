@@ -136,7 +136,7 @@ function zodSchemaOfType(
   }
 }
 
-function escapeRouteName(routeName: string): string {
+function escapeResourceName(routeName: string): string {
   return routeName
     .replace(/\[(\w+)\]/g, '$$$1')
     .replace(/\//g, '_')
@@ -220,7 +220,7 @@ export class PastoriaExecutionContext {
     return this.project.getFileSystem();
   }
 
-  /** Returns relative path of a file from the project root. */
+  /** Returns relative path of a file from the project root. This is typically one level above #pastoria. */
   private relativePathFromRoot(sourceFile: SourceFile) {
     return path.relative(this.projectDir, sourceFile.getFilePath());
   }
@@ -233,8 +233,27 @@ export class PastoriaExecutionContext {
     );
   }
 
-  /** Returns the name of a resource for a source file under #pastoria. */
-  private resourceNameForFile(sourceFile: SourceFile) {
+  /** Determines if a file generates a React route, e.g. is a page.tsx. */
+  private isRoutablePageFile(sourceFile: SourceFile) {
+    const pastoriaPath = this.relativePathFromPastoria(sourceFile);
+    return path.basename(pastoriaPath) === 'page.tsx';
+  }
+
+  /** Returns a human-friendly generated abstract resource name for a source file under #pastoria. */
+  private resourceNameForPastoriaSourceFile(sourceFile: SourceFile) {
+    const pastoriaPath = this.relativePathFromPastoria(sourceFile);
+    const routableName = '/' + path.dirname(pastoriaPath);
+    if (this.isRoutablePageFile(sourceFile)) {
+      return routableName;
+    } else {
+      return `${routableName}#${path.basename(pastoriaPath, '.tsx')}`;
+    }
+  }
+
+  /**
+   * Returns an absolute module specifier for a source file under #pastoria, e.g. #pastoria/route/[details]/page.
+   */
+  private moduleNameForPastoriaSourceFile(sourceFile: SourceFile) {
     const pastoriaPath = this.relativePathFromPastoria(sourceFile);
     return path.join(
       '#pastoria',
@@ -243,9 +262,11 @@ export class PastoriaExecutionContext {
     );
   }
 
-  private entryPointFileNameForRoute(sourceFile: SourceFile) {
-    const resourceName = this.resourceNameForFile(sourceFile);
-    const escapedName = escapeRouteName(resourceName.replace('#pastoria/', ''));
+  private entryPointFileNameForResource(sourceFile: SourceFile) {
+    const resourceName = this.moduleNameForPastoriaSourceFile(sourceFile);
+    const escapedName = escapeResourceName(
+      resourceName.replace('#pastoria/', ''),
+    );
     return escapedName + '.entrypoint.ts';
   }
 
@@ -255,10 +276,13 @@ export class PastoriaExecutionContext {
     await this.generateJsResource();
     await this.generateServer();
     await this.generateEntryPointFiles();
+    await this.generateHelperTypes();
   }
 
   private async generateRouter() {
-    const {entryPointRoutes, routes, resources} = this.metadata;
+    const {entryPointRoutes, routes, resources, resourceSourceFiles} =
+      this.metadata;
+
     const routerTemplate = await this.loadRouterTemplate('router.tsx');
     const tc = this.getTypeChecker();
 
@@ -277,41 +301,6 @@ export class PastoriaExecutionContext {
 
     routerSchema.getPropertyOrThrow('noop').remove();
     routerConf.getPropertyOrThrow('noop').remove();
-
-    if (entryPointRoutes.length > 0) {
-      routerTemplate.addStatements(`
-declare global {
-  type PastoriaRouteName =
-    ${entryPointRoutes.map((r) => `| '${r.routeName}'`).join('    \n')};
-
-  type PastoriaPageQueries = {
-    ${entryPointRoutes.map((r) => `['${r.routeName}']: ${escapeRouteName(r.routeName)}_EP_Queries`)},
-  };
-
-  type PastoriaPageEntryPoints = {
-    ${entryPointRoutes.map((r) => `['${r.routeName}']: ${escapeRouteName(r.routeName)}_EP_EntryPoints`)},
-  };
-
-  type PastoriaPageProps<T extends PastoriaRouteName> = EntryPointProps<
-    PastoriaPageQueries[T],
-    PastoriaPageEntryPoints[T],
-    {},
-    {}
-  >;
-
-  type PastoriaPreloadPropsParams = {
-    ${entryPointRoutes.map((r) => `['${r.routeName}']: z.output<typeof ${escapeRouteName(r.routeName)}_EP_schema>`)},
-  };
-
-  type PastoriaPreloadPropsHelpers = {
-    ${entryPointRoutes.map((r) => `['${r.routeName}']: ${escapeRouteName(r.routeName)}_EP_PreloadPropsHelpers`)}
-  };
-
-  type GetPreloadProps<R extends PastoriaRouteName> = (params: PastoriaPreloadPropsHelpers[R]) =>
-    PreloadProps<PastoriaPreloadPropsParams[R], PastoriaPageQueries[R], PastoriaPageEntryPoints[R], {}>
-}
-`);
-    }
 
     // Legacy @route entry point generation.
     let entryPointImportIndex = 0;
@@ -429,10 +418,10 @@ declare global {
 
     // Newer file-based routing generation.
     for (const {routeName, routePath, sourceFile} of entryPointRoutes) {
-      const escapedRouteName = escapeRouteName(routeName);
+      const escapedRouteName = escapeResourceName(routeName);
       routerTemplate.addImportDeclaration({
         moduleSpecifier: routerTemplate.getRelativePathAsModuleSpecifierTo(
-          this.entryPointFileNameForRoute(sourceFile),
+          this.entryPointFileNameForResource(sourceFile),
         ),
         namedImports: [
           {
@@ -442,19 +431,6 @@ declare global {
           {
             name: 'entrypoint',
             alias: `${escapedRouteName}_EP_entrypoint`,
-          },
-          {
-            name: 'Queries',
-            alias: `${escapedRouteName}_EP_Queries`,
-          },
-          {
-            name: 'EntryPoints',
-            alias: `${escapedRouteName}_EP_EntryPoints`,
-          },
-          {
-            name: 'PreloadPropsHelpers',
-            alias: `${escapedRouteName}_EP_PreloadPropsHelpers`,
-            isTypeOnly: true,
           },
         ],
       });
@@ -486,7 +462,7 @@ declare global {
   }
 
   private async generateJsResource() {
-    const {resources, entryPointRoutes} = this.metadata;
+    const {resources} = this.metadata;
     const jsResourceTemplate = await this.loadRouterTemplate('js_resource.ts');
 
     const resourceConf = jsResourceTemplate
@@ -526,16 +502,16 @@ declare global {
       );
     }
 
-    for (const {routeName, sourceFile} of entryPointRoutes) {
+    for (const sourceFile of this.metadata.resourceSourceFiles) {
       resourceConf.addPropertyAssignment({
-        name: `"${this.resourceNameForFile(sourceFile)}"`,
+        name: `"${this.resourceNameForPastoriaSourceFile(sourceFile)}"`,
         initializer: (writer) => {
           writer.block(() => {
             writer.writeLine(
               `src: "${this.relativePathFromRoot(sourceFile)}",`,
             );
             writer.writeLine(
-              `loader: () => import("#pastoria${routeName}/page").then(m => m.default),`,
+              `loader: () => import("${this.moduleNameForPastoriaSourceFile(sourceFile)}").then(m => m.default),`,
             );
           });
         },
@@ -577,15 +553,116 @@ declare global {
     await saveWithChecksum(serverTemplate);
   }
 
-  private async generateEntryPointFiles() {
-    const {entryPointRoutes} = this.metadata;
+  private async generateHelperTypes() {
+    const {resourceSourceFiles} = this.metadata;
+    if (resourceSourceFiles.length === 0) {
+      // TODO: delete the source file if we're not generating any helper types.
+      return;
+    }
 
-    const expectedFiles = new Set<string>();
-    for (const route of entryPointRoutes) {
-      const createdFile = await this.generateSingleEntryPointFile(
-        route.sourceFile,
+    // Create source file with header comment
+    const warningComment = `/*
+ * This file was generated by \`pastoria\`.
+ * Do not modify this file directly.
+ */
+
+`;
+    const helperTypesTemplate = this.project.createSourceFile(
+      '__generated__/router/types.ts',
+      warningComment,
+      {overwrite: true},
+    );
+
+    helperTypesTemplate.addImportDeclarations([
+      {
+        moduleSpecifier: 'react-relay/hooks',
+        namedImports: ['EntryPointProps', 'PreloadProps'],
+        isTypeOnly: true,
+      },
+      {
+        moduleSpecifier: 'zod/v4-mini',
+        namedImports: ['z'],
+        isTypeOnly: true,
+      },
+    ]);
+
+    const pageTypeHelpers: {
+      routeName: string;
+      escapedResourceName: string;
+    }[] = [];
+
+    for (const sourceFile of resourceSourceFiles) {
+      const entryPointFileName = path.basename(
+        this.entryPointFileNameForResource(sourceFile),
+        '.ts',
       );
 
+      const escapedResourceName = path.basename(
+        entryPointFileName,
+        '.entrypoint',
+      );
+
+      helperTypesTemplate.addImportDeclaration({
+        moduleSpecifier: `./${entryPointFileName}`,
+        isTypeOnly: true,
+        namedImports: [
+          {name: 'Queries', alias: `${escapedResourceName}_EP_Queries`},
+          {name: 'EntryPoints', alias: `${escapedResourceName}_EP_EntryPoints`},
+          {name: 'schema', alias: `${escapedResourceName}_EP_schema`},
+          {
+            name: 'PreloadPropsHelpers',
+            alias: `${escapedResourceName}_EP_PreloadPropsHelpers`,
+          },
+        ],
+      });
+
+      pageTypeHelpers.push({
+        routeName: this.resourceNameForPastoriaSourceFile(sourceFile),
+        escapedResourceName,
+      });
+    }
+
+    helperTypesTemplate.addStatements(`
+declare global {
+  type PastoriaRouteName =
+    ${pageTypeHelpers.map((r) => `| '${r.routeName}'`).join('    \n')};
+
+  type PastoriaPageQueries = {
+    ${pageTypeHelpers.map((r) => `['${r.routeName}']: ${r.escapedResourceName}_EP_Queries`)},
+  };
+
+  type PastoriaPageEntryPoints = {
+    ${pageTypeHelpers.map((r) => `['${r.routeName}']: ${r.escapedResourceName}_EP_EntryPoints`)},
+  };
+
+  type PastoriaPageProps<T extends PastoriaRouteName> = EntryPointProps<
+    PastoriaPageQueries[T],
+    PastoriaPageEntryPoints[T],
+    {},
+    {}
+  >;
+
+  type PastoriaPreloadPropsParams = {
+    ${pageTypeHelpers.map((r) => `['${r.routeName}']: z.output<typeof ${r.escapedResourceName}_EP_schema>`)},
+  };
+
+  type PastoriaPreloadPropsHelpers = {
+    ${pageTypeHelpers.map((r) => `['${r.routeName}']: ${r.escapedResourceName}_EP_PreloadPropsHelpers`)}
+  };
+
+  type GetPreloadProps<R extends PastoriaRouteName> = (params: PastoriaPreloadPropsHelpers[R]) =>
+    PreloadProps<PastoriaPreloadPropsParams[R], PastoriaPageQueries[R], PastoriaPageEntryPoints[R], {}>
+}
+`);
+
+    await saveWithChecksum(helperTypesTemplate);
+    logInfo('Created page helper types');
+  }
+
+  private async generateEntryPointFiles() {
+    const expectedFiles = new Set<string>();
+    for (const sourceFile of this.metadata.resourceSourceFiles) {
+      const createdFile = await this.generateSingleEntryPointFile(sourceFile);
       expectedFiles.add(createdFile);
     }
 
@@ -612,8 +689,9 @@ declare global {
   }
 
   private async generateSingleEntryPointFile(entryPointSourceFile: SourceFile) {
-    const resourceName = this.resourceNameForFile(entryPointSourceFile);
-    const fileName = this.entryPointFileNameForRoute(entryPointSourceFile);
+    const resourceName =
+      this.resourceNameForPastoriaSourceFile(entryPointSourceFile);
+    const fileName = this.entryPointFileNameForResource(entryPointSourceFile);
 
     // Create source file with header comment
     const warningComment = `/*

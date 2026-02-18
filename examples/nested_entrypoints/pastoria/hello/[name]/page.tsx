@@ -15,8 +15,8 @@ export type Queries = {
 };
 
 export type EntryPoints = {
-  searchResults: EntryPoint<ModuleType<'#pastoria/search/page'>>;
-  helloBanner: EntryPoint<ModuleType<'m#hello_banner'>>;
+  searchResults: EntryPoint<ModuleType<'/hello/[name]#results'>>;
+  helloBanner: EntryPoint<ModuleType<'/hello/[name]#banner'>>;
 };
 
 export const schema = z.object({
@@ -32,7 +32,10 @@ export const getPreloadProps: GetPreloadProps<'/hello/[name]'> = ({
     queries: {
       nameQuery: queries.nameQuery({name: variables.name}),
     },
-    entryPoints: {},
+    entryPoints: {
+      helloBanner: null!,
+      searchResults: null!,
+    },
   };
 };
 
