@@ -123,7 +123,7 @@ export default function HomePage() {
       // Should have an empty schema since no params
       expect(entrypoint).toContain('z.object({})');
       // Should reference the route resource
-      expect(entrypoint).toContain('#pastoria/home/page');
+      expect(entrypoint).toContain('/home');
       // Should export entrypoint and schema
       expect(entrypoint).toContain(`export {
   entrypoint,
@@ -133,7 +133,7 @@ export default function HomePage() {
       expect(result.router).toContain(`'/home'`);
 
       // js_resource should have a resource for route(/home)
-      expect(result.jsResource).toContain(`'#pastoria/home/page'`);
+      expect(result.jsResource).toContain(`'/home'`);
 
       expect(entrypoint).toMatchSnapshot();
     });

@@ -20,10 +20,10 @@ const schema = z.object({
   name: z.pipe(z.string(), z.transform(decodeURIComponent)),
 });
 const entrypoint: EntryPoint<
-  ModuleType<'#pastoria/details/[name]/page'>,
+  ModuleType<'/details/[name]'>,
   z.output<typeof schema>
 > = {
-  root: JSResource.fromModuleId('#pastoria/details/[name]/page'),
+  root: JSResource.fromModuleId('/details/[name]'),
   getPreloadProps(variables) {
     return {
       queries: {
@@ -39,7 +39,7 @@ const entrypoint: EntryPoint<
 
 type EntryPoints = {};
 
-type PreloadPropParams = {
+type PreloadPropsHelpers = {
   variables: z.output<typeof schema>;
   queries: {
     details: (
@@ -53,7 +53,7 @@ export {
   schema,
   type EntryPoints,
   type Queries,
-  type PreloadPropParams,
+  type PreloadPropsHelpers,
 };
 "
 `;
@@ -636,16 +636,10 @@ import { JSResource, ModuleType } from './js_resource';
 import {
   schema as about_EP_schema,
   entrypoint as about_EP_entrypoint,
-  Queries as about_EP_Queries,
-  EntryPoints as about_EP_EntryPoints,
-  type PreloadPropParams as about_EP_PreloadPropParams,
 } from './about_page.entrypoint';
 import {
   schema as home_EP_schema,
   entrypoint as home_EP_entrypoint,
-  Queries as home_EP_Queries,
-  EntryPoints as home_EP_EntryPoints,
-  type PreloadPropParams as home_EP_PreloadPropParams,
 } from './home_page.entrypoint';
 
 /** Mapping of route name to Zod schema for parsing URL params. */
@@ -1081,41 +1075,6 @@ export function RouteLink<R extends RouteId>({
 export function listRoutes() {
   return Object.keys(ROUTE_MAPPING);
 }
-
-declare global {
-  type PastoriaRouteName = '/about' | '/home';
-
-  type PastoriaPageQueries = {
-    ['/about']: about_EP_Queries;
-    ['/home']: home_EP_Queries;
-  };
-
-  type PastoriaPageEntryPoints = {
-    ['/about']: about_EP_EntryPoints;
-    ['/home']: home_EP_EntryPoints;
-  };
-
-  type PastoriaPageProps<T extends PastoriaRouteName> = EntryPointProps<
-    PastoriaPageQueries[T],
-    PastoriaPageEntryPoints[T],
-    {},
-    {}
-  >;
-
-  type PastoriaPreloadPropsParams = {
-    ['/about']: about_EP_PreloadPropParams;
-    ['/home']: home_EP_PreloadPropParams;
-  };
-
-  type GetPreloadProps<R extends PastoriaRouteName> = (
-    params: PastoriaPreloadPropsParams[R],
-  ) => PreloadProps<
-    z.output<RouterConf[R]['schema']>,
-    PastoriaPageQueries[R],
-    PastoriaPageEntryPoints[R],
-    {}
-  >;
-}
 "
 `;
 
@@ -1130,11 +1089,11 @@ import type { JSResourceReference } from 'react-relay/hooks';
 
 type ResourceConf = typeof RESOURCE_CONF;
 const RESOURCE_CONF = {
-  '#pastoria/about/page': {
+  '/about': {
     src: 'pastoria/about/page.tsx',
     loader: () => import('#pastoria/about/page').then((m) => m.default),
   },
-  '#pastoria/home/page': {
+  '/home': {
     src: 'pastoria/home/page.tsx',
     loader: () => import('#pastoria/home/page').then((m) => m.default),
   },
@@ -1234,11 +1193,8 @@ import { z } from 'zod/v4-mini';
 import { JSResource, ModuleType } from './js_resource';
 
 const schema = z.object({});
-const entrypoint: EntryPoint<
-  ModuleType<'#pastoria/home/page'>,
-  z.output<typeof schema>
-> = {
-  root: JSResource.fromModuleId('#pastoria/home/page'),
+const entrypoint: EntryPoint<ModuleType<'/home'>, z.output<typeof schema>> = {
+  root: JSResource.fromModuleId('/home'),
   getPreloadProps(variables) {
     return {
       queries: {},
@@ -1251,7 +1207,7 @@ type Queries = {};
 
 type EntryPoints = {};
 
-type PreloadPropParams = {
+type PreloadPropsHelpers = {
   variables: z.output<typeof schema>;
   queries: {};
 };
@@ -1261,7 +1217,7 @@ export {
   schema,
   type EntryPoints,
   type Queries,
-  type PreloadPropParams,
+  type PreloadPropsHelpers,
 };
 "
 `;
