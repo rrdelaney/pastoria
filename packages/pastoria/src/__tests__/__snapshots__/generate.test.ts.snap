@@ -19,6 +19,7 @@ import type {
 const schema = z.object({
   name: z.pipe(z.string(), z.transform(decodeURIComponent)),
 });
+
 const entrypoint: EntryPoint<
   ModuleType<'/details/[name]'>,
   z.output<typeof schema>
@@ -1193,6 +1194,7 @@ import { z } from 'zod/v4-mini';
 import { JSResource, ModuleType } from './js_resource';
 
 const schema = z.object({});
+
 const entrypoint: EntryPoint<ModuleType<'/home'>, z.output<typeof schema>> = {
   root: JSResource.fromModuleId('/home'),
   getPreloadProps(variables) {

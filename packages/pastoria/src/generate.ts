@@ -29,7 +29,10 @@ import pc from 'picocolors';
 import {
   CodeBlockWriter,
   ExportedDeclarations,
+  ImportDeclarationStructure,
+  OptionalKind,
   Project,
+  PropertyAssignmentStructure,
   SourceFile,
   SyntaxKind,
   ts,
@@ -276,11 +279,13 @@ export class PastoriaExecutionContext {
 
   async generatePastoriaArtifacts() {
     // TODO: Add sanity checks that #pastoria/app.tsx and #pastoria/environment.ts exist.
-    await this.generateRouter();
-    await this.generateJsResource();
-    await this.generateServer();
-    await this.generateEntryPointFiles();
-    await this.generateHelperTypes();
+    await Promise.all([
+      this.generateRouter(),
+      this.generateJsResource(),
+      this.generateServer(),
+      this.generateEntryPointFiles(),
+      this.generateHelperTypes(),
+    ]);
   }
 
   private async generateRouter() {
@@ -420,10 +425,16 @@ export class PastoriaExecutionContext {
       );
     }
 
+    const importDeclarations: OptionalKind<ImportDeclarationStructure>[] = [];
+    const routerConfProperties: OptionalKind<PropertyAssignmentStructure>[] =
+      [];
+    const routerMappingProperties: OptionalKind<PropertyAssignmentStructure>[] =
+      [];
+
     // Newer file-based routing generation.
     for (const {routeName, routePath, sourceFile} of entryPointRoutes) {
       const escapedRouteName = escapeResourceName(routeName);
-      routerTemplate.addImportDeclaration({
+      importDeclarations.push({
         moduleSpecifier: routerTemplate.getRelativePathAsModuleSpecifierTo(
           this.entryPointFileNameForResource(sourceFile),
         ),
@@ -439,7 +450,7 @@ export class PastoriaExecutionContext {
         ],
       });
 
-      routerConf.addPropertyAssignment({
+      routerConfProperties.push({
         name: `"${routeName}"`,
         initializer: (writer) => {
           writer
@@ -454,13 +465,17 @@ export class PastoriaExecutionContext {
         },
       });
 
-      routeMapping.addPropertyAssignment({
+      routerMappingProperties.push({
         name: `"${routePath}"`,
         initializer: `ROUTER_CONF["${routeName}"]`,
       });
 
       logInfo('Created route', pc.cyan(routeName));
     }
+
+    routerTemplate.addImportDeclarations(importDeclarations);
+    routerConf.addPropertyAssignments(routerConfProperties);
+    routeMapping.addPropertyAssignments(routerMappingProperties);
 
     await saveWithChecksum(routerTemplate);
   }
@@ -476,6 +491,7 @@ export class PastoriaExecutionContext {
 
     resourceConf.getPropertyOrThrow('noop').remove();
 
+    // Legacy @resource-style declarations.
     for (const [resourceName, {sourceFile, symbol}] of resources.entries()) {
       const filePath = this.relativePathFromRoot(sourceFile);
       const moduleSpecifier =
@@ -506,8 +522,11 @@ export class PastoriaExecutionContext {
       );
     }
 
+    const resourceConfProperies: OptionalKind<PropertyAssignmentStructure>[] =
+      [];
+
     for (const sourceFile of this.metadata.resourceSourceFiles) {
-      resourceConf.addPropertyAssignment({
+      resourceConfProperies.push({
         name: `"${this.resourceNameForPastoriaSourceFile(sourceFile)}"`,
         initializer: (writer) => {
           writer.block(() => {
@@ -522,12 +541,16 @@ export class PastoriaExecutionContext {
       });
     }
 
+    resourceConf.addPropertyAssignments(resourceConfProperies);
     await saveWithChecksum(jsResourceTemplate);
   }
 
   private async generateServer() {
     const {serverRoutes} = this.metadata;
     const serverTemplate = await this.loadRouterTemplate('server.ts');
+
+    const importDeclarations: OptionalKind<ImportDeclarationStructure>[] = [];
+    const statements: string[] = [];
 
     let serverHandlerImportIndex = 0;
     for (const {symbol, sourceFile, routeName, routePath} of serverRoutes) {
@@ -537,14 +560,12 @@ export class PastoriaExecutionContext {
         sourceFile.getFilePath(),
       );
 
-      serverTemplate.addImportDeclaration({
+      importDeclarations.push({
         moduleSpecifier,
         namedImports: [{name: symbol.getName(), alias: importAlias}],
       });
 
-      serverTemplate.addStatements(
-        `router.use('${routePath}', ${importAlias})`,
-      );
+      statements.push(`router.use('${routePath}', ${importAlias})`);
 
       logInfo(
         'Created server route',
@@ -554,6 +575,8 @@ export class PastoriaExecutionContext {
       );
     }
 
+    serverTemplate.addImportDeclarations(importDeclarations);
+    serverTemplate.addStatements(statements);
     await saveWithChecksum(serverTemplate);
   }
 
@@ -577,7 +600,7 @@ export class PastoriaExecutionContext {
       {overwrite: true},
     );
 
-    helperTypesTemplate.addImportDeclarations([
+    const importDeclarations: OptionalKind<ImportDeclarationStructure>[] = [
       {
         moduleSpecifier: 'react-relay/hooks',
         namedImports: ['EntryPointProps', 'PreloadProps'],
@@ -588,7 +611,7 @@ export class PastoriaExecutionContext {
         namedImports: ['z'],
         isTypeOnly: true,
       },
-    ]);
+    ];
 
     const pageTypeHelpers: {
       routeName: string;
@@ -606,7 +629,7 @@ export class PastoriaExecutionContext {
         '.entrypoint',
       );
 
-      helperTypesTemplate.addImportDeclaration({
+      importDeclarations.push({
         moduleSpecifier: `./${entryPointFileName}`,
         isTypeOnly: true,
         namedImports: [
@@ -626,6 +649,7 @@ export class PastoriaExecutionContext {
       });
     }
 
+    helperTypesTemplate.addImportDeclarations(importDeclarations);
     helperTypesTemplate.addStatements(`
 declare global {
   type PastoriaRouteName =
@@ -664,11 +688,13 @@ declare global {
   }
 
   private async generateEntryPointFiles() {
-    const expectedFiles = new Set<string>();
-    for (const sourceFile of this.metadata.resourceSourceFiles) {
-      const createdFile = await this.generateSingleEntryPointFile(sourceFile);
-      expectedFiles.add(createdFile);
-    }
+    const expectedFiles = new Set(
+      await Promise.all(
+        this.metadata.resourceSourceFiles.map((sourceFile) =>
+          this.generateSingleEntryPointFile(sourceFile),
+        ),
+      ),
+    );
 
     // Delete stale entrypoint files that no longer correspond to a resource
     const generatedDir = path.resolve(this.projectDir, '__generated__/router');
@@ -745,28 +771,30 @@ declare global {
     if (hasEntryPointsExport) pageTypeImports.push('EntryPoints');
     if (hasQueriesExport) pageTypeImports.push('Queries');
 
+    const importDeclarations: OptionalKind<ImportDeclarationStructure>[] = [];
+
     if (pageTypeImports.length > 0) {
       const moduleSpecifier =
         sourceFile.getRelativePathAsModuleSpecifierTo(entryPointSourceFile);
 
-      sourceFile.addImportDeclaration({
+      importDeclarations.push({
         moduleSpecifier,
         namedImports: pageTypeImports,
         isTypeOnly: true,
       });
     }
 
-    sourceFile.addImportDeclaration({
+    importDeclarations.push({
       moduleSpecifier: 'react-relay/hooks',
       namedImports: ['EntryPoint', 'ThinQueryParams'],
     });
 
-    sourceFile.addImportDeclaration({
+    importDeclarations.push({
       moduleSpecifier: 'zod/v4-mini',
       namedImports: ['z'],
     });
 
-    sourceFile.addImportDeclaration({
+    importDeclarations.push({
       moduleSpecifier: './js_resource',
       namedImports: ['JSResource', 'ModuleType'],
     });
@@ -781,70 +809,73 @@ declare global {
       params,
     );
 
-    sourceFile.addVariableStatement({
-      declarations: [
-        {
-          name: 'schema',
-          initializer: schemaCode,
-        },
-      ],
-      isExported: false,
-      declarationKind: VariableDeclarationKind.Const,
-      trailingTrivia: '\n\n',
-    });
-
-    sourceFile.addVariableStatement({
-      declarations: [
-        {
-          name: 'entrypoint',
-          type: `EntryPoint<ModuleType<'${resourceName}'>, z.output<typeof schema>>`,
-          initializer: (writer) => {
-            writer.block(() => {
-              const getPreloadProps = exportedDecls
-                .get('getPreloadProps')
-                ?.at(0);
-
-              if (getPreloadProps != null) {
-                this.writeStandaloneEntryPointWithPreloadProps(
-                  writer,
-                  resourceName,
-                  getPreloadProps,
-                  queries,
-                );
-              } else {
-                this.writeStandaloneEntryPoint(writer, resourceName, queries);
-              }
-            });
+    sourceFile.addVariableStatements([
+      {
+        declarations: [
+          {
+            name: 'schema',
+            initializer: schemaCode,
           },
-        },
-      ],
-      declarationKind: VariableDeclarationKind.Const,
-      trailingTrivia: '\n\n',
-    });
+        ],
+        isExported: false,
+        declarationKind: VariableDeclarationKind.Const,
+        trailingTrivia: '\n\n',
+      },
+      {
+        declarations: [
+          {
+            name: 'entrypoint',
+            type: `EntryPoint<ModuleType<'${resourceName}'>, z.output<typeof schema>>`,
+            initializer: (writer) => {
+              writer.block(() => {
+                const getPreloadProps = exportedDecls
+                  .get('getPreloadProps')
+                  ?.at(0);
+
+                if (getPreloadProps != null) {
+                  this.writeStandaloneEntryPointWithPreloadProps(
+                    writer,
+                    resourceName,
+                    getPreloadProps,
+                    queries,
+                  );
+                } else {
+                  this.writeStandaloneEntryPoint(writer, resourceName, queries);
+                }
+              });
+            },
+          },
+        ],
+        declarationKind: VariableDeclarationKind.Const,
+        trailingTrivia: '\n\n',
+      },
+    ]);
 
     // Add query parameter imports after writeEntryPoint populates consumedQueries
     for (const queryName of queries.values()) {
-      sourceFile.addImportDeclaration({
+      importDeclarations.push({
         moduleSpecifier: `#genfiles/queries/${queryName}$parameters`,
         defaultImport: `${queryName}Parameters`,
       });
     }
 
+    const trailingStatements: string[] = [];
+
     // Generate fallback types for any missing exports
     if (!hasQueriesExport) {
-      sourceFile.addStatements('\ntype Queries = {};\n');
+      trailingStatements.push('\ntype Queries = {};\n');
     }
     if (!hasEntryPointsExport) {
-      sourceFile.addStatements('\ntype EntryPoints = {};\n');
+      trailingStatements.push('\ntype EntryPoints = {};\n');
     }
 
     // PreloadPropsHelpers exports is used by PastoriaPreloadPropsParams in router.tsx as a helper
     // type for routes that overload and export getPreloadProps.
-    sourceFile.addStatements(`\ntype PreloadPropsHelpers = {
+    trailingStatements.push(`\ntype PreloadPropsHelpers = {
   variables: z.output<typeof schema>,
   queries: {
     ${Array.from(queries.entries()).map(([queryAlias, queryName]) => {
-      sourceFile.addImportDeclaration({
+      importDeclarations.push({
         moduleSpecifier: `#genfiles/queries/${queryName}.graphql`,
         namedImports: [queryName, `${queryName}$variables`],
         isTypeOnly: true,
@@ -856,9 +887,12 @@ declare global {
 };\n`);
 
     // Re-export the normalized types and schemas.
-    sourceFile.addStatements(
+    trailingStatements.push(
       `\nexport {entrypoint, schema, type EntryPoints, type Queries, type PreloadPropsHelpers};\n`,
     );
+
+    sourceFile.addImportDeclarations(importDeclarations);
+    sourceFile.addStatements(trailingStatements);
 
     await saveWithChecksum(sourceFile);
     logInfo('Created entrypoint for', pc.cyan(resourceName));
