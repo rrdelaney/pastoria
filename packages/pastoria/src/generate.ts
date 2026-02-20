@@ -36,6 +36,7 @@ import {
   SourceFile,
   SyntaxKind,
   ts,
+  Type,
   TypeFlags,
   VariableDeclarationKind,
 } from 'ts-morph';
@@ -736,25 +737,11 @@ declare global {
       {overwrite: true},
     );
 
-    // Extract Queries type from page.tsx to get query names
-    const queriesType = entryPointSourceFile
-      .getExportedDeclarations()
-      .get('Queries')
-      ?.at(0)
-      ?.getType();
-
-    // Build queries map: {queryRef -> queryTypeName}
-    const queries = new Map<string, string>();
-    queriesType?.getProperties().forEach((prop) => {
-      const queryName = prop
-        .getValueDeclaration()
-        ?.getType()
-        .getAliasSymbol()
-        ?.getName();
-      if (queryName) {
-        queries.set(prop.getName(), queryName);
-      }
-    });
+    const queries =
+      getExportedQueriesFromPastoriaSourceFile(entryPointSourceFile);
+    // TODO: Generate EntryPoint helpers using these.
+    const nestedEntryPoints =
+      getExportedEntryPointsFromPastoriaSourceFile(entryPointSourceFile);
 
     // Collect parameters from query variables
     const params = collectQueryParameters(
@@ -771,8 +758,10 @@ declare global {
     if (hasEntryPointsExport) pageTypeImports.push('EntryPoints');
     if (hasQueriesExport) pageTypeImports.push('Queries');
 
+    // Imports to be added to the entry point file, added at once at the end for better performance.
     const importDeclarations: OptionalKind<ImportDeclarationStructure>[] = [];
 
+    // Only generate the EntryPoints or Queries imports if we use them.
     if (pageTypeImports.length > 0) {
       const moduleSpecifier =
         sourceFile.getRelativePathAsModuleSpecifierTo(entryPointSourceFile);
@@ -784,20 +773,21 @@ declare global {
       });
     }
 
-    importDeclarations.push({
-      moduleSpecifier: 'react-relay/hooks',
-      namedImports: ['EntryPoint', 'ThinQueryParams'],
-    });
-
-    importDeclarations.push({
-      moduleSpecifier: 'zod/v4-mini',
-      namedImports: ['z'],
-    });
-
-    importDeclarations.push({
-      moduleSpecifier: './js_resource',
-      namedImports: ['JSResource', 'ModuleType'],
-    });
+    // Required imports for scaffolding the file.
+    importDeclarations.push(
+      {
+        moduleSpecifier: 'react-relay/hooks',
+        namedImports: ['EntryPoint', 'ThinQueryParams'],
+      },
+      {
+        moduleSpecifier: 'zod/v4-mini',
+        namedImports: ['z'],
+      },
+      {
+        moduleSpecifier: './js_resource',
+        namedImports: ['JSResource', 'ModuleType'],
+      },
+    );
 
     // Generate schema - prefer copying from page.tsx if exported
     const tc = this.getTypeChecker();
@@ -982,7 +972,7 @@ declare global {
       return `['${queryAlias}']: (variables) => ({
         parameters: ${queryName}Parameters,
         variables,
-      })`;
+      }),`;
     })}
   }
 } satisfies PreloadPropsHelpers);`,
@@ -1067,4 +1057,92 @@ declare global {
         });
       });
   }
+}
+
+/**
+ * Extracts the queries for a given entry point in #pastoria uses.
+ *
+ * @param sourceFile Source file under #pastoria
+ * @returns Map of query alias to query name ({queryRef -> queryTypeName})
+ */
+function getExportedQueriesFromPastoriaSourceFile(sourceFile: SourceFile) {
+  const queriesType = sourceFile
+    .getExportedDeclarations()
+    .get('Queries')
+    ?.at(0)
+    ?.getType();
+
+  const queries = new Map<string, string>();
+  queriesType?.getProperties().forEach((prop) => {
+    const queryName = prop
+      .getValueDeclaration()
+      ?.getType()
+      .getAliasSymbol()
+      ?.getName();
+
+    if (queryName) {
+      queries.set(prop.getName(), queryName);
+    }
+  });
+
+  return queries;
+}
+
+/**
+ * Extracts the nested entry points a given entry point may use in #pastoria uses.
+ *
+ * @param sourceFile Source file under #pastoria
+ * @returns Map of entry point alias to entry point name ({epRef -> #pastoria/details/[name]#banner})
+ */
+function getExportedEntryPointsFromPastoriaSourceFile(sourceFile: SourceFile) {
+  const entryPointsType = sourceFile
+    .getExportedDeclarations()
+    .get('EntryPoints')
+    ?.at(0)
+    ?.getType();
+
+  const entryPoints = new Map<string, string>();
+
+  // type EntryPoints = { ... }
+  entryPointsType?.getProperties().forEach((prop) => {
+    const maybeEntryPointWrapper = prop // entryPointRef?: EntryPoint<ModuleType<'/hello#banner'>>
+      .getValueDeclaration()
+      ?.getType() // ?EntryPoint<ModuleType<'/hello#banner'>>
+      .getNonNullableType(); // EntryPoint<ModuleType<'/hello#banner'>>
+
+    const wrapperTypeName = maybeEntryPointWrapper?.getAliasSymbol()?.getName();
+    if (wrapperTypeName !== 'EntryPoint') {
+      // TODO: Should warn here that we found an invalid type.
+      return;
+    }
+
+    const maybeModuleTypeWrapper = maybeEntryPointWrapper
+      ?.getAliasTypeArguments() // [ModuleType<'/hello#banner'>]
+      .at(0) // ModuleType<'/hello#banner'>
+      ?.getCallSignatures() // [(props: PastoriaPageProps<'/hello#banner'>) => Element]
+      .at(0) // (props: PastoriaPageProps<'/hello#banner'>) => Element
+      ?.getParameters() // [props: PastoriaPageProps<'/hello#banner'>]
+      .at(0) // props: PastoriaPageProps<'/hello#banner'>
+      ?.getTypeAtLocation(sourceFile); // PastoriaPageProps<'/hello#banner'>
+
+    const moduleTypeName = maybeModuleTypeWrapper?.getAliasSymbol()?.getName();
+    if (moduleTypeName !== 'PastoriaPageProps') {
+      // TODO: Should warn here that we found an invalid type.
+      return;
+    }
+
+    const resourceTypeName = maybeModuleTypeWrapper
+      ?.getAliasTypeArguments()
+      .at(0)
+      ?.getLiteralValue();
+
+    if (typeof resourceTypeName !== 'string') {
+      // TODO: Should warn here that we found an invalid type.
+      return;
+    }
+
+    entryPoints.set(prop.getName(), resourceTypeName);
+  });
+
+  return entryPoints;
 }
