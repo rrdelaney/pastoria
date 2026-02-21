@@ -310,7 +310,7 @@ function router__createPathForRoute(
 
   Object.entries(params).forEach(([key, value]) => {
     if (value != null) {
-      const paramPattern = `:${key}`;
+      const paramPattern = `[${key}]`;
       if (pathname.includes(paramPattern)) {
         pathname = pathname.replace(
           paramPattern,
