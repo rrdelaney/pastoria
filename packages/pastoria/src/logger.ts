@@ -9,6 +9,10 @@ export function logInfo(...messages: string[]) {
   logger.info(messages.join(' '), {timestamp: true});
 }
 
+export const warnLogger = createLogger('warn', {
+  prefix: pc.yellow('[! warn !]'),
+});
+
 export function logWarn(...messages: string[]) {
-  logger.warn(messages.join(' '), {timestamp: true});
+  warnLogger.warn(messages.join(' '), {timestamp: true});
 }

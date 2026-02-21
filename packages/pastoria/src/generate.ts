@@ -37,6 +37,7 @@ import {
   SyntaxKind,
   ts,
   Type,
+  TypeChecker,
   TypeFlags,
   VariableDeclarationKind,
 } from 'ts-morph';
@@ -145,6 +146,7 @@ function escapeResourceName(routeName: string): string {
     .replace(/\[(\w+)\]/g, '$$$1')
     .replace(/\//g, '_')
     .replace(/^_/, '')
+    .replace(/#/, '_')
     .replace(/_$/, '');
 }
 
@@ -680,7 +682,9 @@ declare global {
   };
 
   type GetPreloadProps<R extends PastoriaRouteName> = (params: PastoriaPreloadPropsHelpers[R]) =>
-    PreloadProps<PastoriaPreloadPropsParams[R], PastoriaPageQueries[R], PastoriaPageEntryPoints[R], {}>
+    PreloadProps<PastoriaPreloadPropsParams[R], PastoriaPageQueries[R], PastoriaPageEntryPoints[R], {}>;
+
+  type ModuleParams<T extends PastoriaRouteName> = PastoriaPreloadPropsParams[T]
 }
 `);
 
@@ -720,6 +724,7 @@ declare global {
   }
 
   private async generateSingleEntryPointFile(entryPointSourceFile: SourceFile) {
+    const tc = this.getTypeChecker();
     const resourceName =
       this.resourceNameForPastoriaSourceFile(entryPointSourceFile);
     const fileName = this.entryPointFileNameForResource(entryPointSourceFile);
@@ -737,11 +742,14 @@ declare global {
       {overwrite: true},
     );
 
+    // Exported queries from the source file.
     const queries =
       getExportedQueriesFromPastoriaSourceFile(entryPointSourceFile);
-    // TODO: Generate EntryPoint helpers using these.
-    const nestedEntryPoints =
-      getExportedEntryPointsFromPastoriaSourceFile(entryPointSourceFile);
+    // Exported nested entry poitns from the source file.
+    const nestedEntryPoints = getExportedEntryPointsFromPastoriaSourceFile(
+      entryPointSourceFile,
+      tc,
+    );
 
     // Collect parameters from query variables
     const params = collectQueryParameters(
@@ -777,7 +785,12 @@ declare global {
     importDeclarations.push(
       {
         moduleSpecifier: 'react-relay/hooks',
-        namedImports: ['EntryPoint', 'ThinQueryParams'],
+        namedImports: [
+          'EntryPoint',
+          'ThinNestedEntryPointParams',
+          'ThinQueryParams',
+        ],
+        isTypeOnly: true,
       },
       {
         moduleSpecifier: 'zod/v4-mini',
@@ -790,7 +803,6 @@ declare global {
     );
 
     // Generate schema - prefer copying from page.tsx if exported
-    const tc = this.getTypeChecker();
     // TODO: Copy the original page file and remove everything but `schema` and the variables it uses.
     const schemaCode = getSchemaCode(
       entryPointSourceFile,
@@ -828,6 +840,7 @@ declare global {
                     resourceName,
                     getPreloadProps,
                     queries,
+                    nestedEntryPoints,
                   );
                 } else {
                   this.writeStandaloneEntryPoint(writer, resourceName, queries);
@@ -862,18 +875,49 @@ declare global {
     // PreloadPropsHelpers exports is used by PastoriaPreloadPropsParams in router.tsx as a helper
     // type for routes that overload and export getPreloadProps.
     trailingStatements.push(`\ntype PreloadPropsHelpers = {
-  variables: z.output<typeof schema>,
+  variables: z.output<typeof schema>;
   queries: {
-    ${Array.from(queries.entries()).map(([queryAlias, queryName]) => {
-      importDeclarations.push({
-        moduleSpecifier: `#genfiles/queries/${queryName}.graphql`,
-        namedImports: [queryName, `${queryName}$variables`],
-        isTypeOnly: true,
-      });
+    ${Array.from(queries)
+      .map(([queryAlias, queryName]) => {
+        importDeclarations.push({
+          moduleSpecifier: `#genfiles/queries/${queryName}.graphql`,
+          namedImports: [queryName, `${queryName}$variables`],
+          isTypeOnly: true,
+        });
 
-      return `${queryAlias}: (variables: ${queryName}$variables) => ThinQueryParams<${queryName}>`;
-    })}
-  },
+        return `${queryAlias}: (variables: ${queryName}$variables) => ThinQueryParams<${queryName}>`;
+      })
+      .join(',\n')}
+  };
+  entryPoints: {
+    ${Array.from(nestedEntryPoints)
+      .map(([entryPointAlias, resourceName]) => {
+        const escapedResourceName = escapeResourceName(resourceName);
+        importDeclarations.push({
+          moduleSpecifier: `./${escapedResourceName}.entrypoint`,
+          namedImports: [
+            {
+              name: 'entrypoint',
+              alias: `${escapedResourceName}_entrypoint`,
+            },
+            {
+              name: 'schema',
+              alias: `${escapedResourceName}_schema`,
+            },
+          ],
+        });
+
+        return `${entryPointAlias}: (
+          entryPointParams: z.output<typeof ${escapedResourceName}_schema>
+        ) => ThinNestedEntryPointParams<
+          EntryPoint<
+            ModuleType<'${resourceName}'>,
+            ModuleParams<'${resourceName}'>
+          >
+        >`;
+      })
+      .join(',\n')}
+  }
 };\n`);
 
     // Re-export the normalized types and schemas.
@@ -950,6 +994,7 @@ declare global {
     resourceName: string,
     getPreloadProps: ExportedDeclarations,
     queries: Map<string, string>,
+    nestedEntryPoints: Map<string, string>,
   ) {
     const getPreloadPropsFunctionExpression = getPreloadProps
       .asKind(SyntaxKind.VariableDeclaration)
@@ -968,13 +1013,25 @@ declare global {
         `return (${getPreloadPropsFunctionExpression})({
   variables: $variables,
   queries: {
-    ${Array.from(queries).map(([queryAlias, queryName]) => {
-      return `['${queryAlias}']: (variables) => ({
+    ${Array.from(queries)
+      .map(([queryAlias, queryName]) => {
+        return `['${queryAlias}']: (variables) => ({
         parameters: ${queryName}Parameters,
         variables,
-      }),`;
-    })}
-  }
+      })`;
+      })
+      .join(',\n')}
+  },
+  entryPoints: {
+    ${Array.from(nestedEntryPoints)
+      .map(([entryPointAlias, resourceName]) => {
+        return `['${entryPointAlias}']: (entryPointParams) => ({
+        entryPoint: ${escapeResourceName(resourceName)}_entrypoint,
+        entryPointParams,
+      })`;
+      })
+      .join(',\n')}
+  },
 } satisfies PreloadPropsHelpers);`,
       );
     });
@@ -1094,7 +1151,10 @@ function getExportedQueriesFromPastoriaSourceFile(sourceFile: SourceFile) {
  * @param sourceFile Source file under #pastoria
  * @returns Map of entry point alias to entry point name ({epRef -> #pastoria/details/[name]#banner})
  */
-function getExportedEntryPointsFromPastoriaSourceFile(sourceFile: SourceFile) {
+function getExportedEntryPointsFromPastoriaSourceFile(
+  sourceFile: SourceFile,
+  tc: ts.TypeChecker,
+) {
   const entryPointsType = sourceFile
     .getExportedDeclarations()
     .get('EntryPoints')
@@ -1112,7 +1172,9 @@ function getExportedEntryPointsFromPastoriaSourceFile(sourceFile: SourceFile) {
 
     const wrapperTypeName = maybeEntryPointWrapper?.getAliasSymbol()?.getName();
     if (wrapperTypeName !== 'EntryPoint') {
-      // TODO: Should warn here that we found an invalid type.
+      logWarn(
+        `Found invalid type exported in EntryPoints: ${!maybeEntryPointWrapper ? 'unknown' : tc.typeToString(maybeEntryPointWrapper.compilerType)}`,
+      );
       return;
     }
 
@@ -1127,7 +1189,9 @@ function getExportedEntryPointsFromPastoriaSourceFile(sourceFile: SourceFile) {
 
     const moduleTypeName = maybeModuleTypeWrapper?.getAliasSymbol()?.getName();
     if (moduleTypeName !== 'PastoriaPageProps') {
-      // TODO: Should warn here that we found an invalid type.
+      logWarn(
+        `Found invalid type exported in EntryPoints: ${!maybeEntryPointWrapper ? 'unknown' : tc.typeToString(maybeEntryPointWrapper.compilerType)}`,
+      );
       return;
     }
 
@@ -1137,7 +1201,9 @@ function getExportedEntryPointsFromPastoriaSourceFile(sourceFile: SourceFile) {
       ?.getLiteralValue();
 
     if (typeof resourceTypeName !== 'string') {
-      // TODO: Should warn here that we found an invalid type.
+      logWarn(
+        `Found invalid type exported in EntryPoints: ${!maybeEntryPointWrapper ? 'unknown' : tc.typeToString(maybeEntryPointWrapper.compilerType)}`,
+      );
       return;
     }
 

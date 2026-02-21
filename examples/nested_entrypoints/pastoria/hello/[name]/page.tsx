@@ -15,8 +15,14 @@ export type Queries = {
 };
 
 export type EntryPoints = {
-  searchResults: EntryPoint<ModuleType<'/hello/[name]#results'>>;
-  helloBanner: EntryPoint<ModuleType<'/hello/[name]#banner'>>;
+  searchResults: EntryPoint<
+    ModuleType<'/hello/[name]#results'>,
+    ModuleParams<'/hello/[name]#results'>
+  >;
+  helloBanner: EntryPoint<
+    ModuleType<'/hello/[name]#banner'>,
+    ModuleParams<'/hello/[name]#banner'>
+  >;
 };
 
 export const schema = z.object({
@@ -26,6 +32,7 @@ export const schema = z.object({
 
 export const getPreloadProps: GetPreloadProps<'/hello/[name]'> = ({
   queries,
+  entryPoints,
   variables,
 }) => {
   return {
@@ -33,8 +40,8 @@ export const getPreloadProps: GetPreloadProps<'/hello/[name]'> = ({
       nameQuery: queries.nameQuery({name: variables.name}),
     },
     entryPoints: {
-      helloBanner: null!,
-      searchResults: null!,
+      helloBanner: entryPoints.helloBanner({}),
+      searchResults: entryPoints.searchResults({q: variables.q ?? undefined}),
     },
   };
 };

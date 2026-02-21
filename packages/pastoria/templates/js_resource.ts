@@ -18,7 +18,7 @@ export class JSResource<M extends ModuleId>
   }
 
   private static readonly resourceCache = new Map<ModuleId, JSResource<any>>();
-  static fromModuleId<M extends ModuleId>(moduleId: M) {
+  static fromModuleId<M extends ModuleId>(moduleId: M): JSResource<M> {
     if (JSResource.resourceCache.has(moduleId)) {
       return JSResource.resourceCache.get(moduleId)!;
     }
