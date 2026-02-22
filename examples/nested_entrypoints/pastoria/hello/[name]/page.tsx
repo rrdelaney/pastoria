@@ -1,6 +1,6 @@
 import {page_HelloQuery} from '#genfiles/queries/page_HelloQuery.graphql';
 import {ModuleType} from '#genfiles/router/js_resource';
-import {useNavigation, useRouteParams} from '#genfiles/router/router';
+import {useNavigation} from '#genfiles/router/router';
 import {Suspense, useEffect, useState} from 'react';
 import {
   EntryPoint,
@@ -25,6 +25,10 @@ export type EntryPoints = {
   >;
 };
 
+export type ExtraProps = {
+  query: string;
+};
+
 export const schema = z.object({
   name: z.string(),
   q: z.nullish(z.string()),
@@ -43,12 +47,16 @@ export const getPreloadProps: GetPreloadProps<'/hello/[name]'> = ({
       helloBanner: entryPoints.helloBanner({}),
       searchResults: entryPoints.searchResults({q: variables.q ?? undefined}),
     },
+    extraProps: {
+      query: variables.q ?? '',
+    },
   };
 };
 
 export default function HelloWorldPage({
   queries,
   entryPoints,
+  extraProps,
 }: PastoriaPageProps<'/hello/[name]'>) {
   const {greet} = usePreloadedQuery(
     graphql`
@@ -59,8 +67,8 @@ export default function HelloWorldPage({
     queries.nameQuery,
   );
 
-  const {name, q} = useRouteParams('/hello/[name]');
-  const [search, setSearch] = useState(q ?? '');
+  const {name} = queries.nameQuery.variables;
+  const [search, setSearch] = useState(extraProps.query);
 
   const {replaceRoute} = useNavigation();
   useEffect(() => {

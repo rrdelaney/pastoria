@@ -279,15 +279,6 @@ export function usePath() {
   return location.pathname;
 }
 
-export function useRouteParams<R extends RouteId>(
-  routeId: R,
-): z.infer<RouterConf[R]['schema']> {
-  const schema = ROUTER_CONF[routeId].schema;
-  const {location} = useContext(RouterContext);
-
-  return schema.parse(location.params()) as z.infer<RouterConf[R]['schema']>;
-}
-
 function router__createPathForRoute(
   routeId: RouteId,
   inputParams: Record<string, any>,

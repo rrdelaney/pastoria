@@ -1,6 +1,6 @@
 import {page_GreetQuery} from '#genfiles/queries/page_GreetQuery.graphql.js';
 import {page_SearchResultsQuery} from '#genfiles/queries/page_SearchResultsQuery.graphql.js';
-import {useNavigation, useRouteParams} from '#genfiles/router/router.jsx';
+import {useNavigation} from '#genfiles/router/router.jsx';
 import {Suspense, useEffect, useState} from 'react';
 import {graphql, PreloadedQuery, usePreloadedQuery} from 'react-relay';
 
@@ -21,7 +21,7 @@ export default function SearchResultsPage({
     queries.bannerMessage,
   );
 
-  const {q} = useRouteParams('/search');
+  const {q} = queries.searchResults.variables;
   const [search, setSearch] = useState(q ?? '');
 
   const {replaceRoute} = useNavigation();

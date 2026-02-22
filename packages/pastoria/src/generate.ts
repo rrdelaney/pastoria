@@ -302,7 +302,6 @@ export class PastoriaExecutionContext {
     const routerMappingProperties: OptionalKind<PropertyAssignmentStructure>[] =
       [];
 
-    // Newer file-based routing generation.
     for (const {routeName, routePath, sourceFile} of entryPointRoutes) {
       const escapedRouteName = escapeResourceName(routeName);
       importDeclarations.push({
@@ -474,6 +473,7 @@ export class PastoriaExecutionContext {
         namedImports: [
           {name: 'Queries', alias: `${escapedResourceName}_EP_Queries`},
           {name: 'EntryPoints', alias: `${escapedResourceName}_EP_EntryPoints`},
+          {name: 'ExtraProps', alias: `${escapedResourceName}_EP_ExtraProps`},
           {name: 'schema', alias: `${escapedResourceName}_EP_schema`},
           {
             name: 'PreloadPropsHelpers',
@@ -502,11 +502,15 @@ declare global {
     ${pageTypeHelpers.map((r) => `['${r.routeName}']: ${r.escapedResourceName}_EP_EntryPoints`)},
   };
 
+  type PastoriaPageExtraProps = {
+    ${pageTypeHelpers.map((r) => `['${r.routeName}']: ${r.escapedResourceName}_EP_ExtraProps`)},
+  };
+
   type PastoriaPageProps<T extends PastoriaRouteName> = EntryPointProps<
     PastoriaPageQueries[T],
     PastoriaPageEntryPoints[T],
     {},
-    {}
+    PastoriaPageExtraProps[T]
   >;
 
   type PastoriaPreloadPropsParams = {
@@ -518,7 +522,7 @@ declare global {
   };
 
   type GetPreloadProps<R extends PastoriaRouteName> = (params: PastoriaPreloadPropsHelpers[R]) =>
-    PreloadProps<PastoriaPreloadPropsParams[R], PastoriaPageQueries[R], PastoriaPageEntryPoints[R], {}>;
+    PreloadProps<PastoriaPreloadPropsParams[R], PastoriaPageQueries[R], PastoriaPageEntryPoints[R], PastoriaPageExtraProps[R]>;
 
   type ModuleParams<T extends PastoriaRouteName> = PastoriaPreloadPropsParams[T]
 }
@@ -596,11 +600,13 @@ declare global {
     const exportedDecls = entryPointSourceFile.getExportedDeclarations();
     const hasQueriesExport = exportedDecls.has('Queries');
     const hasEntryPointsExport = exportedDecls.has('EntryPoints');
+    const hasExtraPropsExport = exportedDecls.has('ExtraProps');
 
     // Import only the types that are actually exported from page.tsx
     const pageTypeImports: string[] = [];
     if (hasEntryPointsExport) pageTypeImports.push('EntryPoints');
     if (hasQueriesExport) pageTypeImports.push('Queries');
+    if (hasExtraPropsExport) pageTypeImports.push('ExtraProps');
 
     // Imports to be added to the entry point file, added at once at the end for better performance.
     const importDeclarations: OptionalKind<ImportDeclarationStructure>[] = [];
@@ -707,6 +713,9 @@ declare global {
     if (!hasEntryPointsExport) {
       trailingStatements.push('\ntype EntryPoints = {};\n');
     }
+    if (!hasExtraPropsExport) {
+      trailingStatements.push('\ntype ExtraProps = {};\n');
+    }
 
     // PreloadPropsHelpers exports is used by PastoriaPreloadPropsParams in router.tsx as a helper
     // type for routes that overload and export getPreloadProps.
@@ -758,7 +767,7 @@ declare global {
 
     // Re-export the normalized types and schemas.
     trailingStatements.push(
-      `\nexport {entrypoint, schema, type EntryPoints, type Queries, type PreloadPropsHelpers};\n`,
+      `\nexport {entrypoint, schema, type EntryPoints, type Queries, type ExtraProps, type PreloadPropsHelpers};\n`,
     );
 
     sourceFile.addImportDeclarations(importDeclarations);
