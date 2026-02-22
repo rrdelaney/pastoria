@@ -44,6 +44,8 @@ const entrypoint: EntryPoint<
 
 type EntryPoints = {};
 
+type ExtraProps = {};
+
 type PreloadPropsHelpers = {
   variables: z.output<typeof schema>;
   queries: {
@@ -59,6 +61,7 @@ export {
   schema,
   type EntryPoints,
   type Queries,
+  type ExtraProps,
   type PreloadPropsHelpers,
 };
 "
@@ -345,15 +348,6 @@ export async function createRouterApp() {
 export function usePath() {
   const { location } = useContext(RouterContext);
   return location.pathname;
-}
-
-export function useRouteParams<R extends RouteId>(
-  routeId: R,
-): z.infer<RouterConf[R]['schema']> {
-  const schema = ROUTER_CONF[routeId].schema;
-  const { location } = useContext(RouterContext);
-
-  return schema.parse(location.params()) as z.infer<RouterConf[R]['schema']>;
 }
 
 function router__createPathForRoute(
@@ -897,15 +891,6 @@ export function usePath() {
   return location.pathname;
 }
 
-export function useRouteParams<R extends RouteId>(
-  routeId: R,
-): z.infer<RouterConf[R]['schema']> {
-  const schema = ROUTER_CONF[routeId].schema;
-  const { location } = useContext(RouterContext);
-
-  return schema.parse(location.params()) as z.infer<RouterConf[R]['schema']>;
-}
-
 function router__createPathForRoute(
   routeId: RouteId,
   inputParams: Record<string, any>,
@@ -1202,6 +1187,8 @@ type Queries = {};
 
 type EntryPoints = {};
 
+type ExtraProps = {};
+
 type PreloadPropsHelpers = {
   variables: z.output<typeof schema>;
   queries: {};
@@ -1213,6 +1200,7 @@ export {
   schema,
   type EntryPoints,
   type Queries,
+  type ExtraProps,
   type PreloadPropsHelpers,
 };
 "
