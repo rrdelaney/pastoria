@@ -84,14 +84,6 @@ pnpm publish -r
 
 ### Code Generation System (`packages/pastoria/src/generate.ts`)
 
-The `pastoria gen` command scans TypeScript files for JSDoc annotations to
-generate type-safe routing and resource loading code for framework users:
-
-- **`@route <route-name>`**: Marks a function/component as a route handler
-- **`@param <name> <type>`**: Documents route parameters (generates Zod schemas
-  for validation)
-- **`@resource <resource-name>`**: Marks exports for lazy loading
-
 Generated files (in user projects) are placed in `__generated__/router/`:
 
 - `js_resource.ts`: Resource configuration for lazy loading
@@ -157,15 +149,6 @@ The `pastoria dev` command:
 - Loads server entry via `vite.ssrLoadModule()` for live updates
 - Serves both static assets and SSR routes
 - Reads persisted queries JSON on each request
-
-### Framework User Project Conventions
-
-User projects are expected to have:
-
-- `__generated__/router/persisted_queries.json`: Persisted query map (from Relay
-  compiler)
-- Route components with JSDoc annotations (`@route`, `@param`)
-- Resource exports with JSDoc annotation (`@resource`)
 
 ### Key Configuration
 

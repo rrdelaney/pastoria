@@ -29,21 +29,11 @@ import {
 import * as z from 'zod/v4-mini';
 import {JSResource, ModuleType} from './js_resource';
 
-/** Mapping of route name to Zod schema for parsing URL params. */
-const ROUTER_SCHEMA = {
-  noop: z.object({}),
-};
-
-/** Type of URL params for a route's EntryPoint type. */
-export type EntryPointParams<R extends keyof typeof ROUTER_SCHEMA> = z.output<
-  (typeof ROUTER_SCHEMA)[R]
->;
-
 type RouterConf = typeof ROUTER_CONF;
 const ROUTER_CONF = {
   noop: {
     entrypoint: null! as EntryPoint<any>,
-    schema: ROUTER_SCHEMA['noop'],
+    schema: null! as z.ZodMiniAny,
   },
 } as const;
 

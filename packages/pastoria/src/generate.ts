@@ -2,20 +2,9 @@
  * @fileoverview Router Code Generator
  *
  * This script generates type-safe router configuration files by scanning TypeScript
- * source code for JSDoc annotations. It's part of the "Pastoria" routing framework.
- *
- * How it works:
- * 1. Scans all TypeScript files in the project for exported functions/classes
- * 2. Looks for JSDoc tags: @route, @resource, @appRoot, and @param
- * 3. Looks for exported classes that extend PastoriaRootContext for GraphQL context
- * 4. Generates files from templates:
- *    - js_resource.ts: Resource configuration for lazy loading
- *    - router.tsx: Client-side router with type-safe routes
+ * source code in the project's `pastoria` directory.
  *
  * Usage:
- * - Add @route <route-name> to functions to create routes
- * - Add @param <name> <type> to document route parameters
- * - Add @resource <resource-name> to exports for lazy loading
  * - Add #pastoria/app.tsx to create a wrapper component for the app
  * - Add #pastoria/environment.ts to configure the application
  * - Add page.tsx files to #pastoria to create new routes
@@ -292,15 +281,9 @@ export class PastoriaExecutionContext {
   }
 
   private async generateRouter() {
-    const {entryPointRoutes, routes, resources, resourceSourceFiles} =
-      this.metadata;
+    const {entryPointRoutes} = this.metadata;
 
     const routerTemplate = await this.loadRouterTemplate('router.tsx');
-    const tc = this.getTypeChecker();
-
-    const routerSchema = routerTemplate
-      .getVariableDeclarationOrThrow('ROUTER_SCHEMA')
-      .getInitializerIfKindOrThrow(SyntaxKind.ObjectLiteralExpression);
 
     const routerConf = routerTemplate
       .getVariableDeclarationOrThrow('ROUTER_CONF')
@@ -311,122 +294,7 @@ export class PastoriaExecutionContext {
       .getVariableDeclarationOrThrow('ROUTE_MAPPING')
       .getInitializerIfKindOrThrow(SyntaxKind.ObjectLiteralExpression);
 
-    routerSchema.getPropertyOrThrow('noop').remove();
     routerConf.getPropertyOrThrow('noop').remove();
-
-    // Legacy @route entry point generation.
-    let entryPointImportIndex = 0;
-    for (let [routeName, {sourceFile, symbol, params}] of routes.entries()) {
-      const filePath = this.relativePathFromRoot(sourceFile);
-      let entryPointExpression: string;
-
-      // Resource-routes are combined declarations of a resource and a route
-      // where we should generate the entrypoint for the route.
-      const isResourceRoute = Array.from(resources.entries()).find(
-        ([, {symbol: resourceSymbol}]) => symbol === resourceSymbol,
-      );
-
-      if (isResourceRoute) {
-        const [resourceName, resource] = isResourceRoute;
-        const entryPointFunctionName = `entrypoint_${resourceName.replace(/\W/g, '')}`;
-
-        const consumedQueries = new Set<string>();
-        routerTemplate.addFunction({
-          name: entryPointFunctionName,
-          returnType: `EntryPoint<ModuleType<'${resourceName}'>, EntryPointParams<'${routeName}'>>`,
-          statements: (writer) => {
-            writer.write('return ').block(() => {
-              this.writeLegacyEntryPoint(
-                writer,
-                consumedQueries,
-                routeName,
-                resourceName,
-                resource,
-              );
-            });
-          },
-        });
-
-        if (params.size === 0 && consumedQueries.size > 0) {
-          params = collectQueryParameters(
-            this.project,
-            Array.from(consumedQueries),
-          );
-        }
-
-        for (const query of consumedQueries) {
-          routerTemplate.addImportDeclaration({
-            moduleSpecifier: `#genfiles/queries/${query}$parameters`,
-            defaultImport: `${query}Parameters`,
-          });
-        }
-
-        entryPointExpression = entryPointFunctionName + '()';
-      } else {
-        const importAlias = `e${entryPointImportIndex++}`;
-        const moduleSpecifier =
-          routerTemplate.getRelativePathAsModuleSpecifierTo(
-            sourceFile.getFilePath(),
-          );
-
-        routerTemplate.addImportDeclaration({
-          moduleSpecifier,
-          namedImports: [
-            {
-              name: symbol.getName(),
-              alias: importAlias,
-            },
-          ],
-        });
-
-        entryPointExpression = importAlias;
-      }
-
-      routerSchema.addPropertyAssignment({
-        name: `"${routeName}"`,
-        initializer: (writer) => {
-          if (params.size === 0) {
-            writer.write(`z.object({})`);
-          } else {
-            writer.writeLine(`z.object({`);
-            for (const [paramName, paramType] of Array.from(params)) {
-              writer.writeLine(
-                `  ${paramName}: ${zodSchemaOfType(routerTemplate, tc, paramType)},`,
-              );
-            }
-
-            writer.writeLine('})');
-          }
-        },
-      });
-
-      routerConf.addPropertyAssignment({
-        name: `"${routeName}"`,
-        initializer: (writer) => {
-          writer
-            .write('{')
-            .indent(() => {
-              writer.writeLine(`entrypoint: ${entryPointExpression},`);
-              writer.writeLine(`schema: ROUTER_SCHEMA["${routeName}"]`);
-            })
-            .write('} as const');
-        },
-      });
-
-      routeMapping.addPropertyAssignment({
-        name: `"${routeName}"`,
-        initializer: `ROUTER_CONF["${routeName}"]`,
-      });
-
-      logInfo(
-        'Created route',
-        pc.cyan(routeName),
-        'for',
-        pc.green(symbol.getName()),
-        'exported from',
-        pc.yellow(filePath),
-      );
-    }
 
     const importDeclarations: OptionalKind<ImportDeclarationStructure>[] = [];
     const routerConfProperties: OptionalKind<PropertyAssignmentStructure>[] =
@@ -484,7 +352,6 @@ export class PastoriaExecutionContext {
   }
 
   private async generateJsResource() {
-    const {resources} = this.metadata;
     const jsResourceTemplate = await this.loadRouterTemplate('js_resource.ts');
 
     const resourceConf = jsResourceTemplate
@@ -493,37 +360,6 @@ export class PastoriaExecutionContext {
       .getExpressionIfKindOrThrow(SyntaxKind.ObjectLiteralExpression);
 
     resourceConf.getPropertyOrThrow('noop').remove();
-
-    // Legacy @resource-style declarations.
-    for (const [resourceName, {sourceFile, symbol}] of resources.entries()) {
-      const filePath = this.relativePathFromRoot(sourceFile);
-      const moduleSpecifier =
-        jsResourceTemplate.getRelativePathAsModuleSpecifierTo(
-          sourceFile.getFilePath(),
-        );
-
-      resourceConf.addPropertyAssignment({
-        name: `"${resourceName}"`,
-        initializer: (writer) => {
-          writer.block(() => {
-            writer
-              .writeLine(`src: "${filePath}",`)
-              .writeLine(
-                `loader: () => import("${moduleSpecifier}").then(m => m.${symbol.getName()})`,
-              );
-          });
-        },
-      });
-
-      logInfo(
-        'Created resource',
-        pc.cyan(resourceName),
-        'for',
-        pc.green(symbol.getName()),
-        'exported from',
-        pc.yellow(filePath),
-      );
-    }
 
     const resourceConfProperies: OptionalKind<PropertyAssignmentStructure>[] =
       [];
@@ -1035,84 +871,6 @@ declare global {
 } satisfies PreloadPropsHelpers);`,
       );
     });
-  }
-
-  private writeLegacyEntryPoint(
-    writer: CodeBlockWriter,
-    consumedQueries: Set<string>,
-    routeName: string,
-    resourceName: string,
-    resource: RouterResource,
-    isRootEntryPoint = true,
-  ) {
-    writer.writeLine(`root: JSResource.fromModuleId('${resourceName}'),`);
-
-    writer
-      .write(`getPreloadProps(${isRootEntryPoint ? 'variables' : ''})`)
-      .block(() => {
-        writer.write('return').block(() => {
-          writer
-            .write('queries:')
-            .block(() => {
-              for (const [queryRef, query] of resource.queries.entries()) {
-                consumedQueries.add(query);
-
-                // Determine which variables this specific query needs
-                const queryVars = collectQueryParameters(this.project, [query]);
-                const hasVariables = queryVars.size > 0;
-
-                writer
-                  .write(`${queryRef}:`)
-                  .block(() => {
-                    writer.writeLine(`parameters: ${query}Parameters,`);
-
-                    if (hasVariables) {
-                      const varNames = Array.from(queryVars.keys());
-                      // Always pick from the variables object
-                      writer.write(`variables: {`);
-                      writer.write(
-                        varNames.map((v) => `${v}: variables.${v}`).join(', '),
-                      );
-                      writer.write(`}`);
-                    } else {
-                      // Query has no variables, pass empty object
-                      writer.write(`variables: {}`);
-                    }
-                    writer.newLine();
-                  })
-                  .write(',');
-              }
-            })
-            .writeLine(',');
-
-          writer.write('entryPoints:').block(() => {
-            for (const [
-              epRef,
-              subresourceName,
-            ] of resource.entryPoints.entries()) {
-              const subresource = this.metadata.resources.get(subresourceName);
-              if (subresource) {
-                writer
-                  .write(`${epRef}:`)
-                  .block(() => {
-                    writer.writeLine(`entryPointParams: {},`);
-                    writer.write('entryPoint:').block(() => {
-                      this.writeLegacyEntryPoint(
-                        writer,
-                        consumedQueries,
-                        routeName,
-                        subresourceName,
-                        subresource,
-                        false,
-                      );
-                    });
-                  })
-                  .writeLine(',');
-              }
-            }
-          });
-        });
-      });
   }
 }
 
