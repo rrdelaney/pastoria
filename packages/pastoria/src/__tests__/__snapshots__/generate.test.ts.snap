@@ -7,7 +7,11 @@ exports[`generatePastoriaArtifacts > dynamic page route with queries > generates
  * Do not modify this file directly.
  */
 import type { Queries } from '../../pastoria/details/[name]/page';
-import { EntryPoint, ThinQueryParams } from 'react-relay/hooks';
+import type {
+  EntryPoint,
+  ThinNestedEntryPointParams,
+  ThinQueryParams,
+} from 'react-relay/hooks';
 import { z } from 'zod/v4-mini';
 import { JSResource, ModuleType } from './js_resource';
 import page_DetailsQueryParameters from '#genfiles/queries/page_DetailsQuery$parameters';
@@ -47,6 +51,7 @@ type PreloadPropsHelpers = {
       variables: page_DetailsQuery$variables,
     ) => ThinQueryParams<page_DetailsQuery>;
   };
+  entryPoints: {};
 };
 
 export {
@@ -96,14 +101,6 @@ import {
 } from 'react-relay/hooks';
 import * as z from 'zod/v4-mini';
 import { JSResource, ModuleType } from './js_resource';
-
-/** Mapping of route name to Zod schema for parsing URL params. */
-const ROUTER_SCHEMA = {};
-
-/** Type of URL params for a route's EntryPoint type. */
-export type EntryPointParams<R extends keyof typeof ROUTER_SCHEMA> = z.output<
-  (typeof ROUTER_SCHEMA)[R]
->;
 
 type RouterConf = typeof ROUTER_CONF;
 const ROUTER_CONF = {} as const;
@@ -371,7 +368,7 @@ function router__createPathForRoute(
 
   Object.entries(params).forEach(([key, value]) => {
     if (value != null) {
-      const paramPattern = \`:\${key}\`;
+      const paramPattern = \`[\${key}]\`;
       if (pathname.includes(paramPattern)) {
         pathname = pathname.replace(
           paramPattern,
@@ -546,7 +543,7 @@ export class JSResource<M extends ModuleId>
   }
 
   private static readonly resourceCache = new Map<ModuleId, JSResource<any>>();
-  static fromModuleId<M extends ModuleId>(moduleId: M) {
+  static fromModuleId<M extends ModuleId>(moduleId: M): JSResource<M> {
     if (JSResource.resourceCache.has(moduleId)) {
       return JSResource.resourceCache.get(moduleId)!;
     }
@@ -642,14 +639,6 @@ import {
   schema as home_EP_schema,
   entrypoint as home_EP_entrypoint,
 } from './home_page.entrypoint';
-
-/** Mapping of route name to Zod schema for parsing URL params. */
-const ROUTER_SCHEMA = {};
-
-/** Type of URL params for a route's EntryPoint type. */
-export type EntryPointParams<R extends keyof typeof ROUTER_SCHEMA> = z.output<
-  (typeof ROUTER_SCHEMA)[R]
->;
 
 type RouterConf = typeof ROUTER_CONF;
 const ROUTER_CONF = {
@@ -929,7 +918,7 @@ function router__createPathForRoute(
 
   Object.entries(params).forEach(([key, value]) => {
     if (value != null) {
-      const paramPattern = \`:\${key}\`;
+      const paramPattern = \`[\${key}]\`;
       if (pathname.includes(paramPattern)) {
         pathname = pathname.replace(
           paramPattern,
@@ -1113,7 +1102,7 @@ export class JSResource<M extends ModuleId>
   }
 
   private static readonly resourceCache = new Map<ModuleId, JSResource<any>>();
-  static fromModuleId<M extends ModuleId>(moduleId: M) {
+  static fromModuleId<M extends ModuleId>(moduleId: M): JSResource<M> {
     if (JSResource.resourceCache.has(moduleId)) {
       return JSResource.resourceCache.get(moduleId)!;
     }
@@ -1189,7 +1178,11 @@ exports[`generatePastoriaArtifacts > simple page route > generates an entrypoint
  * @generated-checksum <STRIPPED>
  * Do not modify this file directly.
  */
-import { EntryPoint, ThinQueryParams } from 'react-relay/hooks';
+import type {
+  EntryPoint,
+  ThinNestedEntryPointParams,
+  ThinQueryParams,
+} from 'react-relay/hooks';
 import { z } from 'zod/v4-mini';
 import { JSResource, ModuleType } from './js_resource';
 
@@ -1212,6 +1205,7 @@ type EntryPoints = {};
 type PreloadPropsHelpers = {
   variables: z.output<typeof schema>;
   queries: {};
+  entryPoints: {};
 };
 
 export {
