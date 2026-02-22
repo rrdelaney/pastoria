@@ -5,8 +5,13 @@ export type Queries = {
   helloBannerRef: banner_HelloBannerQuery;
 };
 
+export type RuntimeProps = {
+  helloMessageSuffix: string;
+};
+
 export default function HelloBanner({
   queries,
+  props,
 }: PastoriaPageProps<'/hello/[name]#banner'>) {
   const {helloMessage} = usePreloadedQuery(
     graphql`
@@ -17,5 +22,10 @@ export default function HelloBanner({
     queries.helloBannerRef,
   );
 
-  return <div className="mb-10">{helloMessage}</div>;
+  return (
+    <div className="mb-10">
+      {helloMessage}
+      {props.helloMessageSuffix}
+    </div>
+  );
 }

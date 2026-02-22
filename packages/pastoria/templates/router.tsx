@@ -20,14 +20,11 @@ import {preinit, preloadModule} from 'react-dom';
 import {
   EntryPoint,
   EntryPointContainer,
-  EntryPointProps,
-  PreloadProps,
   loadEntryPoint,
   RelayEnvironmentProvider,
   useEntryPointLoader,
 } from 'react-relay/hooks';
 import * as z from 'zod/v4-mini';
-import {JSResource, ModuleType} from './js_resource';
 
 type RouterConf = typeof ROUTER_CONF;
 const ROUTER_CONF = {
@@ -216,13 +213,20 @@ export function router__createAppFromEntryPoint(
 
   function RouterCore() {
     const [location, setLocation] = useLocation(initialPath);
-    const routerContextValue = useMemo(
-      (): RouterContextValue => ({
+
+    const routerContextValue = useMemo((): RouterContextValue => {
+      return {
         location,
         setLocation,
-      }),
-      [location, setLocation],
-    );
+      };
+    }, [location, setLocation]);
+
+    const entryPointRuntimeProps = useMemo(() => {
+      return {
+        pathname: location.pathname,
+        searchParams: location.searchParams,
+      };
+    }, [location]);
 
     const [entryPointRef, loadEntryPointRef, _dispose] = useEntryPointLoader(
       provider,
@@ -239,7 +243,10 @@ export function router__createAppFromEntryPoint(
 
     return (
       <RouterContext value={routerContextValue}>
-        <EntryPointContainer entryPointReference={entryPoint} props={{}} />
+        <EntryPointContainer
+          entryPointReference={entryPoint}
+          props={entryPointRuntimeProps}
+        />
       </RouterContext>
     );
   }

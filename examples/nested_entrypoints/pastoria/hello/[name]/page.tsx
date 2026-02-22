@@ -57,6 +57,7 @@ export default function HelloWorldPage({
   queries,
   entryPoints,
   extraProps,
+  props,
 }: PastoriaPageProps<'/hello/[name]'>) {
   const {greet} = usePreloadedQuery(
     graphql`
@@ -85,16 +86,18 @@ export default function HelloWorldPage({
     <div className="flex min-h-screen flex-col items-center justify-start pt-36">
       <EntryPointContainer
         entryPointReference={entryPoints.helloBanner}
-        props={{}}
+        props={{helloMessageSuffix: '!'}}
       />
-
+      The URL you are currently visiting is:{' '}
+      <code>
+        {props.pathname}?{props.searchParams.toString()}
+      </code>
       <input
         value={search}
         onChange={(e) => setSearch(e.target.value)}
         placeholder={`${greet} Search for cities...`}
         className="mb-24 min-w-lg rounded-lg border border-gray-400 p-4"
       />
-
       <Suspense fallback="Loading...">
         <EntryPointContainer
           entryPointReference={entryPoints.searchResults}

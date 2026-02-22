@@ -473,6 +473,10 @@ export class PastoriaExecutionContext {
         namedImports: [
           {name: 'Queries', alias: `${escapedResourceName}_EP_Queries`},
           {name: 'EntryPoints', alias: `${escapedResourceName}_EP_EntryPoints`},
+          {
+            name: 'RuntimeProps',
+            alias: `${escapedResourceName}_EP_RuntimeProps`,
+          },
           {name: 'ExtraProps', alias: `${escapedResourceName}_EP_ExtraProps`},
           {name: 'schema', alias: `${escapedResourceName}_EP_schema`},
           {
@@ -502,6 +506,10 @@ declare global {
     ${pageTypeHelpers.map((r) => `['${r.routeName}']: ${r.escapedResourceName}_EP_EntryPoints`)},
   };
 
+  type PastoriaPageRuntimeProps = {
+    ${pageTypeHelpers.map((r) => `['${r.routeName}']: ${r.escapedResourceName}_EP_RuntimeProps`)},
+  };
+
   type PastoriaPageExtraProps = {
     ${pageTypeHelpers.map((r) => `['${r.routeName}']: ${r.escapedResourceName}_EP_ExtraProps`)},
   };
@@ -509,7 +517,7 @@ declare global {
   type PastoriaPageProps<T extends PastoriaRouteName> = EntryPointProps<
     PastoriaPageQueries[T],
     PastoriaPageEntryPoints[T],
-    {},
+    PastoriaPageRuntimeProps[T],
     PastoriaPageExtraProps[T]
   >;
 
@@ -568,6 +576,7 @@ declare global {
     const resourceName =
       this.resourceNameForPastoriaSourceFile(entryPointSourceFile);
     const fileName = this.entryPointFileNameForResource(entryPointSourceFile);
+    const isRoutable = entryPointSourceFile.getFilePath().endsWith('page.tsx');
 
     // Create source file with header comment
     const warningComment = `/*
@@ -601,12 +610,20 @@ declare global {
     const hasQueriesExport = exportedDecls.has('Queries');
     const hasEntryPointsExport = exportedDecls.has('EntryPoints');
     const hasExtraPropsExport = exportedDecls.has('ExtraProps');
+    const hasRuntimePropsExport = exportedDecls.has('RuntimeProps');
+
+    if (hasRuntimePropsExport && isRoutable) {
+      logWarn(
+        `Route ${resourceName} has an exported RuntimeProps. Runtime props for routable resources are automatically generated and should not be overridden. This may cause type and runtime errors.`,
+      );
+    }
 
     // Import only the types that are actually exported from page.tsx
     const pageTypeImports: string[] = [];
     if (hasEntryPointsExport) pageTypeImports.push('EntryPoints');
     if (hasQueriesExport) pageTypeImports.push('Queries');
     if (hasExtraPropsExport) pageTypeImports.push('ExtraProps');
+    if (hasRuntimePropsExport) pageTypeImports.push('RuntimeProps');
 
     // Imports to be added to the entry point file, added at once at the end for better performance.
     const importDeclarations: OptionalKind<ImportDeclarationStructure>[] = [];
@@ -713,6 +730,15 @@ declare global {
     if (!hasEntryPointsExport) {
       trailingStatements.push('\ntype EntryPoints = {};\n');
     }
+    if (!hasRuntimePropsExport) {
+      if (isRoutable) {
+        trailingStatements.push(
+          '\ntype RuntimeProps = { pathname: string, searchParams: URLSearchParams };\n',
+        );
+      } else {
+        trailingStatements.push('\ntype RuntimeProps = {};\n');
+      }
+    }
     if (!hasExtraPropsExport) {
       trailingStatements.push('\ntype ExtraProps = {};\n');
     }
@@ -767,7 +793,7 @@ declare global {
 
     // Re-export the normalized types and schemas.
     trailingStatements.push(
-      `\nexport {entrypoint, schema, type EntryPoints, type Queries, type ExtraProps, type PreloadPropsHelpers};\n`,
+      `\nexport {entrypoint, schema, type EntryPoints, type Queries, type RuntimeProps, type ExtraProps, type PreloadPropsHelpers};\n`,
     );
 
     sourceFile.addImportDeclarations(importDeclarations);
