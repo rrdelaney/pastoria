@@ -1,7 +1,7 @@
 import * as path from 'node:path';
 import pc from 'picocolors';
 import {Project, SourceFile, Symbol, SyntaxKind, ts} from 'ts-morph';
-import {logWarn} from './logger.js';
+import {logInfo, logWarn} from './logger.js';
 
 export interface ExportedSymbol {
   sourceFile: SourceFile;
@@ -35,9 +35,6 @@ export interface ServerRoute extends ExportedSymbol {
   routePath: string;
 }
 
-/** Regex to quickly check if a file contains any Pastoria JSDoc tags. */
-const PASTORIA_TAG_REGEX = /@(route|resource|param)\b/;
-
 export class PastoriaMetadata {
   /**
    * Files reserved by Pastoria that cannot be entry points.
@@ -65,9 +62,13 @@ export class PastoriaMetadata {
   readonly resourceSourceFiles: SourceFile[];
 
   constructor(project: Project, projectDir: string) {
+    logInfo('Collecting server routes...');
     this.serverRoutes = this.collectServerRoutes(project);
+    logInfo('Collecting entry points...');
     this.entryPointRoutes = this.collectEntryPointRoutes(project);
+    logInfo('Collecting resources...');
     this.resourceSourceFiles = this.collectResourceFiles(project, projectDir);
+    logInfo('Metadata complete');
   }
 
   private collectServerRoutes(project: Project): ServerRoute[] {
