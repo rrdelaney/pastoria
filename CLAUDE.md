@@ -164,8 +164,8 @@ export default function AppRoot({children}: PropsWithChildren) {
 ```
 
 The generate pipeline is a three-step sequence: `grats` (GraphQL schema from TS
-JSDoc) → `relay-compiler` (Relay query artifacts) → `pastoria generate`
-(router, entrypoints, types).
+JSDoc) → `relay-compiler` (Relay query artifacts) → `pastoria generate` (router,
+entrypoints, types).
 
 ## File-Based Routing
 
@@ -248,7 +248,9 @@ export type Queries = {
   hello: page_HelloQuery;
 };
 
-export default function HelloPage({queries}: PastoriaPageProps<'/hello/[name]'>) {
+export default function HelloPage({
+  queries,
+}: PastoriaPageProps<'/hello/[name]'>) {
   const {greet} = usePreloadedQuery(
     graphql`
       query page_HelloQuery($name: String!) @preloadable {
@@ -281,13 +283,13 @@ export default function Page({
 
 ### Exports a Page Can Have
 
-| Export             | Required | Purpose                                           |
-| ------------------ | -------- | ------------------------------------------------- |
-| `default`          | Yes      | React component                                   |
-| `type Queries`     | No       | Map of query ref name → Relay query type          |
-| `type EntryPoints` | No       | Map of entrypoint name → Relay EntryPoint type    |
+| Export             | Required | Purpose                                            |
+| ------------------ | -------- | -------------------------------------------------- |
+| `default`          | Yes      | React component                                    |
+| `type Queries`     | No       | Map of query ref name → Relay query type           |
+| `type EntryPoints` | No       | Map of entrypoint name → Relay EntryPoint type     |
 | `type ExtraProps`  | No       | Extra data shape from `getPreloadProps`            |
-| `schema`           | No       | Zod schema for URL param parsing                  |
+| `schema`           | No       | Zod schema for URL param parsing                   |
 | `getPreloadProps`  | No       | Custom preload function (auto-generated if absent) |
 
 **Do NOT export `RuntimeProps` from a `page.tsx`** — pages automatically receive
@@ -296,8 +298,8 @@ export default function Page({
 ### `getPreloadProps`
 
 Controls how URL params map to query variables and which nested entrypoints to
-load. If not exported, Pastoria auto-generates one that wires all query variables
-from URL params.
+load. If not exported, Pastoria auto-generates one that wires all query
+variables from URL params.
 
 ```tsx
 export const getPreloadProps: GetPreloadProps<'/hello/[name]'> = ({
@@ -326,7 +328,10 @@ For computed/derived data that doesn't come from queries or URL params. Set in
 ```tsx
 export type ExtraProps = {query: string; sortBy: string};
 
-export const getPreloadProps: GetPreloadProps<'/'> = ({variables, queries}) => ({
+export const getPreloadProps: GetPreloadProps<'/'> = ({
+  variables,
+  queries,
+}) => ({
   queries: {commandersRef: queries.commandersRef(variables)},
   extraProps: {
     sortBy: variables.sortBy ?? 'POPULARITY',
@@ -378,7 +383,12 @@ export default function Banner({
   props, // RuntimeProps
 }: PastoriaPageProps<'/hello/[name]#banner'>) {
   const data = usePreloadedQuery(graphql`...`, queries.bannerRef);
-  return <div>{data.message}{props.helloMessageSuffix}</div>;
+  return (
+    <div>
+      {data.message}
+      {props.helloMessageSuffix}
+    </div>
+  );
 }
 ```
 
@@ -389,16 +399,20 @@ navigation):
 
 ```tsx
 export const getPreloadProps: GetPreloadProps<'/commander/[commander]'> = ({
-  variables, queries, entryPoints,
+  variables,
+  queries,
+  entryPoints,
 }) => ({
   queries: {shell: queries.shell({commander: variables.commander})},
   entryPoints: {
-    entries: variables.tab === 'entries'
-      ? entryPoints.entries({commander: variables.commander})
-      : undefined,
-    staples: variables.tab === 'staples'
-      ? entryPoints.staples({commander: variables.commander})
-      : undefined,
+    entries:
+      variables.tab === 'entries'
+        ? entryPoints.entries({commander: variables.commander})
+        : undefined,
+    staples:
+      variables.tab === 'staples'
+        ? entryPoints.staples({commander: variables.commander})
+        : undefined,
   },
 });
 ```
@@ -487,8 +501,8 @@ generation automatically.
 3. All queries fire in parallel against the server GraphQL environment
 4. Query results are serialized into `window.__router_ops`
 5. React renders to a pipeable stream with hydration bootstrapping
-6. Vite manifest is walked to inject `<link rel="modulepreload">` and
-   stylesheet `preinit` calls
+6. Vite manifest is walked to inject `<link rel="modulepreload">` and stylesheet
+   `preinit` calls
 
 **Client-side:**
 
@@ -534,11 +548,19 @@ Lists use `usePaginationFragment` with `@connection` and `@refetchable`:
 const {data, loadNext, hasNext} = usePaginationFragment(
   graphql`
     fragment page_commanders on Query
-    @argumentDefinitions(cursor: {type: "String"}, count: {type: "Int", defaultValue: 48})
+    @argumentDefinitions(
+      cursor: {type: "String"}
+      count: {type: "Int", defaultValue: 48}
+    )
     @refetchable(queryName: "CommandersPaginationQuery") {
       commanders(first: $count, after: $cursor)
         @connection(key: "page__commanders") {
-        edges { node { id ...CommanderCard } }
+        edges {
+          node {
+            id
+            ...CommanderCard
+          }
+        }
       }
     }
   `,
@@ -562,11 +584,16 @@ Tabs are modeled as URL params. `getPreloadProps` conditionally loads the
 relevant nested entrypoint, and the page renders it inside `<Suspense>`:
 
 ```tsx
-{entryPoints.entries && (
-  <Suspense fallback={<Loading />}>
-    <EntryPointContainer entryPointReference={entryPoints.entries} props={{}} />
-  </Suspense>
-)}
+{
+  entryPoints.entries && (
+    <Suspense fallback={<Loading />}>
+      <EntryPointContainer
+        entryPointReference={entryPoints.entries}
+        props={{}}
+      />
+    </Suspense>
+  );
+}
 ```
 
 ## Development Notes

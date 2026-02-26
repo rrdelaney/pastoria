@@ -79,7 +79,9 @@ async function main() {
       const dest = path.join(destDir, 'SKILL.md');
       await mkdir(destDir, {recursive: true});
       await copyFile(src, dest);
-      logInfo(`Installed Pastoria skill to ${path.relative(process.cwd(), dest)}`);
+      logInfo(
+        `Installed Pastoria skill to ${path.relative(process.cwd(), dest)}`,
+      );
     });
 
   program.parseAsync();
