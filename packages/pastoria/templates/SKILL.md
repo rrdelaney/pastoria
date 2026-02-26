@@ -1,6 +1,9 @@
 ---
 name: pastoria
-description: Create and modify pages, routes, nested entrypoints, and Relay queries in this Pastoria app. Use this skill when adding new pages, routes, components with GraphQL data, or modifying the routing structure.
+description:
+  Create and modify pages, routes, nested entrypoints, and Relay queries in this
+  Pastoria app. Use this skill when adding new pages, routes, components with
+  GraphQL data, or modifying the routing structure.
 ---
 
 # Pastoria App Reference
@@ -17,7 +20,7 @@ pastoria/              # All routes and app config
   globals.css          # Global styles (typically imports tailwindcss)
   <route>/page.tsx     # Routable pages
   <route>/other.tsx    # Nested entrypoints (lazy sub-components)
-  api/**/route.ts      # Server API routes (Express handlers)
+  <route>/route.ts     # Server API routes (Express handlers)
 __generated__/         # Generated code — never hand-edit
   router/              # Pastoria-generated router, entrypoints, types
   queries/             # Relay-generated query artifacts
@@ -31,15 +34,14 @@ Required path aliases (in `package.json` `"imports"` and `tsconfig.json`
 
 ## File-Based Routing Conventions
 
-| File pattern | Result |
-| --- | --- |
-| `pastoria/<path>/page.tsx` | Route at `/<path>` |
+| File pattern                       | Result                            |
+| ---------------------------------- | --------------------------------- |
+| `pastoria/<path>/page.tsx`         | Route at `/<path>`                |
 | `pastoria/<path>/[param]/page.tsx` | Dynamic route at `/<path>/:param` |
-| `pastoria/<path>/other.tsx` | Nested entrypoint `/<path>#other` |
-| `pastoria/api/<path>/route.ts` | Express API handler at `/api/<path>` |
+| `pastoria/<path>/other.tsx`        | Nested entrypoint `/<path>#other` |
+| `pastoria/<path>/route.ts`         | Express API handler at `/<path>`  |
 
-Reserved files (never treated as routes): `app.tsx`, `app.ts`,
-`environment.ts`.
+Reserved files (never treated as routes): `app.tsx`, `app.ts`, `environment.ts`.
 
 ## Pages
 
@@ -90,7 +92,9 @@ export default function UserPage({queries}: PastoriaPageProps<'/user/[id]'>) {
   const data = usePreloadedQuery(
     graphql`
       query page_UserQuery($id: String!) @preloadable {
-        user(id: $id) { name }
+        user(id: $id) {
+          name
+        }
       }
     `,
     queries.user,
@@ -131,9 +135,10 @@ export const getPreloadProps: GetPreloadProps<'/my-route/[id]'> = ({
     user: queries.user({id: variables.id}),
   },
   entryPoints: {
-    details: variables.tab === 'details'
-      ? entryPoints.details({id: variables.id})
-      : undefined,
+    details:
+      variables.tab === 'details'
+        ? entryPoints.details({id: variables.id})
+        : undefined,
   },
   extraProps: {
     tab: variables.tab ?? 'overview',
@@ -150,7 +155,9 @@ export type ExtraProps = {tab: string};
 
 // Set via getPreloadProps: extraProps: { tab: variables.tab ?? 'overview' }
 
-export default function MyPage({extraProps}: PastoriaPageProps<'/my-route/[id]'>) {
+export default function MyPage({
+  extraProps,
+}: PastoriaPageProps<'/my-route/[id]'>) {
   const [tab, setTab] = useState(extraProps.tab);
   // ...
 }
@@ -158,14 +165,14 @@ export default function MyPage({extraProps}: PastoriaPageProps<'/my-route/[id]'>
 
 ## Page Exports Reference
 
-| Export | Required | Purpose |
-| --- | --- | --- |
-| `default` | Yes | React component |
-| `type Queries` | No | Map of query ref name to Relay query type |
-| `type EntryPoints` | No | Map of entrypoint name to Relay EntryPoint type |
-| `type ExtraProps` | No | Extra data shape from `getPreloadProps` |
-| `schema` | No | Zod schema for URL param parsing |
-| `getPreloadProps` | No | Custom preload function (auto-generated if absent) |
+| Export             | Required | Purpose                                            |
+| ------------------ | -------- | -------------------------------------------------- |
+| `default`          | Yes      | React component                                    |
+| `type Queries`     | No       | Map of query ref name to Relay query type          |
+| `type EntryPoints` | No       | Map of entrypoint name to Relay EntryPoint type    |
+| `type ExtraProps`  | No       | Extra data shape from `getPreloadProps`            |
+| `schema`           | No       | Zod schema for URL param parsing                   |
+| `getPreloadProps`  | No       | Custom preload function (auto-generated if absent) |
 
 Pages must NOT export `RuntimeProps`. Pages automatically receive
 `{pathname: string; searchParams: URLSearchParams}` as RuntimeProps.
@@ -177,18 +184,18 @@ component props:
 
 ```tsx
 export default function Page({
-  queries,     // Preloaded Relay query refs (from type Queries)
+  queries, // Preloaded Relay query refs (from type Queries)
   entryPoints, // Preloaded nested entrypoint refs (from type EntryPoints)
-  props,       // RuntimeProps — for pages: {pathname, searchParams}
-  extraProps,  // Extra static data from getPreloadProps (from type ExtraProps)
+  props, // RuntimeProps — for pages: {pathname, searchParams}
+  extraProps, // Extra static data from getPreloadProps (from type ExtraProps)
 }: PastoriaPageProps<'/route'>) {}
 ```
 
 ## Nested Entrypoints
 
 Any `.tsx` file in `pastoria/` that is not `page.tsx`, `app.tsx`, or
-`environment.ts` becomes a nested entrypoint — a lazily loaded sub-component
-for code-splitting.
+`environment.ts` becomes a nested entrypoint — a lazily loaded sub-component for
+code-splitting.
 
 ### Declaration in the parent page
 
@@ -235,7 +242,9 @@ export default function Details({
   const data = usePreloadedQuery(
     graphql`
       query details_DetailsQuery($id: String!) @preloadable {
-        user(id: $id) { bio }
+        user(id: $id) {
+          bio
+        }
       }
     `,
     queries.detailsRef,
@@ -287,8 +296,8 @@ remaining params in the query string.
 
 - Queries must use `@preloadable` so Relay generates `$parameters` files for
   server-side preloading.
-- Query naming convention: `<filename>_<QueryName>` (e.g. `page_UserQuery` for
-  a query in `page.tsx`, `details_DetailsQuery` for `details.tsx`).
+- Query naming convention: `<filename>_<QueryName>` (e.g. `page_UserQuery` for a
+  query in `page.tsx`, `details_DetailsQuery` for `details.tsx`).
 - Query types are imported from `#genfiles/queries/<queryName>.graphql.js`.
 - Primary page queries use `usePreloadedQuery` — not `useLazyLoadQuery`.
 
