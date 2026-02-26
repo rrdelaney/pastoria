@@ -4,71 +4,99 @@ sidebar_position: 1
 
 # CLI Commands
 
-Pastoria provides a powerful command-line interface for managing your
-application's build process, code generation, and development server. The CLI is
-installed when you create a new Pastoria project and is available through your
-package manager.
+Pastoria provides a command-line interface for code generation, development, and
+production builds. The CLI is installed as the `pastoria` package.
 
-## Available Commands
+## `pastoria generate`
 
-### `pastoria make`
+Generates router artifacts from the files in your `pastoria/` directory. This
+analyzes your TypeScript source files using static analysis and produces:
 
-The main build and code generation command. This orchestrates all the necessary
-code generation steps for your Pastoria application, including GraphQL schema
-generation, Relay compilation, and router configuration.
-
-**Learn more:** [pastoria make](./make.md)
-
-### `pastoria dev`
-
-Starts the development server with hot module reloading. This command runs your
-application locally with Vite middleware for fast refresh and server-side
-rendering.
+- Route configuration and navigation hooks
+- Module registry for code splitting
+- Relay entrypoint definitions with `getPreloadProps`
+- Type-safe `PastoriaPageProps<R>` type augmentations
+- Server route mounts for Express API handlers
 
 ```bash
-$ pastoria dev
+pastoria generate
 ```
 
-### `pastoria build`
-
-_(Deprecated: Use `pastoria make --release` instead)_
-
-Creates production builds of your application, including client and server
-bundles optimized for deployment.
-
-## Quick Start
-
-After creating a new Pastoria project, you'll typically use these commands:
+In most projects, `pastoria generate` is the last step of the full generate
+pipeline:
 
 ```bash
-# Generate all code artifacts (schema, queries, router)
-$ pastoria make
-
-# Start development server
-$ pastoria dev
-
-# Build for production
-$ pastoria make --release
+grats && relay-compiler && pastoria generate
 ```
 
-## Package Scripts
+Or via the conventional script:
 
-Most Pastoria projects include these npm/pnpm scripts in `package.json`:
+```bash
+pnpm generate
+```
+
+## `pastoria dev`
+
+Starts the development server with Vite middleware mode, server-side rendering,
+and hot module replacement.
+
+```bash
+pastoria dev
+pastoria dev --port 4000
+```
+
+Options:
+
+- `--port <port>` — port the dev server listens on (default: `3000`)
+
+When files in `pastoria/` change, code generation runs automatically and the
+page reloads.
+
+## `pastoria build`
+
+Creates optimized production bundles for both client and server:
+
+```bash
+pastoria build
+```
+
+This produces:
+
+- **`dist/client/`** — optimized JavaScript, CSS, and assets for the browser
+- **`dist/server/`** — server-side rendering bundle for Node.js
+
+## `pastoria-server`
+
+The standalone production server (from the `pastoria-server` package). Run it
+after building:
+
+```bash
+NODE_ENV=production pastoria-server
+```
+
+This serves the built application on port 8000, including static files from
+`dist/client/` and server-side rendered pages from `dist/server/`.
+
+## `pastoria add-skill`
+
+Installs the Pastoria Claude Code skill into the current project:
+
+```bash
+pastoria add-skill
+```
+
+This copies the skill manifest to `.claude/skills/pastoria/SKILL.md`, enabling
+Claude Code to understand Pastoria conventions when working in your project.
+
+## Typical package.json scripts
 
 ```json
 {
   "scripts": {
+    "generate": "grats && relay-compiler && pastoria generate",
+    "build": "pastoria build",
     "dev": "pastoria dev",
-    "build": "pastoria make --release",
-    "generate": "pastoria make"
+    "start": "NODE_ENV=production pastoria-server"
   }
 }
-```
-
-This allows you to use familiar commands like:
-
-```bash
-$ pnpm dev
-$ pnpm build
-$ pnpm generate
 ```
