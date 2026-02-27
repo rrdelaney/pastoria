@@ -1,4 +1,4 @@
 User-agent: *
 Allow: /
 
-Sitemap: https://rrdelaney.github.io/pastoria/sitemap.xml
+Sitemap: https://pastoria.org/sitemap.xml
