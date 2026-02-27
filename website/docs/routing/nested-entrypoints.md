@@ -4,7 +4,7 @@ sidebar_position: 3
 
 # Nested Entrypoints
 
-Any `.tsx` file in `pastoria/` that is not `page.tsx`, `app.tsx`, or
+Any `.tsx` file in `pastoria/` that is not `page.tsx`, `app.tsx`, `app.ts`, or
 `environment.ts` becomes a **nested entrypoint** — a lazily loaded sub-component
 for code splitting.
 
@@ -20,7 +20,7 @@ preloaded on the server.
 The parent page declares nested entrypoints using the `EntryPoints` type export:
 
 ```tsx
-import {ModuleType, ModuleParams} from '#genfiles/router/js_resource';
+import {ModuleType} from '#genfiles/router/js_resource';
 import {EntryPoint, EntryPointContainer} from 'react-relay';
 
 export type EntryPoints = {
@@ -30,6 +30,10 @@ export type EntryPoints = {
   >;
 };
 ```
+
+`ModuleType` is imported from the generated module registry. `ModuleParams` is a
+global type declared in the generated `types.ts` and does not need to be
+imported.
 
 The entrypoint ID follows the pattern `/<route>#<filename>` — matching the route
 path with `#` separating the sub-component filename (without `.tsx`).
@@ -109,7 +113,7 @@ Here is a complete parent page with two nested entrypoints:
 
 ```tsx
 import {page_HelloQuery} from '#genfiles/queries/page_HelloQuery.graphql';
-import {ModuleType, ModuleParams} from '#genfiles/router/js_resource';
+import {ModuleType} from '#genfiles/router/js_resource';
 import {useNavigation} from '#genfiles/router/router';
 import {Suspense, useState} from 'react';
 import {
@@ -237,10 +241,22 @@ export default function HelloWorldCityResults({
 
 ## Conditional loading
 
-Entrypoints can be conditionally loaded based on URL params. Use
-`getPreloadProps` to return `undefined` for entrypoints that shouldn't load:
+Entrypoints can be conditionally loaded based on URL params. Mark the fields as
+optional in the `EntryPoints` type and return `undefined` from `getPreloadProps`
+for entrypoints that shouldn't load:
 
 ```tsx
+export type EntryPoints = {
+  details?: EntryPoint<
+    ModuleType<'/users/[id]#details'>,
+    ModuleParams<'/users/[id]#details'>
+  >;
+  activity?: EntryPoint<
+    ModuleType<'/users/[id]#activity'>,
+    ModuleParams<'/users/[id]#activity'>
+  >;
+};
+
 export const getPreloadProps: GetPreloadProps<'/users/[id]'> = ({
   variables,
   queries,

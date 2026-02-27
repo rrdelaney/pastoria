@@ -37,6 +37,28 @@ export default router;
   relative to `/`.
 - API routes support all Express methods (`get`, `post`, `put`, `delete`, etc.).
 
+## Catch-all routes
+
+Use `router.all()` with a splat pattern to forward all requests to middleware or
+external handlers:
+
+```ts
+import express from 'express';
+import {toNodeHandler} from 'better-auth/node';
+import {auth} from '#src/lib/server/auth.js';
+
+const router = express.Router();
+
+router.all('/*splat', (req, res, next) => {
+  toNodeHandler(auth)(req, res).catch(next);
+});
+
+export default router;
+```
+
+This is useful for authentication endpoints, proxying, or any route that needs
+to handle multiple HTTP methods and sub-paths.
+
 ## Code generation
 
 When you add or remove a `route.ts` file, run code generation so the server
@@ -46,4 +68,6 @@ entry picks it up:
 pnpm generate
 ```
 
-In development (`pastoria dev`), this happens automatically.
+Note that `route.ts` changes are not auto-detected by the dev server's file
+watcher (which only watches `.tsx` files). You must run `pnpm generate` manually
+after adding or modifying API routes.

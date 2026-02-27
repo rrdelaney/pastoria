@@ -101,11 +101,22 @@ Controls how URL params map to query variables and which nested entrypoints to
 load. If not exported, Pastoria auto-generates one that wires all query
 variables from URL params.
 
+The function receives a single object with these fields:
+
+- **`variables`** — the Zod-parsed URL params (path params + search params
+  merged and validated against your `schema`)
+- **`queries`** — factory functions keyed by your `Queries` type names; call
+  `queries.<name>(vars)` to create preload params for that query
+- **`entryPoints`** — factory functions keyed by your `EntryPoints` type names;
+  call `entryPoints.<name>(vars)` to create preload params for that entrypoint
+
+It returns an object with `queries`, `entryPoints`, and optionally `extraProps`:
+
 ```tsx
 export const getPreloadProps: GetPreloadProps<'/hello/[name]'> = ({
-  variables, // Zod-parsed URL params
-  queries, // Factory functions: (vars) => ThinQueryParams
-  entryPoints, // Factory functions: (params) => ThinNestedEntryPointParams
+  variables,
+  queries,
+  entryPoints,
 }) => ({
   queries: {
     hello: queries.hello({name: variables.name}),

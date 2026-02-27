@@ -49,8 +49,9 @@ Options:
 
 - `--port <port>` — port the dev server listens on (default: `3000`)
 
-When files in `pastoria/` change, code generation runs automatically and the
-page reloads.
+When `.tsx` files in `pastoria/` change, code generation runs automatically and
+the page reloads. Changes to `.ts` files (like `route.ts` API routes) require
+running `pnpm generate` manually.
 
 ## `pastoria build`
 
@@ -76,6 +77,11 @@ NODE_ENV=production pastoria-server
 
 This serves the built application on port 8000, including static files from
 `dist/client/` and server-side rendered pages from `dist/server/`.
+
+The server loads `.env` files via [dotenv](https://github.com/motdotla/dotenv),
+so you can configure environment variables there. It reads the Vite manifest
+from `dist/client/.vite/manifest.json` for asset fingerprinting and persisted
+queries from `__generated__/router/persisted_queries.json`.
 
 ## `pastoria add-skill`
 

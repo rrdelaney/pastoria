@@ -34,7 +34,7 @@ export interface PastoriaConfig {
    * This improves security and enables optimizations like GraphQL-JIT.
    * In development mode, plain text queries are always allowed (for GraphiQL).
    *
-   * @default false
+   * @default true
    */
   persistedQueriesOnlyInProduction?: boolean;
 }
