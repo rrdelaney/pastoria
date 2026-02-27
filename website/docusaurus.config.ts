@@ -15,8 +15,8 @@ const config: Config = {
     v4: true, // Improve compatibility with the upcoming Docusaurus v4
   },
 
-  url: 'https://rrdelaney.github.io',
-  baseUrl: '/pastoria/',
+  url: 'https://pastoria.org',
+  baseUrl: '/',
   trailingSlash: false,
 
   organizationName: 'rrdelaney',
