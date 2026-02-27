@@ -4,9 +4,10 @@ sidebar_position: 1
 
 # Creating Your GraphQL Schema
 
-Pastoria uses [Grats](https://grats.capt.dev) to generate GraphQL schemas from
-TypeScript code with JSDoc annotations. You write normal TypeScript functions
-and classes, annotate them, and Grats produces the schema.
+Pastoria requires a `GraphQLSchema` but is agnostic about how you build it. This
+guide covers [Grats](https://grats.capt.dev), which generates schemas from
+TypeScript JSDoc annotations — but any schema construction approach works (e.g.
+`graphql-js` directly, Pothos, Nexus, or SDL-first).
 
 ## Quick overview
 
@@ -93,30 +94,41 @@ type Query {
 
 ## Context
 
-Every Pastoria app needs a GraphQL context class for data available to all
-resolvers:
+Every Pastoria app needs a GraphQL context class annotated with `@gqlContext`.
+This makes the context available to all resolvers:
 
 ```ts
-import {PastoriaRootContext} from 'pastoria-runtime/server';
-
 /**
  * @gqlContext
  */
-export class Context extends PastoriaRootContext {}
+export class Context {}
 ```
 
-Your context must extend `PastoriaRootContext` and be annotated with
-`@gqlContext`. You can add custom properties:
+You can add custom properties and accept the Express request object for
+per-request data. Use the `createContext` option in `PastoriaEnvironment` to
+construct the context:
 
 ```ts
+import type {Request} from 'express';
+
 /**
  * @gqlContext
  */
-export class Context extends PastoriaRootContext {
+export class Context {
+  constructor(public readonly req: Request) {}
+
   get userId(): string | null {
-    return this.req.session?.userId ?? null;
+    return this.req.cookies?.userId ?? null;
   }
 }
+```
+
+```ts
+// pastoria/environment.ts
+export default new PastoriaEnvironment({
+  schema,
+  createContext: (req) => new Context(req),
+});
 ```
 
 ## Type mapping

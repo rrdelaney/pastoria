@@ -93,8 +93,8 @@ pnpm dev
 ```
 
 The dev server runs Vite in middleware mode with server-side rendering. When you
-edit files in the `pastoria/` directory, code generation runs automatically and
-the page reloads.
+edit `.tsx` files in the `pastoria/` directory, code generation runs
+automatically and the page reloads.
 
 ## Production builds
 

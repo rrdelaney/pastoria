@@ -32,7 +32,7 @@ Dynamic segments use `[param]` notation in directory names.
 
 ### Nested entrypoints
 
-Any other `.tsx` file under `pastoria/` (excluding `app.tsx` and
+Any other `.tsx` file under `pastoria/` (excluding `app.tsx`, `app.ts`, and
 `environment.ts`) becomes a **nested entrypoint** — a lazily loaded
 sub-component for code splitting. Its ID uses `#` to separate the path from the
 filename:
@@ -54,15 +54,18 @@ See [API Routes](./api-routes.md) for details.
 ### Reserved files
 
 These files in the `pastoria/` directory are framework configuration and are
-never treated as routes:
+never treated as routes or entrypoints:
 
-- **`app.tsx`** — the app shell component wrapping all pages
+- **`app.tsx`** / **`app.ts`** — the app shell component wrapping all pages
 - **`environment.ts`** — the `PastoriaEnvironment` config
 
 ## App shell
 
-`pastoria/app.tsx` is an optional file that defines the HTML shell wrapping all
-pages. If present, it replaces the default HTML structure:
+`pastoria/app.tsx` is an optional file that wraps all page content. It receives
+the current route's rendered output as `children`. The framework provides a
+default `<html>` / `<head>` / `<body>` shell around your app component, so your
+`app.tsx` typically adds global styles, metadata, and layout — not a full HTML
+document:
 
 ```tsx
 import type {PropsWithChildren} from 'react';
@@ -70,17 +73,16 @@ import './globals.css';
 
 export default function AppRoot({children}: PropsWithChildren) {
   return (
-    <html>
-      <head>
-        <meta charSet="utf-8" />
-        <meta name="viewport" content="width=device-width, initial-scale=1" />
-        <title>My App</title>
-      </head>
-      <body>{children}</body>
-    </html>
+    <>
+      <title>My App</title>
+      <main>{children}</main>
+    </>
   );
 }
 ```
+
+React 19 hoists `<title>`, `<link>`, and `<meta>` tags to `<head>`
+automatically, so you can render them anywhere in your component tree.
 
 ## Environment configuration
 
@@ -121,7 +123,8 @@ Route IDs use bracket notation as the canonical identifier (e.g.
 
 After creating or removing pages, entrypoints, or API routes, code generation
 must run to update the router artifacts. In development (`pastoria dev`), this
-happens automatically on file changes. Otherwise run:
+happens automatically when `.tsx` files change. Changes to `.ts` files (like
+`route.ts` API routes) require running generation manually:
 
 ```bash
 pnpm generate
