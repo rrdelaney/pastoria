@@ -15,17 +15,19 @@ const config: Config = {
     v4: true, // Improve compatibility with the upcoming Docusaurus v4
   },
 
-  // Set the production url of your site here
-  url: 'https://pastoria.org',
-  // Set the /<baseUrl>/ pathname under which your site is served
-  // For GitHub pages deployment, it is often '/<projectName>/'
-  baseUrl: '/',
+  url: 'https://rrdelaney.github.io',
+  baseUrl: '/pastoria/',
   trailingSlash: false,
 
-  // GitHub pages deployment config.
-  organizationName: 'rrdelaney', // Usually your GitHub org/user name.
-  projectName: 'pastoria', // Usually your repo name.
+  organizationName: 'rrdelaney',
+  projectName: 'pastoria',
   onBrokenLinks: 'throw',
+
+  markdown: {
+    hooks: {
+      onBrokenMarkdownLinks: 'throw',
+    },
+  },
 
   i18n: {
     defaultLocale: 'en',
@@ -45,6 +47,7 @@ const config: Config = {
         docs: {
           sidebarPath: './sidebars.ts',
         },
+        blog: false,
         theme: {
           customCss: './src/css/custom.css',
         },
@@ -53,7 +56,7 @@ const config: Config = {
   ],
 
   themeConfig: {
-    image: 'img/docusaurus-social-card.jpg',
+    image: 'img/social-card.png',
     colorMode: {
       respectPrefersColorScheme: true,
     },
