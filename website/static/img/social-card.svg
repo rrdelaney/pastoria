@@ -1,0 +1,14 @@
+<svg width="1200" height="630" viewBox="0 0 1200 630" xmlns="http://www.w3.org/2000/svg">
+  <defs>
+    <linearGradient id="bg" x1="0%" y1="0%" x2="100%" y2="100%">
+      <stop offset="0%" stop-color="#6d9afb"/>
+      <stop offset="15%" stop-color="#0752f5"/>
+      <stop offset="85%" stop-color="#c73707"/>
+      <stop offset="100%" stop-color="#992a05"/>
+    </linearGradient>
+  </defs>
+  <rect width="1200" height="630" fill="url(#bg)"/>
+  <text x="600" y="260" text-anchor="middle" font-family="Georgia, 'Times New Roman', serif" font-size="120" font-weight="bold" fill="white">Pastoria.</text>
+  <text x="600" y="370" text-anchor="middle" font-family="system-ui, -apple-system, sans-serif" font-size="36" fill="rgba(255,255,255,0.9)">A full-stack JavaScript framework for building</text>
+  <text x="600" y="420" text-anchor="middle" font-family="system-ui, -apple-system, sans-serif" font-size="36" fill="rgba(255,255,255,0.9)">scalable, data-driven apps.</text>
+</svg>

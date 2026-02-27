@@ -33,7 +33,7 @@ function HomepageHeader() {
 
 export default function Home(): ReactNode {
   return (
-    <Layout description="Description will go into a meta tag in <head />">
+    <Layout description="A full-stack JavaScript framework for building scalable, data-driven apps with file-based routing, React Relay, and server-side rendering.">
       <HomepageHeader />
       <main>
         <HomepageFeatures />
