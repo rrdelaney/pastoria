@@ -17,5 +17,5 @@ export default function DetailsPage({
     queries.details,
   );
 
-  return <div>This is the details page for {greet}.</div>;
+  return <div className="text-4xl">This is the details page for {greet}.</div>;
 }

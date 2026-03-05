@@ -1,9 +1,7 @@
-import tailwindcss from '@tailwindcss/vite';
 import react from '@vitejs/plugin-react';
 import {Project} from 'ts-morph';
 import {
   InlineConfig,
-  PluginOption,
   type BuildEnvironmentOptions,
   type Plugin,
 } from 'vite';
@@ -92,7 +90,6 @@ export function createBuildConfig(
     },
     plugins: [
       pastoriaEntryPlugin(project),
-      tailwindcss() as PluginOption,
       react({
         babel: {
           plugins: [['babel-plugin-react-compiler', {}], 'relay'],

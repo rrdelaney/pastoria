@@ -21,7 +21,6 @@
   },
   "dependencies": {
     "@parcel/watcher": "^2.5.1",
-    "@tailwindcss/vite": "^4.1.15",
     "@vitejs/plugin-react": "^5.0.4",
     "babel-plugin-relay": "^20.1.1",
     "commander": "catalog:",
@@ -29,9 +28,7 @@
     "dotenv": "catalog:",
     "picocolors": "catalog:",
     "prettier": "^3.6.2",
-    "tailwindcss": "^4.1.15",
     "ts-morph": "^26.0.0",
-    "vite": "catalog:",
     "vite-plugin-cjs-interop": "^2.3.0"
   },
   "devDependencies": {
@@ -54,7 +51,7 @@
     "express": "catalog:",
     "grats": "catalog:",
     "relay-compiler": "catalog:",
-    "tailwindcss": "catalog:"
+    "vite": "catalog:"
   },
   "peerDependenciesMeta": {
     "babel-plugin-react-compiler": {

@@ -25,7 +25,6 @@ export async function startDevserver(project: Project, opts: {port: string}) {
   const buildConfig = createBuildConfig(project, CLIENT_BUILD);
   const vite = await createViteServer({
     ...buildConfig,
-    configFile: false,
     server: {middlewareMode: true},
   });
 

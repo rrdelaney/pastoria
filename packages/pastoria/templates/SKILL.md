@@ -17,7 +17,7 @@ routing, React Relay for GraphQL data fetching, and server-side rendering.
 pastoria/              # All routes and app config
   app.tsx              # App shell wrapping all pages (optional)
   environment.ts       # PastoriaEnvironment config (GraphQL schema)
-  globals.css          # Global styles (typically imports tailwindcss)
+  globals.css          # Global styles
   <route>/page.tsx     # Routable pages
   <route>/other.tsx    # Nested entrypoints (lazy sub-components)
   <route>/route.ts     # Server API routes (Express handlers)

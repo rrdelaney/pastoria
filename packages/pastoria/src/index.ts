@@ -19,10 +19,7 @@ async function runViteBuild(project: Project, target: 'client' | 'server') {
 
   logInfo(`Building ${target}...`);
 
-  await build({
-    ...createBuildConfig(project, buildType),
-    configFile: false,
-  });
+  await build(createBuildConfig(project, buildType));
 
   logInfo(`${target} build complete!`);
 }
