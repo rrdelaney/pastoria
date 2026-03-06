@@ -1,10 +1,6 @@
 import react from '@vitejs/plugin-react';
 import {Project} from 'ts-morph';
-import {
-  InlineConfig,
-  type BuildEnvironmentOptions,
-  type Plugin,
-} from 'vite';
+import {InlineConfig, type BuildEnvironmentOptions, type Plugin} from 'vite';
 import {cjsInterop} from 'vite-plugin-cjs-interop';
 import {PastoriaExecutionContext} from './generate.js';
 import {logger, logInfo} from './logger.js';
