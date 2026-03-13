@@ -17,6 +17,7 @@
     "#pastoria/*": "./pastoria/*"
   },
   "dependencies": {
+    "@stylexjs/stylex": "catalog:",
     "dotenv": "catalog:",
     "express": "catalog:",
     "graphql": "catalog:",

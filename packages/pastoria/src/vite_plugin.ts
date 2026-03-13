@@ -1,9 +1,13 @@
+import stylexPluginImport from '@stylexjs/unplugin/vite';
 import react from '@vitejs/plugin-react';
 import {Project} from 'ts-morph';
 import {InlineConfig, type BuildEnvironmentOptions, type Plugin} from 'vite';
 import {cjsInterop} from 'vite-plugin-cjs-interop';
 import {PastoriaExecutionContext} from './generate.js';
 import {logger, logInfo} from './logger.js';
+
+const stylex =
+  stylexPluginImport as unknown as (typeof stylexPluginImport)['default'];
 
 function pastoriaEntryPlugin(project: Project): Plugin {
   const clientEntryModuleId = 'virtual:pastoria-entry-client.tsx';
@@ -86,6 +90,9 @@ export function createBuildConfig(
     },
     plugins: [
       pastoriaEntryPlugin(project),
+      stylex({
+        useCSSLayers: true,
+      }),
       react({
         babel: {
           plugins: [['babel-plugin-react-compiler', {}], 'relay'],

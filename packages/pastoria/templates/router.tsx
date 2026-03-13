@@ -155,12 +155,34 @@ const RouterContext = createContext<RouterContextValue>({
   setLocation: () => {},
 });
 
-const REACT_REFRESH_SCRIPT = `
+let PastoriaDeveloperTools: React.FC = () => null;
+if (process.env.NODE_ENV !== 'production') {
+  const REACT_REFRESH_SCRIPT = `
 import RefreshRuntime from 'http://localhost:3000/@react-refresh'
 RefreshRuntime.injectIntoGlobalHook(window)
 window.$RefreshReg$ = () => {}
 window.$RefreshSig$ = () => (type) => type
 window.__vite_plugin_react_preamble_installed__ = true`;
+
+  PastoriaDeveloperTools = () => {
+    useEffect(() => {
+      if (process.env.NODE_ENV !== 'production') {
+        // @ts-expect-error
+        import('virtual:stylex:runtime');
+      }
+    }, []);
+
+    return (
+      <>
+        <link rel="stylesheet" href="/virtual:stylex.css" />
+        <script
+          type="module"
+          dangerouslySetInnerHTML={{__html: REACT_REFRESH_SCRIPT}}
+        />
+      </>
+    );
+  };
+}
 
 export function router__createAppFromEntryPoint(
   initialEntryPoint: AnyPreloadedEntryPoint | null,
@@ -188,24 +210,8 @@ export function router__createAppFromEntryPoint(
     return (
       <StrictMode>
         <RelayEnvironmentProvider environment={env}>
-          <html>
-            <head>
-              <meta charSet="utf-8" />
-              <meta
-                name="viewport"
-                content="width=device-width, initial-scale=1"
-              />
-
-              {process.env.NODE_ENV !== 'production' && (
-                <script
-                  type="module"
-                  dangerouslySetInnerHTML={{__html: REACT_REFRESH_SCRIPT}}
-                />
-              )}
-            </head>
-
-            <body>{children}</body>
-          </html>
+          {process.env.NODE_ENV !== 'production' && <PastoriaDeveloperTools />}
+          {children}
         </RelayEnvironmentProvider>
       </StrictMode>
     );

@@ -21,6 +21,7 @@
   },
   "dependencies": {
     "@parcel/watcher": "^2.5.1",
+    "@stylexjs/unplugin": "^0.18.1",
     "@vitejs/plugin-react": "^5.0.4",
     "babel-plugin-relay": "^20.1.1",
     "commander": "catalog:",

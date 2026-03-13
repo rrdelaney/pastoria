@@ -14,8 +14,8 @@
     "skipLibCheck": true,
     "forceConsistentCasingInFileNames": true,
     "jsx": "react-jsx",
-    "noUncheckedIndexedAccess": true
+    "noUncheckedIndexedAccess": true,
   },
   "include": ["src/**/*"],
-  "exclude": ["node_modules", "dist", "src/__tests__"]
+  "exclude": ["node_modules", "dist", "src/__tests__"],
 }

@@ -4,6 +4,7 @@ packages:
   - examples/*
 
 catalog:
+  '@stylexjs/stylex': ^0.18.1
   '@types/cookie-parser': ^1.4.9
   '@types/express': ^5.0.3
   '@types/node': ^22.12.0
