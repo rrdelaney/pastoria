@@ -20,9 +20,11 @@
     "test": "vitest run"
   },
   "dependencies": {
+    "@babel/core": "^7.29.0",
     "@parcel/watcher": "^2.5.1",
+    "@rolldown/plugin-babel": "^0.2.1",
     "@stylexjs/unplugin": "^0.18.1",
-    "@vitejs/plugin-react": "^5.0.4",
+    "@vitejs/plugin-react": "^6.0.1",
     "babel-plugin-relay": "^20.1.1",
     "commander": "catalog:",
     "cookie-parser": "catalog:",
@@ -30,9 +32,10 @@
     "picocolors": "catalog:",
     "prettier": "^3.6.2",
     "ts-morph": "^26.0.0",
-    "vite-plugin-cjs-interop": "^2.3.0"
+    "vite-plugin-cjs-interop": "^2.4.4"
   },
   "devDependencies": {
+    "@types/babel__core": "^7.20.5",
     "@types/cookie-parser": "catalog:",
     "@types/express": "catalog:",
     "@types/node": "catalog:",

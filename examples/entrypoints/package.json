@@ -1,5 +1,5 @@
 {
-  "name": "pastoria-starter-nested-entrypoints",
+  "name": "pastoria-starter-entrypoints",
   "version": "0.1.5",
   "private": true,
   "type": "module",
@@ -43,7 +43,7 @@
     "prettier-plugin-tailwindcss": "^0.6.14",
     "relay-compiler": "catalog:",
     "relay-config": "^12.0.1",
-    "@tailwindcss/vite": "^4.1.15",
+    "@tailwindcss/vite": "catalog:",
     "tailwindcss": "catalog:",
     "typescript": "catalog:",
     "vite": "catalog:"
