@@ -1,5 +1,5 @@
 import {getSchema} from '#genfiles/schema/schema';
-import {Context} from '#src/schema/context';
+import {Context} from '#lib/schema/context';
 import {GraphQLSchema, specifiedDirectives} from 'graphql';
 import {PastoriaEnvironment} from 'pastoria-runtime/server';
 

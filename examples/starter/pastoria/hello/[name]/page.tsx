@@ -30,14 +30,3 @@ export default function HelloPage({
     </div>
   );
 }
-
-export const getPreloadProps: GetPreloadProps<'/hello/[name]'> = ({
-  variables,
-  queries,
-}) => {
-  return {
-    queries: {
-      hello: queries.hello({name: variables.name}),
-    },
-  };
-};
