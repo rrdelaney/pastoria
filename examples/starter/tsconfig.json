@@ -19,14 +19,14 @@
     "paths": {
       "#lib/*": ["./lib/*"],
       "#genfiles/*": ["./__generated__/*"],
-      "#pastoria/*": ["./pastoria/*"],
-    },
+      "#pastoria/*": ["./pastoria/*"]
+    }
   },
   "include": ["__generated__/**/*", "lib/**/*", "pastoria/**/*"],
   "grats": {
     "graphqlSchema": "./__generated__/schema/schema.graphql",
     "tsSchema": "./__generated__/schema/schema.ts",
     "nullableByDefault": true,
-    "strictSemanticNullability": true,
-  },
+    "strictSemanticNullability": true
+  }
 }
