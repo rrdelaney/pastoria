@@ -12,7 +12,7 @@
     "check": "tsc"
   },
   "imports": {
-    "#src/*": "./src/*",
+    "#lib/*": "./lib/*",
     "#genfiles/*": "./__generated__/*",
     "#pastoria/*": "./pastoria/*"
   },

@@ -17,7 +17,7 @@
     "jsx": "preserve",
     "incremental": true,
     "paths": {
-      "#src/*": ["./src/*"],
+      "#lib/*": ["./lib/*"],
       "#genfiles/*": ["./__generated__/*"],
       "#pastoria/*": ["./pastoria/*"]
     }
@@ -25,8 +25,8 @@
   "include": [
     "__generated__/**/*.ts",
     "__generated__/**/*.tsx",
-    "src/**/*.ts",
-    "src/**/*.tsx",
+    "lib/**/*.ts",
+    "lib/**/*.tsx",
     "pastoria/**/*.ts",
     "pastoria/**/*.tsx"
   ],

@@ -6,11 +6,11 @@
   "type": "module",
   "exports": {
     ".": {
-      "default": "./dist/index.js",
+      "import": "./dist/index.js",
       "types": "./dist/index.d.ts"
     },
     "./vite": {
-      "default": "./dist/vite.js",
+      "import": "./dist/vite.js",
       "types": "./dist/vite.d.ts"
     }
   },
