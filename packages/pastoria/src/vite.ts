@@ -1,8 +1,12 @@
 import babel from '@rolldown/plugin-babel';
 import stylexPluginImport from '@stylexjs/unplugin/vite';
 import react, {reactCompilerPreset} from '@vitejs/plugin-react';
-import {Project} from 'ts-morph';
-import {InlineConfig, type BuildEnvironmentOptions, type Plugin} from 'vite';
+import cookieParser from 'cookie-parser';
+import express from 'express';
+import {readFile} from 'node:fs/promises';
+import path from 'node:path';
+import {IndentationText, Project} from 'ts-morph';
+import {type Manifest, type Plugin, type ViteDevServer} from 'vite';
 import {cjsInterop} from 'vite-plugin-cjs-interop';
 import {PastoriaExecutionContext} from './generate.js';
 import {logger, logInfo} from './logger.js';
@@ -10,17 +14,85 @@ import {logger, logInfo} from './logger.js';
 const stylex =
   stylexPluginImport as unknown as (typeof stylexPluginImport)['default'];
 
-function pastoriaEntryPlugin(project: Project): Plugin {
+type ViteMode = 'development' | 'production';
+
+export function pastoria(): Plugin[] {
+  return [
+    pastoriaEntryPlugin(),
+    stylex({useCSSLayers: true}),
+    react(),
+    babel({
+      presets: [reactCompilerPreset()],
+      plugins: [['relay']],
+    }),
+    cjsInterop({
+      dependencies: ['react-relay', 'react-relay/hooks', 'relay-runtime'],
+    }),
+  ];
+}
+
+function pastoriaEntryPlugin(): Plugin {
   const clientEntryModuleId = 'virtual:pastoria-entry-client.tsx';
   const serverEntryModuleId = 'virtual:pastoria-entry-server.tsx';
+  const project = new Project({
+    tsConfigFilePath: path.join(process.cwd(), 'tsconfig.json'),
+    manipulationSettings: {
+      indentationText: IndentationText.TwoSpaces,
+    },
+  });
+
+  let mode: ViteMode = 'development';
   let shouldGenerateOnBuildStart = false;
 
   return {
-    name: 'pastoria-entry',
+    name: 'pastoria',
+    config() {
+      return {
+        appType: 'custom' as const,
+        builder: {},
+        customLogger: logger,
+        build: {
+          assetsInlineLimit: 0,
+          manifest: true,
+          ssrManifest: true,
+          outDir: 'dist/client',
+          rollupOptions: {
+            input: 'virtual:pastoria-entry-client.tsx',
+          },
+        },
+        ssr: {
+          noExternal: ['pastoria-runtime'],
+        },
+        environments: {
+          ssr: {
+            build: {
+              outDir: 'dist/server',
+              ssr: true,
+              rollupOptions: {
+                input: 'virtual:pastoria-entry-server.tsx',
+              },
+            },
+          },
+        },
+      };
+    },
     configResolved(config) {
+      if (config.mode === 'production') {
+        mode = 'production';
+      }
+
       if (config.command === 'serve') {
         shouldGenerateOnBuildStart = true;
       }
+    },
+    configureServer(server) {
+      return () => {
+        server.middlewares.use(
+          express()
+            .use(cookieParser())
+            .use(createPastoriaDevRouteHandler(server)),
+        );
+      };
     },
     resolveId(id) {
       if (id === clientEntryModuleId) {
@@ -31,7 +103,7 @@ function pastoriaEntryPlugin(project: Project): Plugin {
     },
     async load(id) {
       if (id === clientEntryModuleId) {
-        return generateClientEntry();
+        return generateClientEntry(mode);
       } else if (id === serverEntryModuleId) {
         return generateServerEntry();
       }
@@ -61,56 +133,35 @@ function pastoriaEntryPlugin(project: Project): Plugin {
   };
 }
 
-export const CLIENT_BUILD: BuildEnvironmentOptions = {
-  outDir: 'dist/client',
-  rollupOptions: {
-    input: 'virtual:pastoria-entry-client.tsx',
-  },
-};
-
-export const SERVER_BUILD: BuildEnvironmentOptions = {
-  outDir: 'dist/server',
-  ssr: true,
-  rollupOptions: {
-    input: 'virtual:pastoria-entry-server.tsx',
-  },
-};
-
-export function createBuildConfig(
-  project: Project,
-  buildEnv: BuildEnvironmentOptions,
-): InlineConfig {
-  return {
-    appType: 'custom' as const,
-    customLogger: logger,
-    build: {
-      ...buildEnv,
-      assetsInlineLimit: 0,
-      manifest: true,
-      ssrManifest: true,
+interface ServerEntry {
+  createHandler(
+    persistedQueries: {
+      [hash: string]: string;
     },
-    plugins: [
-      pastoriaEntryPlugin(project),
-      stylex({
-        useCSSLayers: true,
-      }),
-      react(),
-      babel({
-        presets: [reactCompilerPreset()],
-        plugins: [['relay']],
-      }),
-      cjsInterop({
-        dependencies: ['react-relay', 'react-relay/hooks', 'relay-runtime'],
-      }),
-    ],
-    ssr: {
-      noExternal: ['pastoria-runtime'],
-    },
+    manifest?: Manifest,
+  ): express.Router;
+}
+
+function createPastoriaDevRouteHandler(
+  viteServer: ViteDevServer,
+): express.Handler {
+  return async (req, res, next) => {
+    const persistedQueries = JSON.parse(
+      await readFile('__generated__/router/persisted_queries.json', 'utf-8'),
+    );
+
+    const {createHandler} = (await viteServer.ssrLoadModule(
+      'virtual:pastoria-entry-server.tsx',
+    )) as ServerEntry;
+
+    const handler = createHandler(persistedQueries);
+    handler(req, res, next);
   };
 }
 
-function generateClientEntry(): string {
+function generateClientEntry(mode: ViteMode): string {
   return `// Generated by Pastoria.
+${mode === 'development' ? `import '@vitejs/plugin-react/preamble';` : ''}
 import {createRouterApp} from '#genfiles/router/router';
 import App from '#pastoria/app';
 import {hydrateRoot} from 'react-dom/client';

@@ -4,7 +4,7 @@ import stylex from '@stylexjs/stylex';
 
 const styles = stylex.create({
   text: {
-    color: 'white',
+    color: 'green',
   },
 });
 
@@ -26,7 +26,7 @@ export default function HelloPage({
 
   return (
     <div {...stylex.props(styles.text)}>
-      This is the details page for {greet}.
+      This is the details page for {greet}.!!
     </div>
   );
 }

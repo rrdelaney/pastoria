@@ -6,8 +6,8 @@
   "scripts": {
     "format": "prettier -w .",
     "generate": "grats && relay-compiler && pastoria generate",
-    "build": "pastoria build",
-    "dev": "pastoria dev",
+    "build": "vite build",
+    "dev": "vite",
     "start": "NODE_ENV=production pastoria-server",
     "check": "tsc"
   },

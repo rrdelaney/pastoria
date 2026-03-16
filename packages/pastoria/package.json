@@ -4,15 +4,22 @@
   "description": "Pastoria Development CLI",
   "license": "MIT",
   "type": "module",
-  "main": "./dist/index.js",
-  "types": "./dist/index.d.ts",
+  "exports": {
+    ".": {
+      "default": "./dist/index.js",
+      "types": "./dist/index.d.ts"
+    },
+    "./vite": {
+      "default": "./dist/vite.js",
+      "types": "./dist/vite.d.ts"
+    }
+  },
   "bin": {
     "pastoria": "./dist/index.js"
   },
   "files": [
     "dist",
-    "templates",
-    "justfile"
+    "templates"
   ],
   "scripts": {
     "build": "tsc",
