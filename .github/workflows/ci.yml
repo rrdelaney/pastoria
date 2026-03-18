@@ -21,17 +21,14 @@ jobs:
       - name: Install dependencies
         run: vp install --frozen-lockfile
 
+      - name: Build local dependencies
+        run: vp run --filter './packages/*' build
+
       - name: Check formatting
         run: vp check
 
-      - name: Build packages
-        run: vp run --filter './packages/*' build
-
       - name: Run tests
         run: vp test
-
-      - name: Link local pastoria CLI
-        run: vp install --frozen-lockfile
 
       - name: Build examples
         run: vp run --filter '@pastoria/example-*' build
