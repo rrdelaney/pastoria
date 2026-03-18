@@ -75,12 +75,11 @@ handlers.
 ## Claude Code Skill
 
 Pastoria ships with a built-in
-[Claude Code skill](packages/pastoria/templates/SKILL.md) that teaches Claude
-how to create and modify pages, routes, nested entrypoints, and Relay queries in
-your app. The skill is automatically available in Pastoria projects and covers
-routing conventions, page exports, query patterns, and code generation — so you
-can use Claude Code to scaffold and iterate on your app with full framework
-awareness.
+[Claude Code skill](.agents/skills/pastoria/SKILL.md) that teaches Claude how to
+create and modify pages, routes, nested entrypoints, and Relay queries in your
+app. The skill is automatically available in Pastoria projects and covers routing
+conventions, page exports, query patterns, and code generation — so you can use
+Claude Code to scaffold and iterate on your app with full framework awareness.
 
 ## Documentation
 

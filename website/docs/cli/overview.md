@@ -83,17 +83,6 @@ so you can configure environment variables there. It reads the Vite manifest
 from `dist/client/.vite/manifest.json` for asset fingerprinting and persisted
 queries from `__generated__/router/persisted_queries.json`.
 
-## `pastoria add-skill`
-
-Installs the Pastoria Claude Code skill into the current project:
-
-```bash
-pastoria add-skill
-```
-
-This copies the skill manifest to `.claude/skills/pastoria/SKILL.md`, enabling
-Claude Code to understand Pastoria conventions when working in your project.
-
 ## Typical package.json scripts
 
 ```json
