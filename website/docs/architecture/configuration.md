@@ -10,7 +10,7 @@ Pastoria is configured through `pastoria/environment.ts`, which exports a
 ## PastoriaEnvironment
 
 ```ts
-import {PastoriaEnvironment} from 'pastoria-runtime/server';
+import {PastoriaEnvironment} from '@pastoria/runtime/server';
 
 export default new PastoriaEnvironment({
   schema,

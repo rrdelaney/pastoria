@@ -93,7 +93,7 @@ configures the GraphQL server:
 import {getSchema} from '#genfiles/schema/schema';
 import {Context} from '#src/schema/context';
 import {GraphQLSchema, specifiedDirectives} from 'graphql';
-import {PastoriaEnvironment} from 'pastoria-runtime/server';
+import {PastoriaEnvironment} from '@pastoria/runtime/server';
 
 const schemaConfig = getSchema().toConfig();
 const schema = new GraphQLSchema({

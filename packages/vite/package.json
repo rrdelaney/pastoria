@@ -1,0 +1,70 @@
+{
+  "name": "@pastoria/vite",
+  "version": "0.1.0",
+  "description": "Vite plugin for Pastoria apps",
+  "license": "MIT",
+  "type": "module",
+  "exports": {
+    "import": "./dist/vite.mjs",
+    "require": "./dist/vite.cjs"
+  },
+  "bin": {
+    "pastoria": "./dist/cli.mjs"
+  },
+  "files": [
+    "dist",
+    "templates"
+  ],
+  "scripts": {
+    "build": "vp pack",
+    "check": "vp check",
+    "test": "vp test"
+  },
+  "keywords": [
+    "vite-plugin"
+  ],
+  "dependencies": {
+    "@babel/core": "^7.29.0",
+    "@parcel/watcher": "^2.5.1",
+    "@rolldown/plugin-babel": "^0.2.1",
+    "@stylexjs/unplugin": "^0.18.1",
+    "@vitejs/plugin-react": "^6.0.1",
+    "babel-plugin-relay": "catalog:",
+    "commander": "catalog:",
+    "cookie-parser": "catalog:",
+    "dotenv": "catalog:",
+    "picocolors": "catalog:",
+    "prettier": "^3.6.2",
+    "ts-morph": "^26.0.0",
+    "vite-plugin-cjs-interop": "^2.4.4"
+  },
+  "devDependencies": {
+    "@types/babel__core": "^7.20.5",
+    "@types/cookie-parser": "catalog:",
+    "@types/express": "catalog:",
+    "@types/node": "catalog:",
+    "@types/react": "catalog:",
+    "@types/react-dom": "catalog:",
+    "@types/react-relay": "catalog:",
+    "@types/relay-compiler": "^14.0.4",
+    "@pastoria/runtime": "workspace:*",
+    "radix3": "^1.1.2",
+    "relay-compiler": "catalog:",
+    "typescript": "catalog:",
+    "vitest": "catalog:",
+    "zod": "catalog:",
+    "vite-plus": "catalog:"
+  },
+  "peerDependencies": {
+    "babel-plugin-react-compiler": "^1.0.0",
+    "express": "catalog:",
+    "grats": "catalog:",
+    "relay-compiler": "catalog:",
+    "vite": "catalog:"
+  },
+  "peerDependenciesMeta": {
+    "babel-plugin-react-compiler": {
+      "optional": true
+    }
+  }
+}

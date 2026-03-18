@@ -5,7 +5,7 @@ import {Context} from './context.js';
  *
  * @gqlQueryField
  */
-export function hello(ctx: Context): string {
+export function hello(_ctx: Context): string {
   return 'Hello from Pastoria!';
 }
 
@@ -15,6 +15,6 @@ export function hello(ctx: Context): string {
  *
  * @gqlQueryField
  */
-export function greet(name: string, ctx: Context): string {
+export function greet(name: string, _ctx: Context): string {
   return `Hello, ${name}! Welcome to Pastoria.`;
 }

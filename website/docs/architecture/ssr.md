@@ -89,7 +89,7 @@ In development (`pastoria dev`):
 - The server entry is loaded fresh per request via `vite.ssrLoadModule()`
 - Source maps and React Refresh are injected
 
-In production (`pastoria-server`):
+In production (`@pastoria/server`):
 
 - Pre-built bundles are served from `dist/`
 - The Vite manifest drives asset fingerprinting and preloading

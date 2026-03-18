@@ -1,0 +1,39 @@
+{
+  "name": "@pastoria/server",
+  "version": "0.1.0",
+  "description": "Production server for Pastoria apps",
+  "main": "./dist/index.js",
+  "types": "./dist/index.d.ts",
+  "exports": {
+    "import": "./dist/index.mjs",
+    "require": "./dist/index.cjs"
+  },
+  "bin": {
+    "pastoria-server": "./dist/index.mjs"
+  },
+  "author": "",
+  "license": "MIT",
+  "type": "module",
+  "scripts": {
+    "build": "vp pack",
+    "check": "vp check"
+  },
+  "dependencies": {
+    "cookie-parser": "catalog:",
+    "dotenv": "catalog:",
+    "picocolors": "catalog:"
+  },
+  "devDependencies": {
+    "@types/cookie-parser": "catalog:",
+    "@types/express": "catalog:",
+    "@types/node": "catalog:",
+    "@pastoria/runtime": "workspace:*",
+    "typescript": "catalog:",
+    "vite": "catalog:",
+    "vite-plus": "catalog:"
+  },
+  "peerDependencies": {
+    "express": "catalog:",
+    "@pastoria/runtime": "workspace:*"
+  }
+}

@@ -1,15 +1,16 @@
 {
   "name": "pastoria-monorepo",
   "private": true,
+  "type": "module",
   "scripts": {
     "check:types": "pnpm -r check:types",
-    "check:format": "prettier --check .",
-    "format": "prettier --write ."
+    "check:format": "vp fmt --check .",
+    "format": "vp fmt ."
   },
   "devDependencies": {
     "@changesets/cli": "^2.29.7",
-    "prettier": "^3.6.2",
-    "prettier-plugin-tailwindcss": "^0.6.14"
+    "vite-plus": "catalog:"
   },
-  "version": "1.0.1"
+  "version": "1.0.1",
+  "packageManager": "pnpm@10.32.1"
 }

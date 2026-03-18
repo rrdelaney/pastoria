@@ -27,7 +27,7 @@ export default function SearchResultsPage({
   const {replaceRoute} = useNavigation();
   useEffect(() => {
     const timeoutId = setTimeout(() => {
-      replaceRoute('/search', {q: !!search ? search : null});
+      replaceRoute('/search', {q: search ? search : null});
     }, 500);
 
     return () => {
@@ -41,7 +41,7 @@ export default function SearchResultsPage({
         value={search}
         onChange={(e) => setSearch(e.target.value)}
         placeholder={greetingMessage}
-        className="min-w-lg mb-24 rounded-lg border border-gray-400 p-4"
+        className="mb-24 min-w-lg rounded-lg border border-gray-400 p-4"
       />
 
       <Suspense fallback="Loading...">

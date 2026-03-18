@@ -1,0 +1,58 @@
+{
+  "name": "@pastoria/runtime",
+  "version": "0.1.0",
+  "description": "Runtime utilities for Pastoria routing system",
+  "type": "module",
+  "main": "./dist/index.js",
+  "types": "./dist/index.d.ts",
+  "exports": {
+    ".": {
+      "require": "./dist/index.cjs",
+      "import": "./dist/index.mjs"
+    },
+    "./server": {
+      "require": "./dist/server/index.cjs",
+      "import": "./dist/server/index.mjs"
+    }
+  },
+  "scripts": {
+    "build": "vp pack -f cjs,esm src/index.ts src/server/index.ts",
+    "check": "vp check"
+  },
+  "keywords": [],
+  "author": "",
+  "license": "MIT",
+  "dependencies": {
+    "dataloader": "^2.2.3",
+    "serialize-javascript": "^6.0.2"
+  },
+  "devDependencies": {
+    "@types/express": "catalog:",
+    "@types/node": "catalog:",
+    "@types/react-dom": "catalog:",
+    "@types/react-relay": "catalog:",
+    "@types/react": "catalog:",
+    "@types/relay-runtime": "catalog:",
+    "@types/serialize-javascript": "^5.0.4",
+    "express": "catalog:",
+    "graphql": "catalog:",
+    "react-dom": "catalog:",
+    "react-relay": "catalog:",
+    "react": "catalog:",
+    "relay-runtime": "catalog:",
+    "typescript": "catalog:",
+    "vite": "catalog:",
+    "zod": "catalog:",
+    "vite-plus": "catalog:"
+  },
+  "peerDependencies": {
+    "express": "catalog:",
+    "graphql": "catalog:",
+    "radix3": "^1.1.2",
+    "react": "catalog:",
+    "react-dom": "catalog:",
+    "react-relay": "catalog:",
+    "relay-runtime": "catalog:",
+    "zod": "catalog:"
+  }
+}

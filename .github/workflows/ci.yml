@@ -13,31 +13,25 @@ jobs:
     steps:
       - uses: actions/checkout@v4
 
-      - name: Setup pnpm
-        uses: pnpm/action-setup@v4
+      - uses: voidzero-dev/setup-vp@v1
         with:
-          version: 9
-
-      - name: Setup Node.js
-        uses: actions/setup-node@v4
-        with:
-          node-version: '20'
-          cache: 'pnpm'
+          node-version: '22'
+          cache: true
 
       - name: Install dependencies
-        run: pnpm install --frozen-lockfile
+        run: vp install --frozen-lockfile
 
       - name: Check formatting
-        run: pnpm check:format
+        run: vp check
 
       - name: Build packages
-        run: pnpm --filter './packages/*' -r build
+        run: vp run --filter './packages/*' build
 
       - name: Run tests
-        run: pnpm run -r test
+        run: vp test
 
       - name: Link local pastoria CLI
-        run: pnpm install --frozen-lockfile
+        run: vp install --frozen-lockfile
 
       - name: Build examples
-        run: pnpm run --parallel --filter 'create-pastoria-*' build
+        run: vp run --filter '@pastoria/example-*' build

@@ -26,7 +26,7 @@ jobs:
         run: pnpm install --frozen-lockfile
 
       - name: Build website
-        run: pnpm run --filter website build
+        run: pnpm -C website run build
 
       - name: Upload Build Artifact
         uses: actions/upload-pages-artifact@v3

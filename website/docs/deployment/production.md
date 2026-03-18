@@ -29,7 +29,7 @@ maps query IDs to query text for the GraphQL endpoint.
 NODE_ENV=production pastoria-server
 ```
 
-The `pastoria-server` binary (from the `pastoria-server` package) starts an
+The `pastoria-server` binary (from the `@pastoria/server` package) starts an
 Express server on **port 8000** that:
 
 1. Loads environment variables from `.env` via

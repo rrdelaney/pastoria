@@ -65,12 +65,12 @@ handlers.
 
 ## Packages
 
-| Package                                         | Description                                                            |
-| ----------------------------------------------- | ---------------------------------------------------------------------- |
-| [`pastoria`](packages/pastoria)                 | CLI tool — `generate`, `dev`, and `build` commands                     |
-| [`pastoria-runtime`](packages/pastoria-runtime) | Runtime utilities for routing, Relay environments, and server handlers |
-| [`pastoria-server`](packages/pastoria-server)   | Standalone production server                                           |
-| [`create-pastoria`](packages/create-pastoria)   | Scaffolding tool for new projects                                      |
+| Package                                 | Description                                                            |
+| --------------------------------------- | ---------------------------------------------------------------------- |
+| [`@pastoria/vite`](packages/vite)       | Vite plugin and CLI tool — `generate`, `dev`, and `build` commands     |
+| [`@pastoria/runtime`](packages/runtime) | Runtime utilities for routing, Relay environments, and server handlers |
+| [`@pastoria/server`](packages/server)   | Standalone production server                                           |
+| [`@pastoria/create`](packages/create)   | Scaffolding tool for new projects                                      |
 
 ## Claude Code Skill
 

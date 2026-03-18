@@ -1,0 +1,33 @@
+{
+  "name": "@pastoria/create",
+  "version": "0.1.0",
+  "description": "Scaffolding tool for creating new Pastoria projects",
+  "type": "module",
+  "main": "./dist/index.js",
+  "types": "./dist/index.d.ts",
+  "bin": {
+    "create-pastoria": "./dist/index.js"
+  },
+  "scripts": {
+    "build": "tsc && cp ../../pnpm-workspace.yaml dist/",
+    "check": "vp check"
+  },
+  "keywords": [
+    "pastoria",
+    "framework",
+    "scaffold",
+    "create"
+  ],
+  "author": "",
+  "license": "MIT",
+  "dependencies": {
+    "degit": "^2.8.4",
+    "picocolors": "catalog:",
+    "yaml": "^2.7.0"
+  },
+  "devDependencies": {
+    "@types/degit": "^2.8.6",
+    "@types/node": "catalog:",
+    "typescript": "catalog:"
+  }
+}

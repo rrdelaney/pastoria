@@ -66,9 +66,9 @@ This produces:
 - **`dist/client/`** — optimized JavaScript, CSS, and assets for the browser
 - **`dist/server/`** — server-side rendering bundle for Node.js
 
-## `pastoria-server`
+## `@pastoria/server`
 
-The standalone production server (from the `pastoria-server` package). Run it
+The standalone production server (from the `@pastoria/server` package). Run it
 after building:
 
 ```bash

@@ -74,7 +74,7 @@ export default function HelloWorldPage({
   const {replaceRoute} = useNavigation();
   useEffect(() => {
     const timeoutId = setTimeout(() => {
-      replaceRoute('/hello/[name]', {name, q: !!search ? search : null});
+      replaceRoute('/hello/[name]', {name, q: search ? search : null});
     }, 500);
 
     return () => {
@@ -96,7 +96,7 @@ export default function HelloWorldPage({
         value={search}
         onChange={(e) => setSearch(e.target.value)}
         placeholder={`${greet} Search for cities...`}
-        className="min-w-lg mb-24 rounded-lg border border-gray-400 p-4"
+        className="mb-24 min-w-lg rounded-lg border border-gray-400 p-4"
       />
       <Suspense fallback="Loading...">
         <EntryPointContainer
