@@ -404,6 +404,9 @@ importers:
       '@parcel/watcher':
         specifier: ^2.5.1
         version: 2.5.1
+      '@pastoria/server':
+        specifier: workspace:*
+        version: link:../server
       '@rolldown/plugin-babel':
         specifier: ^0.2.1
         version: 0.2.1(@babel/core@7.29.0)(@babel/runtime@7.28.4)(@voidzero-dev/vite-plus-core@0.1.12(@types/node@22.18.12)(jiti@2.6.1)(terser@5.44.0)(typescript@5.9.3)(yaml@2.8.1))(rolldown@1.0.0-rc.9)

@@ -1,12 +1,7 @@
-#!/usr/bin/env node
-
-import cookieParser from 'cookie-parser';
-import dotenv from 'dotenv';
 import express from 'express';
 import {readFile} from 'node:fs/promises';
 import * as path from 'node:path';
-import pc from 'picocolors';
-import type {Manifest} from 'vite-plus';
+import type {Manifest} from 'vite';
 
 interface PersistedQueries {
   [hash: string]: string;
@@ -24,9 +19,7 @@ const MANIFEST_JSON = 'dist/client/.vite/manifest.json';
 const SERVER_MANIFEST_JSON = 'dist/server/.vite/manifest.json';
 const QUERIES_JSON = '__generated__/router/persisted_queries.json';
 
-async function createServer() {
-  dotenv.config();
-
+export async function createHandler() {
   const [manifest, serverManifest, persistedQueries] = await Promise.all([
     readFile(MANIFEST_JSON, 'utf-8').then((f) => JSON.parse(f) as Manifest),
     readFile(SERVER_MANIFEST_JSON, 'utf-8').then(
@@ -46,20 +39,5 @@ async function createServer() {
     path.join(process.cwd(), 'dist/server', serverEntry)
   )) as ServerEntry;
 
-  const handler = createHandler(persistedQueries, manifest);
-
-  const app = express();
-  app.use(cookieParser());
-  app.use(handler);
-  app.use(express.static('dist/client'));
-
-  app.listen(8000, (err) => {
-    if (err) {
-      console.error(err);
-    } else {
-      console.log(pc.cyan('Listening on port 8000!'));
-    }
-  });
+  return createHandler(persistedQueries, manifest);
 }
-
-createServer().catch(console.error);

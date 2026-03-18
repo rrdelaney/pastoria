@@ -10,6 +10,8 @@ import {type Manifest, type Plugin, type ViteDevServer} from 'vite';
 import {cjsInterop} from 'vite-plugin-cjs-interop';
 import {PastoriaExecutionContext} from './generate.js';
 import {logger, logInfo} from './logger.js';
+import {createHandler} from '@pastoria/server';
+import dotenv from 'dotenv';
 
 const stylex =
   stylexPluginImport as unknown as (typeof stylexPluginImport)['default'];
@@ -94,6 +96,15 @@ function pastoriaEntryPlugin(): Plugin {
         );
       };
     },
+    async configurePreviewServer(server) {
+      dotenv.config();
+
+      const app = express()
+        .use(cookieParser())
+        .use(await createHandler());
+
+      server.middlewares.use(app);
+    },
     resolveId(id) {
       if (id === clientEntryModuleId) {
         return clientEntryModuleId; // Return without \0 prefix so React plugin can see .tsx extension
@@ -151,11 +162,11 @@ function createPastoriaDevRouteHandler(
       await readFile('__generated__/router/persisted_queries.json', 'utf-8'),
     );
 
-    const {createHandler} = (await viteServer.ssrLoadModule(
+    const {createHandler: createDevHander} = (await viteServer.ssrLoadModule(
       'virtual:pastoria-entry-server.tsx',
     )) as ServerEntry;
 
-    const handler = createHandler(persistedQueries);
+    const handler = createDevHander(persistedQueries);
     handler(req, res, next);
   };
 }

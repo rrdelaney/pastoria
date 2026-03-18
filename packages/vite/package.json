@@ -25,6 +25,7 @@
   ],
   "dependencies": {
     "@babel/core": "^7.29.0",
+    "@pastoria/server": "workspace:*",
     "@parcel/watcher": "^2.5.1",
     "@rolldown/plugin-babel": "^0.2.1",
     "@stylexjs/unplugin": "^0.18.1",

@@ -2,14 +2,12 @@
   "name": "@pastoria/server",
   "version": "0.1.0",
   "description": "Production server for Pastoria apps",
-  "main": "./dist/index.js",
-  "types": "./dist/index.d.ts",
   "exports": {
     "import": "./dist/index.mjs",
     "require": "./dist/index.cjs"
   },
   "bin": {
-    "pastoria-server": "./dist/index.mjs"
+    "pastoria-server": "./dist/cli.mjs"
   },
   "author": "",
   "license": "MIT",
