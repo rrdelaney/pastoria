@@ -15,7 +15,7 @@ const STARTER_PATH = 'examples/starter';
 
 async function main() {
   const args = process.argv.slice(2);
-  const projectName = args[0] || 'my-pastoria-app';
+  const projectName = args[0] || 'pastoria-app';
 
   console.log(pc.cyan(`Creating a new Pastoria project in ${projectName}...`));
 
@@ -44,10 +44,6 @@ async function main() {
     console.log(pc.blue('Updating dependencies...'));
     await updatePackageJson(targetDir);
 
-    // Create .prettierignore
-    console.log(pc.blue('Creating .prettierignore...'));
-    await createPrettierIgnore(targetDir);
-
     // Install dependencies
     console.log(pc.blue('Installing dependencies...'));
     await installDependencies(targetDir);
@@ -56,7 +52,7 @@ async function main() {
     console.log(pc.cyan(`  ${targetDir}\n`));
     console.log('To get started, run:');
     console.log(pc.cyan(`  cd ${projectName}`));
-    console.log(pc.cyan('  npm run dev'));
+    console.log(pc.cyan('  vp dev'));
   } catch (error) {
     console.error(pc.red('Error creating Pastoria project:'), error);
     process.exit(1);
@@ -84,7 +80,7 @@ async function updatePackageJson(targetDir: string) {
           deps[name] = `^${pastoriaRuntimeVersion}`;
         } else if (name === '@pastoria/server') {
           deps[name] = `^${pastoriaServerVersion}`;
-        } else if (name === 'pastoria') {
+        } else if (name === '@pastoria/vite') {
           deps[name] = `^${pastoriaVersion}`;
         }
       } else if (version === 'catalog:') {
@@ -168,28 +164,8 @@ function getPackageVersion(packageName: string): string {
   }
 }
 
-async function createPrettierIgnore(targetDir: string) {
-  const prettierIgnorePath = join(targetDir, '.prettierignore');
-  const content = `# Generated files
-__generated__/
-
-# Build output
-dist/
-build/
-
-# Dependencies
-node_modules/
-
-# Misc
-.env*
-*.log
-`;
-
-  writeFileSync(prettierIgnorePath, content);
-}
-
 async function installDependencies(targetDir: string) {
-  await runCommand('npm', ['install'], targetDir);
+  await runCommand('vp', ['install'], targetDir);
 }
 
 function runCommand(

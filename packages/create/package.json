@@ -3,13 +3,11 @@
   "version": "0.1.0",
   "description": "Scaffolding tool for creating new Pastoria projects",
   "type": "module",
-  "main": "./dist/index.js",
-  "types": "./dist/index.d.ts",
   "bin": {
-    "create-pastoria": "./dist/index.js"
+    "create-pastoria": "./dist/index.mjs"
   },
   "scripts": {
-    "build": "tsc && cp ../../pnpm-workspace.yaml dist/",
+    "build": "vp pack && cp ../../pnpm-workspace.yaml dist/",
     "check": "vp check"
   },
   "keywords": [
@@ -28,6 +26,7 @@
   "devDependencies": {
     "@types/degit": "^2.8.6",
     "@types/node": "catalog:",
-    "typescript": "catalog:"
+    "typescript": "catalog:",
+    "vite-plus": "catalog:"
   }
 }

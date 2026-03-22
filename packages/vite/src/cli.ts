@@ -22,19 +22,14 @@ async function main() {
     },
   });
 
-  program
+  await program
     .name('pastoria')
-    .description(packageData.description)
-    .version(packageData.version);
-
-  program
-    .command('generate')
+    .version(packageData.version)
     .description('Generate Pastoria router artifacts')
     .action(async () => {
       await runCodeGeneration(project);
-    });
-
-  await program.parseAsync();
+    })
+    .parseAsync();
 }
 
 main().catch(console.error);
