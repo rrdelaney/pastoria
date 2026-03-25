@@ -3,13 +3,13 @@
 </p>
 
 <p align="center">
-  A full-stack React framework for building data-driven apps with Relay, distributed as a Vite plugin.
+  A full-stack React framework for building data-driven apps with Relay, powered by Vite.
 </p>
 
 ---
 
 Pastoria is a full-stack React framework for building data-driven apps with
-Relay, distributed as a Vite plugin.
+Relay, powered by Vite.
 
 It’s comparable to other React meta-frameworks with an emphasis on type-safety
 and using Relay for data. Relay has many advanced features for loading data that
