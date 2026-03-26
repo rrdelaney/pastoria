@@ -19,7 +19,7 @@ a specific way to build a GraphQL schema, but the starter kits come bundled with
 Grats.
 
 In addition to the built-in GraphQL API, Pastoria supports API routes for
-integration backend services like `better-auth`.
+integration with backend services like `better-auth`.
 
 ## Creating a Pastoria App
 
