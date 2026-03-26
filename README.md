@@ -8,48 +8,60 @@
 
 ---
 
-Pastoria is a full-stack React framework for building data-driven apps with
-Relay, powered by Vite.
+Pastoria is a React meta-frameworks with an emphasis on type-safety and using
+Relay for data. Relay has many advanced features for loading data that Pastoria
+natively enables such as partial data load, a normalized store, and optimistic
+mutations.
 
-It’s comparable to other React meta-frameworks with an emphasis on type-safety
-and using Relay for data. Relay has many advanced features for loading data that
-Pastoria natively enables such as partial data load, a normalized store, and
-optimistic mutations.
-
-Pastoria uses a file-system based router for defining pages rendered using
+Pastoria uses a file-system based route definitions for pages rendered using
 React, and comes with a pre-configured GraphQL server. Pastoria doesn’t enforce
-a specific way to build a GraphQL schema, but the starter kits recommend Grats.
+a specific way to build a GraphQL schema, but the starter kits come bundled with
+Grats.
+
+In addition to the built-in GraphQL API, Pastoria supports API routes for
+integration backend services like `better-auth`.
 
 ## Creating a Pastoria App
 
-It's recommended to use a template to create new apps, but it's possible to
-integrate Pastoria into existing Vite apps as well.
+### Pastoria Templates
 
-### Pastoria Templates (create-pastoria)
+It's highly recommend to use [Vite+](https://viteplus.dev/) to create a new
+Pastoria app. Pastoria's Vite plugin is quite comprehensive, but Vite+ brings
+along just about everything else you could want.
+
+```sh
+$ vp create @pastoria@latest
+```
+
+This will create a new fully ready Pastoria app complete with Relay, StyleX, a
+devserver, and a production setup.
 
 ### Starting from Scratch
 
-### Pastoria Environment (environment.ts)
+Although it's recommended to use a template to create new apps, but it's
+possible to integrate Pastoria into existing Vite apps as well.
 
-### Root App (app.ts)
+### Pastoria Environment (`environment.ts`)
 
-### Generating Code (pastoria generate)
+### Root App (`app.ts`)
+
+### Generating Code (`pastoria`)
 
 ## Page Routes
 
-### Page Components (export default)
+### Page Components (`export default`)
 
-### Loading Data (queries)
+### Loading Data (`export type Queries`)
 
-### Defining Params Schema (schema)
+### Defining Params Schema (`export const schema`)
 
-### Customizing Route Loading (getPreloadProps)
+### Customizing Route Loading (`export const getPreloadProps`)
 
-### Nesting Entrypoints (entrypoints)
+### Nesting Entrypoints (`export type EntryPoints`)
 
-### Runtime Props (RuntimeProps)
+### Runtime Props (`export type RuntimeProps`)
 
-### Parameters from Parent Entrypoints (ExtraProps)
+### Parameters from Parent Entrypoints (`export type ExtraProps`)
 
 ## Navigation
 
