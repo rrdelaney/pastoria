@@ -41,6 +41,16 @@ devserver, and a production setup.
 Although it's recommended to use a template to create new apps, but it's
 possible to integrate Pastoria into existing Vite apps as well.
 
+### Installing the Pastoria skill
+
+Pastoria distributes a skill for agents using the
+[`skills` CLI](https://www.npmjs.com/package/skills). Install the Pastoria skill
+with the following:
+
+```sh
+$ vp dlx skills add rrdelaney/pastoria
+```
+
 ### Pastoria Environment (`environment.ts`)
 
 ### Root App (`app.ts`)
