@@ -1,0 +1,14 @@
+{
+  "name": "@pastoria/docs",
+  "private": true,
+  "type": "module",
+  "scripts": {
+    "docs:dev": "vitepress dev",
+    "docs:build": "vitepress build",
+    "docs:preview": "vitepress preview"
+  },
+  "dependencies": {
+    "oxc-minify": "^0.121.0",
+    "vitepress": "2.0.0-alpha.17"
+  }
+}

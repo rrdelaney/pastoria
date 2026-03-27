@@ -1,7 +1,7 @@
 packages:
-  - packages/*
-  - website
+  - docs
   - examples/*
+  - packages/*
 
 catalog:
   '@stylexjs/stylex': ^0.18.1
@@ -42,6 +42,7 @@ onlyBuiltDependencies:
 overrides:
   vite: 'catalog:'
   vitest: 'catalog:'
+  vitepress>vite: ^8
 peerDependencyRules:
   allowAny:
     - vite

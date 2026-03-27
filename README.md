@@ -1,88 +1,30 @@
 <p align="center">
-  <img src=".github/logos/logo.png" alt="Pastoria" width="600" />
+  <img src="docs/public/logo.png" alt="Pastoria" width="600" />
 </p>
-
 <p align="center">
-  A full-stack React framework for building data-driven apps with Relay, powered by Vite.
+  <a href="https://npmjs.com/package/vite"><img src="https://img.shields.io/npm/v/@pastoria/vite.svg" alt="npm package"></a>
+  <a href="https://viteplus.dev"><img src="https://registry.vite.dev/api/badges?package=@pastoria/vite&tool=vite" alt="vite compatability"></a>
+  <a href="https://github.com/rrdelaney/pastoria/actions/workflows/ci.yml"><img src="https://github.com/rrdelaney/pastoria/actions/workflows/ci.yml/badge.svg?branch=main" alt="CI"></a>
 </p>
+<br/>
 
----
+# Pastoria
 
-Pastoria is a React meta-frameworks with an emphasis on type-safety and using
-Relay for data. Relay has many advanced features for loading data that Pastoria
-natively enables such as partial data load, a normalized store, and optimistic
-mutations.
+[Documentation](https://pastoria.org)
 
-Pastoria uses a file-system based route definitions for pages rendered using
-React, and comes with a pre-configured GraphQL server. Pastoria doesn’t enforce
-a specific way to build a GraphQL schema, but the starter kits come bundled with
-Grats.
+Pastoria is full-stack React framework for building data-driven apps with Relay,
+powered by Vite.
 
-In addition to the built-in GraphQL API, Pastoria supports API routes for
-integration with backend services like `better-auth`.
+- 💫 Pre-configured Relay and StyleX
+- 📓 Familiar filesystem router
+- 🌐 Built-in GraphQL server
+- ⏩ React streaming SSR
 
-## Creating a Pastoria App
+## Contributing
 
-### Pastoria Templates
+Not currently accepting outside contributions. Please reach out on
+[Twitter](https://x.com/_rrdelaney).
 
-It's highly recommend to use [Vite+](https://viteplus.dev/) to create a new
-Pastoria app. Pastoria's Vite plugin is quite comprehensive, but Vite+ brings
-along just about everything else you could want.
+## License
 
-```sh
-$ vp create @pastoria@latest
-```
-
-This will create a new fully ready Pastoria app complete with Relay, StyleX, a
-devserver, and a production setup.
-
-### Starting from Scratch
-
-Although it's recommended to use a template to create new apps, but it's
-possible to integrate Pastoria into existing Vite apps as well.
-
-### Installing the Pastoria skill
-
-Pastoria distributes a skill for agents using the
-[`skills` CLI](https://www.npmjs.com/package/skills). Install the Pastoria skill
-with the following:
-
-```sh
-$ vp dlx skills add rrdelaney/pastoria
-```
-
-### Pastoria Environment (`environment.ts`)
-
-### Root App (`app.ts`)
-
-### Generating Code (`pastoria`)
-
-## Page Routes
-
-### Page Components (`export default`)
-
-### Loading Data (`export type Queries`)
-
-### Defining Params Schema (`export const schema`)
-
-### Customizing Route Loading (`export const getPreloadProps`)
-
-### Nesting Entrypoints (`export type EntryPoints`)
-
-### Runtime Props (`export type RuntimeProps`)
-
-### Parameters from Parent Entrypoints (`export type ExtraProps`)
-
-## Navigation
-
-## API Routes
-
-## Deployment
-
-## FAQ
-
-**Can I use Server components?** Not yet. Server components are often redundant
-and overstep Relay’s data management.
-
-**Can I use plain JavaScript?** No. Pastoria apps use TypeScript to ensure full
-end-to-end type safety.
+[MIT](LICENSE).
