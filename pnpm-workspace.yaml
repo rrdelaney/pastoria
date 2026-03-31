@@ -1,3 +1,5 @@
+minimalVersionAge: 7d
+
 packages:
   - docs
   - examples/*
