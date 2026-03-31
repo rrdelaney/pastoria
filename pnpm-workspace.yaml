@@ -1,4 +1,4 @@
-minimalVersionAge: 7d
+minimumReleaseAge: 10080
 
 packages:
   - docs
