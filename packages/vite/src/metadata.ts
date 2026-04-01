@@ -61,98 +61,73 @@ export class PastoriaMetadata {
   readonly resourceSourceFiles: SourceFile[];
 
   constructor(project: Project, projectDir: string) {
-    logInfo('Collecting server routes...');
-    this.serverRoutes = this.collectServerRoutes(project);
-    logInfo('Collecting entry points...');
-    this.entryPointRoutes = this.collectEntryPointRoutes(project);
-    logInfo('Collecting resources...');
-    this.resourceSourceFiles = this.collectResourceFiles(project, projectDir);
-    logInfo('Metadata complete');
-  }
+    logInfo('Collecting metadata...');
 
-  private collectServerRoutes(project: Project): ServerRoute[] {
     const serverRoutes: ServerRoute[] = [];
+    const entryPointRoutes: ServerRoute[] = [];
+    const resourceSourceFiles: SourceFile[] = [];
+    const pastoriaDir = project.getDirectory('pastoria');
 
-    function visitSourceFile(sourceFile: SourceFile) {
-      if (sourceFile.getBaseName() !== 'route.ts') return;
+    // Single pass over all source files to classify them
+    for (const sourceFile of project.getSourceFiles('pastoria/**')) {
+      const baseName = sourceFile.getBaseName();
+      const projectFilePath = path.relative(
+        projectDir,
+        sourceFile.getFilePath(),
+      );
 
-      const defaultExport = sourceFile.getDefaultExportSymbol();
-      if (defaultExport == null) return;
+      // Server routes: route.ts files
+      if (baseName === 'route.ts') {
+        const defaultExport = sourceFile.getDefaultExportSymbol();
+        if (defaultExport != null) {
+          const routeName = pastoriaDir?.getRelativePathTo(
+            sourceFile.getDirectory(),
+          );
+          if (routeName) {
+            serverRoutes.push({
+              routeName: '/' + routeName,
+              routePath: '/' + routeName.replace(/\[(\w+)\]/g, ':$1'),
+              sourceFile,
+              symbol: defaultExport,
+            });
+          }
+        }
+        continue;
+      }
 
-      const routeName = project
-        .getDirectory('pastoria')
-        ?.getRelativePathTo(sourceFile.getDirectory());
+      // Skip reserved framework config files and typing files
+      if (PastoriaMetadata.RESERVED_FILES.has(projectFilePath)) continue;
+      if (projectFilePath.endsWith('.d.ts')) continue;
+      if (projectFilePath.endsWith('route.tsx')) continue;
 
-      if (!routeName) return;
+      // Resource files (all remaining .tsx files)
+      resourceSourceFiles.push(sourceFile);
 
-      serverRoutes.push({
-        routeName: '/' + routeName,
-        routePath: '/' + routeName.replace(/\[(\w+)\]/g, ':$1'),
-        sourceFile,
-        symbol: defaultExport,
-      });
+      // Entry point routes: page.tsx files with a default export
+      if (baseName === 'page.tsx') {
+        const defaultExport = sourceFile.getDefaultExportSymbol();
+        if (defaultExport != null) {
+          let routeName = pastoriaDir?.getRelativePathTo(
+            sourceFile.getDirectory(),
+          );
+          if (routeName === '../pastoria') {
+            routeName = '';
+          } else if (!routeName) {
+            continue;
+          }
+          entryPointRoutes.push({
+            routeName: '/' + routeName,
+            routePath: '/' + routeName.replace(/\[(\w+)\]/g, ':$1'),
+            sourceFile,
+            symbol: defaultExport,
+          });
+        }
+      }
     }
 
-    project.getSourceFiles('pastoria/**').forEach(visitSourceFile);
-    return serverRoutes;
-  }
-
-  private collectEntryPointRoutes(project: Project): ServerRoute[] {
-    const routes: ServerRoute[] = [];
-
-    function visitSourceFile(sourceFile: SourceFile) {
-      if (sourceFile.getBaseName() !== 'page.tsx') return;
-
-      const defaultExport = sourceFile.getDefaultExportSymbol();
-      if (defaultExport == null) return;
-
-      // The route name is the relative path to the directory containing page.tsx
-      let routeName = project
-        .getDirectory('pastoria')
-        ?.getRelativePathTo(sourceFile.getDirectory());
-
-      // Handle the special case of `#pastoria/page.tsx`
-      if (routeName === '../pastoria') {
-        routeName = '';
-      } else if (!routeName) {
-        return;
-      }
-
-      routes.push({
-        routeName: '/' + routeName,
-        routePath: '/' + routeName.replace(/\[(\w+)\]/g, ':$1'),
-        sourceFile,
-        symbol: defaultExport,
-      });
-    }
-
-    project.getSourceFiles('pastoria/**').forEach(visitSourceFile);
-    return routes;
-  }
-
-  private collectResourceFiles(project: Project, projectDir: string) {
-    return project.getSourceFiles('pastoria/**').filter((sf) => {
-      const projectFilePath = path.relative(projectDir, sf.getFilePath());
-
-      // Exclude files reserved for configuring the framework.
-      if (PastoriaMetadata.RESERVED_FILES.has(projectFilePath)) {
-        return false;
-      }
-
-      // Don't generate for typing files.
-      if (projectFilePath.endsWith('.d.ts')) {
-        return false;
-      }
-
-      // Exclude route.ts files used to generate server route handlers.
-      if (
-        projectFilePath.endsWith('route.ts') ||
-        projectFilePath.endsWith('route.tsx')
-      ) {
-        return false;
-      }
-
-      return true;
-    });
+    this.serverRoutes = serverRoutes;
+    this.entryPointRoutes = entryPointRoutes;
+    this.resourceSourceFiles = resourceSourceFiles;
+    logInfo('Metadata complete');
   }
 }
