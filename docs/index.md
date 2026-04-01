@@ -60,9 +60,9 @@ The environment file configured `pastoria/environment.ts` configures the
 server-side environment and runtime of the pastoria app. It must default export
 a `PastoriaEnvironment` object:
 
-```TypeScript
-// pastoria/environment.ts
+::: code-group
 
+```TypeScript [pastoria/environment.ts]
 import {PastoriaEnvironment} from '@pastoria/runtime/server';
 import {createContext} from '#lib/server/my-context';
 import {schema} from '#lib/server/my-schema';
@@ -72,6 +72,8 @@ export default new PastoriaEnvironment({
   createContext: () => createContext(),
 });
 ```
+
+:::
 
 The `PastoriaEnvironment` constructor has the following options:
 
@@ -91,9 +93,9 @@ all pages. Use it to:
 - Perform one-time client initialization
 - Add global CSS
 
-```TypeScript
-// pastoria/app.tsx
+::: code-group
 
+```TypeScript [pastoria/app.tsx]
 import type {PropsWithChildren} from 'react';
 
 import './globals.css';
@@ -108,9 +110,26 @@ export default function AppRoot({children}: PropsWithChildren) {
 }
 ```
 
+:::
+
 This component must be the default export, and must render its children.
 
-### Generating Code (`pastoria`)
+### Generating Code
+
+Pastoria relies on a lot of code generation for the router to discover routes
+and be fully typed. This is automatically run on the development server, but can
+be manually run with:
+
+```Shell
+$ pastoria
+```
+
+This will regenerate all Pastoria code, and can be safely run as many times as
+needed.
+
+<!-- prettier-ignore -->
+> [!TIP]
+> Run `pastoria` during CI and make sure no files changed with `git diff --exit-code --quiet`
 
 ## Page Routes
 
