@@ -41,6 +41,9 @@ devserver, and a production setup.
 Although it's recommended to use a template to create new apps, but it's
 possible to integrate Pastoria into existing Vite apps as well.
 
+<!-- prettier-ignore -->
+> [!NOTE] TODO
+
 ### Installing the Pastoria skill
 
 Pastoria distributes a skill for agents using the
@@ -51,9 +54,61 @@ with the following:
 $ vp dlx skills add rrdelaney/pastoria
 ```
 
-### Pastoria Environment (`environment.ts`)
+### Pastoria Environment
 
-### Root App (`app.ts`)
+The environment file configured `pastoria/environment.ts` configures the
+server-side environment and runtime of the pastoria app. It must default export
+a `PastoriaEnvironment` object:
+
+```TypeScript
+// pastoria/environment.ts
+
+import {PastoriaEnvironment} from '@pastoria/runtime/server';
+import {createContext} from '#lib/server/my-context';
+import {schema} from '#lib/server/my-schema';
+
+export default new PastoriaEnvironment({
+  schema,
+  createContext: () => createContext(),
+});
+```
+
+The `PastoriaEnvironment` constructor has the following options:
+
+| Property                           | Type                         | Description                                                                                                                                                                                                  |
+| ---------------------------------- | ---------------------------- | ------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------ |
+| `schema`                           | `GraphQLSchema`              | The GraphQL schema for the application.This schema will be used for both the GraphQL API endpointand the Relay server environment during SSR.                                                                |
+| `createContext`                    | `(req: Request) => unknown;` | Factory function to create a context for each request.                                                                                                                                                       |
+| `enableGraphiQLInProduction`       | `boolean`                    | Enable GraphiQL interface in production. By default, GraphiQL is only available in development mode. Set to true to enable it in production as well.                                                         |
+| `persistedQueriesOnlyInProduction` | `boolean`                    | Only allow persisted queries to be executed in production. When `true`, plain text GraphQL queries will be rejected in production. In development mode, plain text queries are always allowed (for GraphiQL) |
+
+### Root App
+
+Pastoria uses the component defined in `pastoria/app.tsx` as a common parent to
+all pages. Use it to:
+
+- Set up shared React providers
+- Perform one-time client initialization
+- Add global CSS
+
+```TypeScript
+// pastoria/app.tsx
+
+import type {PropsWithChildren} from 'react';
+
+import './globals.css';
+
+export default function AppRoot({children}: PropsWithChildren) {
+  return (
+    <>
+      <title>Pastoria Starter</title>
+      {children}
+    </>
+  );
+}
+```
+
+This component must be the default export, and must render its children.
 
 ### Generating Code (`pastoria`)
 
