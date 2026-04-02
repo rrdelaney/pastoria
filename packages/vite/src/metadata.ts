@@ -1,5 +1,5 @@
 import * as path from 'node:path';
-import {Project, SourceFile, Symbol, ts} from 'ts-morph';
+import {Directory, Project, SourceFile, Symbol, ts} from 'ts-morph';
 import {logInfo} from './logger.js';
 
 export interface ExportedSymbol {
@@ -60,28 +60,40 @@ export class PastoriaMetadata {
    */
   readonly resourceSourceFiles: SourceFile[];
 
+  private readonly pastoriaDirectory: Directory;
+
+  /** Source files in the pastoria directory. */
+  private readonly projectSourceFiles: SourceFile[];
+
   constructor(project: Project, projectDir: string) {
+    const pastoriaDirectory = project.getDirectory('pastoria');
+    if (!pastoriaDirectory) {
+      throw new Error('Could not locate pastoria source directory!');
+    }
+
+    this.pastoriaDirectory = pastoriaDirectory;
+    this.projectSourceFiles = project.getSourceFiles('pastoria/**');
     logInfo('Collecting server routes...');
-    this.serverRoutes = this.collectServerRoutes(project);
+    this.serverRoutes = this.collectServerRoutes();
     logInfo('Collecting entry points...');
-    this.entryPointRoutes = this.collectEntryPointRoutes(project);
+    this.entryPointRoutes = this.collectEntryPointRoutes();
     logInfo('Collecting resources...');
-    this.resourceSourceFiles = this.collectResourceFiles(project, projectDir);
+    this.resourceSourceFiles = this.collectResourceFiles(projectDir);
     logInfo('Metadata complete');
   }
 
-  private collectServerRoutes(project: Project): ServerRoute[] {
+  private collectServerRoutes(): ServerRoute[] {
     const serverRoutes: ServerRoute[] = [];
 
-    function visitSourceFile(sourceFile: SourceFile) {
+    const visitSourceFile = (sourceFile: SourceFile) => {
       if (sourceFile.getBaseName() !== 'route.ts') return;
 
       const defaultExport = sourceFile.getDefaultExportSymbol();
       if (defaultExport == null) return;
 
-      const routeName = project
-        .getDirectory('pastoria')
-        ?.getRelativePathTo(sourceFile.getDirectory());
+      const routeName = this.pastoriaDirectory?.getRelativePathTo(
+        sourceFile.getDirectory(),
+      );
 
       if (!routeName) return;
 
@@ -91,25 +103,25 @@ export class PastoriaMetadata {
         sourceFile,
         symbol: defaultExport,
       });
-    }
+    };
 
-    project.getSourceFiles('pastoria/**').forEach(visitSourceFile);
+    this.projectSourceFiles.forEach(visitSourceFile);
     return serverRoutes;
   }
 
-  private collectEntryPointRoutes(project: Project): ServerRoute[] {
+  private collectEntryPointRoutes(): ServerRoute[] {
     const routes: ServerRoute[] = [];
 
-    function visitSourceFile(sourceFile: SourceFile) {
+    const visitSourceFile = (sourceFile: SourceFile) => {
       if (sourceFile.getBaseName() !== 'page.tsx') return;
 
       const defaultExport = sourceFile.getDefaultExportSymbol();
       if (defaultExport == null) return;
 
       // The route name is the relative path to the directory containing page.tsx
-      let routeName = project
-        .getDirectory('pastoria')
-        ?.getRelativePathTo(sourceFile.getDirectory());
+      let routeName = this.pastoriaDirectory?.getRelativePathTo(
+        sourceFile.getDirectory(),
+      );
 
       // Handle the special case of `#pastoria/page.tsx`
       if (routeName === '../pastoria') {
@@ -124,14 +136,14 @@ export class PastoriaMetadata {
         sourceFile,
         symbol: defaultExport,
       });
-    }
+    };
 
-    project.getSourceFiles('pastoria/**').forEach(visitSourceFile);
+    this.projectSourceFiles.forEach(visitSourceFile);
     return routes;
   }
 
-  private collectResourceFiles(project: Project, projectDir: string) {
-    return project.getSourceFiles('pastoria/**').filter((sf) => {
+  private collectResourceFiles(projectDir: string) {
+    return this.projectSourceFiles.filter((sf) => {
       const projectFilePath = path.relative(projectDir, sf.getFilePath());
 
       // Exclude files reserved for configuring the framework.

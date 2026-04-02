@@ -18,6 +18,7 @@ import pc from 'picocolors';
 import {
   CodeBlockWriter,
   ExportedDeclarations,
+  FileSystemHost,
   ImportDeclarationStructure,
   OptionalKind,
   Project,
@@ -25,47 +26,13 @@ import {
   SourceFile,
   SyntaxKind,
   ts,
+  TypeChecker,
   TypeFlags,
   VariableDeclarationKind,
 } from 'ts-morph';
 import {saveWithChecksum} from './fs.js';
 import {logInfo, logWarn} from './logger.js';
 import {PastoriaMetadata} from './metadata.js';
-
-/**
- * Collects all parameters used by `queries` represents as `ts.Type`.
- *
- * In the case of a conflict, later queries veriables win.
- */
-function collectQueryParameters(
-  project: Project,
-  queries: string[],
-): Map<string, ts.Type> {
-  const vars = new Map<string, ts.Type>();
-
-  for (const query of queries) {
-    const variablesType = project
-      .getSourceFile(`__generated__/queries/${query}.graphql.ts`)
-      ?.getExportedDeclarations()
-      .get(`${query}$variables`)
-      ?.at(0)
-      ?.getType();
-
-    if (variablesType == null) continue;
-
-    for (const property of variablesType.getProperties()) {
-      // TODO: Detect conflicting types among properties declared.
-      const propertyName = property.getName();
-      const propertyType = property.getValueDeclaration()?.getType();
-
-      if (propertyType) {
-        vars.set(propertyName, propertyType.compilerType);
-      }
-    }
-  }
-
-  return vars;
-}
 
 /**
  * Creates a Zod schema for a given ts.Type.
@@ -205,12 +172,61 @@ export class PastoriaExecutionContext {
     );
   }
 
-  private getTypeChecker() {
-    return this.project.getTypeChecker().compilerObject;
+  private readonly queryParameterCache = new Map<
+    string,
+    [name: string, type: ts.Type][]
+  >();
+
+  /**
+   * Collects all parameters used by `queries` represents as `ts.Type`.
+   *
+   * In the case of a conflict, later queries veriables win.
+   */
+  private collectQueryParameters(queries: string[]): Map<string, ts.Type> {
+    const vars = new Map<string, ts.Type>();
+
+    for (const query of queries) {
+      let params = this.queryParameterCache.get(query);
+      if (!params) {
+        const variablesType = this.project
+          .getSourceFile(`__generated__/queries/${query}.graphql.ts`)
+          ?.getExportedDeclarations()
+          .get(`${query}$variables`)
+          ?.at(0)
+          ?.getType();
+
+        params = [];
+        for (const property of variablesType?.getProperties() ?? []) {
+          // TODO: Detect conflicting types among properties declared.
+          const propertyName = property.getName();
+          const propertyType = property.getValueDeclaration()?.getType();
+
+          if (propertyType) {
+            params.push([propertyName, propertyType.compilerType]);
+          }
+        }
+
+        this.queryParameterCache.set(query, params);
+      }
+
+      for (const [propertyName, propertyType] of params) {
+        vars.set(propertyName, propertyType);
+      }
+    }
+
+    return vars;
   }
 
+  private _typeChecker?: TypeChecker;
+  private getTypeChecker() {
+    if (!this._typeChecker) this._typeChecker = this.project.getTypeChecker();
+    return this._typeChecker.compilerObject;
+  }
+
+  private _fileSystem?: FileSystemHost;
   private getFileSystem() {
-    return this.project.getFileSystem();
+    if (!this._fileSystem) this._fileSystem = this.project.getFileSystem();
+    return this._fileSystem;
   }
 
   /** Returns relative path of a file from the project root. This is typically one level above #pastoria. */
@@ -599,10 +615,7 @@ declare global {
     );
 
     // Collect parameters from query variables
-    const params = collectQueryParameters(
-      this.project,
-      Array.from(queries.values()),
-    );
+    const params = this.collectQueryParameters(Array.from(queries.values()));
 
     const exportedDecls = entryPointSourceFile.getExportedDeclarations();
     const hasQueriesExport = exportedDecls.has('Queries');
@@ -821,7 +834,7 @@ declare global {
         // Write the queries used by the entry point.
         writer.write('queries:').block(() => {
           for (const [queryRef, queryName] of queries) {
-            const queryVars = collectQueryParameters(this.project, [queryName]);
+            const queryVars = this.collectQueryParameters([queryName]);
             const hasVariables = queryVars.size > 0;
 
             writer.write(`${queryRef}:`).block(() => {

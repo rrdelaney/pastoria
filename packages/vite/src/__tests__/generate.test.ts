@@ -84,26 +84,8 @@ async function generate(files: Record<string, string>) {
 
 describe('generatePastoriaArtifacts', () => {
   describe('empty project', () => {
-    it('generates router, js_resource, and server with empty configs', async () => {
-      const result = await generate({});
-
-      // Router config should have no routes (noop removed, nothing added)
-      expect(result.router).toContain('const ROUTER_CONF = {');
-      expect(result.router).not.toContain('noop');
-
-      // js_resource config should have no resources (noop removed)
-      expect(result.jsResource).toContain('const RESOURCE_CONF = {');
-      expect(result.jsResource).not.toContain('noop');
-
-      // server should have no route handlers added
-      expect(result.server).toContain(
-        'export const router = express.Router();',
-      );
-      expect(result.server).not.toContain('router.use(');
-
-      expect(result.router).toMatchSnapshot();
-      expect(result.jsResource).toMatchSnapshot();
-      expect(result.server).toMatchSnapshot();
+    it('throws when no pastoria directory exists', async () => {
+      await expect(generate({})).rejects.toThrow();
     });
   });
 
