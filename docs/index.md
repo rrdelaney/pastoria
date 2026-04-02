@@ -62,7 +62,7 @@ a `PastoriaEnvironment` object:
 
 ::: code-group
 
-```TypeScript [pastoria/environment.ts]
+```ts [pastoria/environment.ts]
 import {PastoriaEnvironment} from '@pastoria/runtime/server';
 import {createContext} from '#lib/server/my-context';
 import {schema} from '#lib/server/my-schema';
@@ -77,12 +77,16 @@ export default new PastoriaEnvironment({
 
 The `PastoriaEnvironment` constructor has the following options:
 
-| Property                           | Type                         | Description                                                                                                                                                                                                  |
-| ---------------------------------- | ---------------------------- | ------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------ |
-| `schema`                           | `GraphQLSchema`              | The GraphQL schema for the application.This schema will be used for both the GraphQL API endpointand the Relay server environment during SSR.                                                                |
-| `createContext`                    | `(req: Request) => unknown;` | Factory function to create a context for each request.                                                                                                                                                       |
-| `enableGraphiQLInProduction`       | `boolean`                    | Enable GraphiQL interface in production. By default, GraphiQL is only available in development mode. Set to true to enable it in production as well.                                                         |
-| `persistedQueriesOnlyInProduction` | `boolean`                    | Only allow persisted queries to be executed in production. When `true`, plain text GraphQL queries will be rejected in production. In development mode, plain text queries are always allowed (for GraphiQL) |
+- **`schema`**: The GraphQL schema for the application.This schema will be used
+  for both the GraphQL API endpointand the Relay server environment during SSR.
+- **`createContext`**: Factory function to create a context for each request.
+- **`enableGraphiQLInProduction`**: Enable GraphiQL interface in production. By
+  default, GraphiQL is only available in development mode. Set to true to enable
+  it in production as well.
+- **`persistedQueriesOnlyInProduction`**: Only allow persisted queries to be
+  executed in production. When `true`, plain text GraphQL queries will be
+  rejected in production. In development mode, plain text queries are always
+  allowed (for GraphiQL).
 
 ### Root App
 
@@ -95,7 +99,7 @@ all pages. Use it to:
 
 ::: code-group
 
-```TypeScript [pastoria/app.tsx]
+```ts [pastoria/app.tsx]
 import type {PropsWithChildren} from 'react';
 
 import './globals.css';
@@ -129,13 +133,90 @@ needed.
 
 <!-- prettier-ignore -->
 > [!TIP]
-> Run `pastoria` during CI and make sure no files changed with `git diff --exit-code --quiet`
+> Run `pastoria` during CI, and make sure no files changed with `git diff --exit-code --quiet`
 
 ## Page Routes
 
-### Page Components (`export default`)
+Pages are a UI defined by a React component rendered on a given route. Pastoria
+pages are defined in `page.tsx` files under the `pastoria` directory. Route
+variables are defined using `[variable]` directories. For example, the following
+files would map to pages:
 
-### Loading Data (`export type Queries`)
+| File                          | Route       |
+| ----------------------------- | ----------- |
+| `pastoria/page.tsx`           | `/`         |
+| `pastoria/about/page.tsx`     | `/about`    |
+| `pastoria/user/[id]/page.tsx` | `/user/:id` |
+
+Pages **must** be named `page.tsx`. Other files in the `pastoria` directory will
+be ignored, exlcuding special files like `app.tsx`, `environment.ts`, and
+`route.ts`.
+
+### Page Components
+
+Pages **must** default export a React component. This component will be used as
+the entry point to the page, and will be rendered as a child of the app
+component in `app.tsx`.
+
+::: code-group
+
+```tsx [pastoria/page.tsx]
+export default function Page() {
+  return <p>Hello Pastoria!</p>;
+}
+```
+
+Page components will be server rendered and then hydrated on the client on
+initial initial navigation, and only client-rendered on subsequent in-app
+navigation. Page components are **not** React server components.
+
+### Loading Data
+
+Pastoria exclusively uses [Relay](https://relay.dev) to load data in page
+components. To define a query that a page component should load, first create a
+query using Relay's
+[`usePreloadedQuery`](https://relay.dev/docs/api-reference/use-preloaded-query/)
+hook:
+
+::: code-group
+
+```tsx [pastoria/app.tsx]
+import {page_GreetingQuery} from '#genfiles/queries/page_GreetingQuery.graphql.js';
+import {graphql, usePreloadedQuery} from 'react-relay';
+
+// [!code focus:3]
+export type Queries = {
+  greeting: page_GreetingQuery;
+};
+
+export default function Page({queries}: PastoriaPageProps<'/'>) {
+  // [!code focus:8]
+  const {greeting} = usePreloadedQuery(
+    graphql`
+      query page_GreetingQuery @preloadable {
+        greeting
+      }
+    `,
+    queries.greeting,
+  );
+
+  return <p>{greeting}</p>;
+}
+```
+
+:::
+
+Next run Relay's code generator to make the generated code available to you:
+
+```sh
+$ relay-compiler && pastoria
+```
+
+<!-- prettier-ignore -->
+> [!WARNING]
+> It is possible to use a `useEffect` and `fetch` to load data in a page component,
+> but it is highly discouraged. This data will not be present during server-side rendering
+> and will cause slow loading for end users.
 
 ### Defining Params Schema (`export const schema`)
 
@@ -155,8 +236,19 @@ needed.
 
 ## FAQ
 
-**Can I use Server components?** Not yet. Server components are often redundant
-and overstep Relay’s data management.
+::: details Can I use Server components?
 
-**Can I use plain JavaScript?** No. Pastoria apps use TypeScript to ensure full
-end-to-end type safety.
+Not yet. Server components are often redundant and overstep Relay’s data
+management.
+
+:::
+
+::: details Can I use plain JavaScript?
+
+**No.** Pastoria apps use TypeScript to ensure full end-to-end type safety.
+
+:::
+
+```
+
+```
