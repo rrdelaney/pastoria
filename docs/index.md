@@ -36,14 +36,6 @@ $ vp create @pastoria@latest
 This will create a new fully ready Pastoria app complete with Relay, StyleX, a
 devserver, and a production setup.
 
-### Starting from Scratch
-
-Although it's recommended to use a template to create new apps, but it's
-possible to integrate Pastoria into existing Vite apps as well.
-
-<!-- prettier-ignore -->
-> [!NOTE] TODO
-
 ### Installing the Pastoria skill
 
 Pastoria distributes a skill for agents using the
@@ -53,6 +45,135 @@ with the following:
 ```sh
 $ vp dlx skills add rrdelaney/pastoria
 ```
+
+### Generating Code
+
+Pastoria relies on a lot of code generation for the router to discover routes
+and be fully typed. This is automatically run on the development server, but can
+be manually run with:
+
+```Shell
+$ pastoria
+```
+
+This will regenerate all Pastoria code, and can be safely run as many times as
+needed.
+
+<!-- prettier-ignore -->
+> [!TIP]
+> Run `pastoria` during CI, and make sure no files changed with
+> ```sh
+> $ git diff --exit-code --quiet
+> ```
+
+## Page Routes
+
+Pages are a UI defined by a React component rendered on a given route. Pastoria
+pages are defined in `page.tsx` files under the `pastoria` directory. Route
+variables are defined using `[variable]` directories. For example, the following
+files would map to pages:
+
+| File                          | Route       |
+| ----------------------------- | ----------- |
+| `pastoria/page.tsx`           | `/`         |
+| `pastoria/about/page.tsx`     | `/about`    |
+| `pastoria/user/[id]/page.tsx` | `/user/:id` |
+
+Pages **must** be named `page.tsx`. Other files in the `pastoria` directory will
+be ignored, exlcuding special files like `app.tsx`, `environment.ts`, and
+`route.ts`.
+
+### Page Components
+
+Pages **must** default export a React component. This component will be used as
+the entry point to the page, and will be rendered as a child of the app
+component in `app.tsx`.
+
+::: code-group
+
+```tsx [pastoria/page.tsx]
+export default function Page() {
+  return <p>Hello Pastoria!</p>;
+}
+```
+
+Page components will be server rendered and then hydrated on the client on
+initial initial navigation, and only client-rendered on subsequent in-app
+navigation. Page components are **not** React server components.
+
+### Loading Data
+
+Pastoria exclusively uses [Relay](https://relay.dev) to load data in page
+components. To define a query that a page component should load, create a query
+using Relay's
+[`usePreloadedQuery`](https://relay.dev/docs/api-reference/use-preloaded-query/)
+hook, then add it to an export `Queries` type:
+
+::: code-group
+
+```tsx [pastoria/app.tsx]
+import {page_GreetingQuery} from '#genfiles/queries/page_GreetingQuery.graphql.js';
+import {graphql, usePreloadedQuery} from 'react-relay';
+
+// [!code focus:3]
+export type Queries = {
+  greeting: page_GreetingQuery;
+};
+
+export default function Page({queries}: PastoriaPageProps<'/'>) {
+  // [!code focus:8]
+  const {greeting} = usePreloadedQuery(
+    graphql`
+      query page_GreetingQuery @preloadable {
+        greeting
+      }
+    `,
+    queries.greeting,
+  );
+
+  return <p>{greeting}</p>;
+}
+```
+
+:::
+
+Next run Relay's code generator to make the generated code available to you:
+
+```sh
+$ relay-compiler && pastoria
+```
+
+Each query added to `Queries` will be fetched and supplied to the page component
+using the key defined in the object. A page can have any number of queries, and
+can even pass them to child components to load.
+
+<!-- prettier-ignore -->
+> [!WARNING]
+> It is possible to use a `useEffect` and `fetch` to load data in a page component,
+> but it is highly discouraged. This data will not be present during server-side rendering
+> and will cause slow loading for end users.
+
+### Route Variables (`export const schema`)
+
+### Customizing Loading (`export const getPreloadProps`)
+
+### Nesting Entrypoints (`export type EntryPoints`)
+
+### Runtime Props (`export type RuntimeProps`)
+
+### Parameters from Parent Entrypoints (`export type ExtraProps`)
+
+## Navigation
+
+## Styling
+
+### StyleX
+
+### Tailwind
+
+## API Routes
+
+## Configuration
 
 ### Pastoria Environment
 
@@ -118,120 +239,6 @@ export default function AppRoot({children}: PropsWithChildren) {
 
 This component must be the default export, and must render its children.
 
-### Generating Code
-
-Pastoria relies on a lot of code generation for the router to discover routes
-and be fully typed. This is automatically run on the development server, but can
-be manually run with:
-
-```Shell
-$ pastoria
-```
-
-This will regenerate all Pastoria code, and can be safely run as many times as
-needed.
-
-<!-- prettier-ignore -->
-> [!TIP]
-> Run `pastoria` during CI, and make sure no files changed with `git diff --exit-code --quiet`
-
-## Page Routes
-
-Pages are a UI defined by a React component rendered on a given route. Pastoria
-pages are defined in `page.tsx` files under the `pastoria` directory. Route
-variables are defined using `[variable]` directories. For example, the following
-files would map to pages:
-
-| File                          | Route       |
-| ----------------------------- | ----------- |
-| `pastoria/page.tsx`           | `/`         |
-| `pastoria/about/page.tsx`     | `/about`    |
-| `pastoria/user/[id]/page.tsx` | `/user/:id` |
-
-Pages **must** be named `page.tsx`. Other files in the `pastoria` directory will
-be ignored, exlcuding special files like `app.tsx`, `environment.ts`, and
-`route.ts`.
-
-### Page Components
-
-Pages **must** default export a React component. This component will be used as
-the entry point to the page, and will be rendered as a child of the app
-component in `app.tsx`.
-
-::: code-group
-
-```tsx [pastoria/page.tsx]
-export default function Page() {
-  return <p>Hello Pastoria!</p>;
-}
-```
-
-Page components will be server rendered and then hydrated on the client on
-initial initial navigation, and only client-rendered on subsequent in-app
-navigation. Page components are **not** React server components.
-
-### Loading Data
-
-Pastoria exclusively uses [Relay](https://relay.dev) to load data in page
-components. To define a query that a page component should load, first create a
-query using Relay's
-[`usePreloadedQuery`](https://relay.dev/docs/api-reference/use-preloaded-query/)
-hook:
-
-::: code-group
-
-```tsx [pastoria/app.tsx]
-import {page_GreetingQuery} from '#genfiles/queries/page_GreetingQuery.graphql.js';
-import {graphql, usePreloadedQuery} from 'react-relay';
-
-// [!code focus:3]
-export type Queries = {
-  greeting: page_GreetingQuery;
-};
-
-export default function Page({queries}: PastoriaPageProps<'/'>) {
-  // [!code focus:8]
-  const {greeting} = usePreloadedQuery(
-    graphql`
-      query page_GreetingQuery @preloadable {
-        greeting
-      }
-    `,
-    queries.greeting,
-  );
-
-  return <p>{greeting}</p>;
-}
-```
-
-:::
-
-Next run Relay's code generator to make the generated code available to you:
-
-```sh
-$ relay-compiler && pastoria
-```
-
-<!-- prettier-ignore -->
-> [!WARNING]
-> It is possible to use a `useEffect` and `fetch` to load data in a page component,
-> but it is highly discouraged. This data will not be present during server-side rendering
-> and will cause slow loading for end users.
-
-### Defining Params Schema (`export const schema`)
-
-### Customizing Route Loading (`export const getPreloadProps`)
-
-### Nesting Entrypoints (`export type EntryPoints`)
-
-### Runtime Props (`export type RuntimeProps`)
-
-### Parameters from Parent Entrypoints (`export type ExtraProps`)
-
-## Navigation
-
-## API Routes
-
 ## Deployment
 
 ## FAQ
@@ -248,7 +255,3 @@ management.
 **No.** Pastoria apps use TypeScript to ensure full end-to-end type safety.
 
 :::
-
-```
-
-```

@@ -1,4 +1,3 @@
-:root {
-  --vp-font-size-base: 14px;
-  --vp-font-size-small: 12px;
+p {
+  font-size: 11pt;
 }
