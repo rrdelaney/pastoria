@@ -100,8 +100,8 @@ export default function Page() {
 :::
 
 Page components will be server rendered and then hydrated on the client on
-initial navigation, and only client-rendered on subsequent in-app
-navigation. Page components are **not** React server components.
+initial navigation, and only client-rendered on subsequent in-app navigation.
+Page components are **not** React server components.
 
 ### Loading Data
 
@@ -244,8 +244,8 @@ patterns like tabs.
 
 Nested entrypoints are lazily loaded sub-components. Any `.tsx` file in the
 `pastoria/` directory that isn't `page.tsx`, `app.tsx`, or `environment.ts`
-becomes a nested entrypoint. They enable code-splitting: each entrypoint gets its
-own bundle and can preload its own queries independently.
+becomes a nested entrypoint. They enable code-splitting: each entrypoint gets
+its own bundle and can preload its own queries independently.
 
 To use entrypoints in a page, declare them with an `EntryPoints` type:
 
@@ -278,14 +278,16 @@ example, the file `pastoria/commander/[commander]/entries.tsx` has the ID
 Render entrypoints using `EntryPointContainer` wrapped in `Suspense`:
 
 ```tsx
-{entryPoints.entries && (
-  <Suspense fallback={<LoadingIcon />}>
-    <EntryPointContainer
-      entryPointReference={entryPoints.entries}
-      props={{}}
-    />
-  </Suspense>
-)}
+{
+  entryPoints.entries && (
+    <Suspense fallback={<LoadingIcon />}>
+      <EntryPointContainer
+        entryPointReference={entryPoints.entries}
+        props={{}}
+      />
+    </Suspense>
+  );
+}
 ```
 
 Entrypoints are only rendered when their ref is defined. Combined with
@@ -304,7 +306,8 @@ entrypoints can define custom runtime props:
 ::: code-group
 
 ```tsx [pastoria/commander/[commander]/staple_details.tsx]
-export type RuntimeProps = { // [!code highlight]
+export type RuntimeProps = {
+  // [!code highlight]
   sortBy: string; // [!code highlight]
 }; // [!code highlight]
 
@@ -344,24 +347,33 @@ values back to the component so it doesn't need to re-derive them:
 ::: code-group
 
 ```tsx [pastoria/page.tsx]
-export type ExtraProps = { // [!code highlight]
+export type ExtraProps = {
+  // [!code highlight]
   sortBy: string;
   timePeriod: string;
   query: string;
 };
 
-export const getPreloadProps: GetPreloadProps<'/'> = ({variables, queries}) => ({
+export const getPreloadProps: GetPreloadProps<'/'> = ({
+  variables,
+  queries,
+}) => ({
   queries: {
     commandersRef: queries.commandersRef(variables),
   },
-  extraProps: { // [!code highlight]
+  extraProps: {
+    // [!code highlight]
     sortBy: variables.sortBy ?? 'POPULARITY',
     timePeriod: variables.timePeriod ?? 'SIX_MONTHS',
     query: variables.q ?? '',
   },
 });
 
-export default function HomePage({queries, extraProps}: PastoriaPageProps<'/'>) { // [!code highlight]
+export default function HomePage({
+  queries,
+  extraProps,
+}: PastoriaPageProps<'/'>) {
+  // [!code highlight]
   // extraProps.sortBy, extraProps.timePeriod, extraProps.query
   // are the resolved values, no need to re-parse from URL
 }
@@ -510,10 +522,10 @@ export default router;
 
 API routes support dynamic segments the same way pages do:
 
-| File                                  | Route              |
-| ------------------------------------- | ------------------ |
-| `pastoria/api/auth/route.ts`          | `/api/auth`        |
-| `pastoria/api/greet/[name]/route.ts`  | `/api/greet/:name` |
+| File                                 | Route              |
+| ------------------------------------ | ------------------ |
+| `pastoria/api/auth/route.ts`         | `/api/auth`        |
+| `pastoria/api/greet/[name]/route.ts` | `/api/greet/:name` |
 
 API routes run server-side only and have full access to Node.js APIs. They are
 mounted alongside the page handler, so avoid defining API routes at paths that
