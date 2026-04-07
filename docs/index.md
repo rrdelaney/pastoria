@@ -30,7 +30,7 @@ Pastoria app. Pastoria's Vite plugin is quite comprehensive, but Vite+ brings
 along just about everything else you could want.
 
 ```sh
-$ vp create @pastoria@latest
+$ vp create @pastoria@latest -- <project name>
 ```
 
 This will create a new fully ready Pastoria app complete with Relay, StyleX, a
