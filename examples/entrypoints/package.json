@@ -5,7 +5,6 @@
   "type": "module",
   "scripts": {
     "format": "vp fmt .",
-    "generate": "grats && relay-compiler && pastoria generate",
     "build": "vp build",
     "dev": "vp dev",
     "start": "NODE_ENV=production pastoria-server",

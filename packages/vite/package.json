@@ -1,7 +1,11 @@
 {
   "name": "@pastoria/vite",
-  "version": "0.1.0",
+  "version": "0.1.1",
   "description": "Vite plugin for Pastoria apps",
+  "author": {
+    "name": "Ryan Delaney",
+    "url": "https://rdel.dev"
+  },
   "license": "MIT",
   "type": "module",
   "exports": {
@@ -15,11 +19,6 @@
     "dist",
     "templates"
   ],
-  "scripts": {
-    "build": "vp pack",
-    "check": "vp check",
-    "test": "vp test"
-  },
   "keywords": [
     "vite-plugin"
   ],

@@ -4,6 +4,24 @@ import {defineConfig} from 'vite-plus';
 
 export default defineConfig({
   plugins: [tailwindcss(), pastoria()],
+  run: {
+    tasks: {
+      'generate:schema': {
+        command: 'grats',
+        input: ['lib/schema/**'],
+      },
+      'generate:relay': {
+        command: 'relay-compiler',
+        dependsOn: ['generate:schema'],
+        input: ['__generated__/schema/**', 'lib/**', 'pastora/**'],
+      },
+      generate: {
+        command: 'pastoria',
+        input: ['pastoria/**'],
+        dependsOn: ['generate:relay'],
+      },
+    },
+  },
   fmt: {
     proseWrap: 'always',
     bracketSpacing: false,

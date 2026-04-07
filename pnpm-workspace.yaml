@@ -1,4 +1,14 @@
 minimumReleaseAge: 10080
+minimumReleaseAgeExclude:
+  - '@oxfmt/*'
+  - '@oxlint/*'
+  - '@oxlint-tsgolint/*'
+  - '@voidzero-dev/*'
+  - oxfmt
+  - oxlint
+  - oxlint-tsgolint
+  - vite
+  - vite-plus
 
 packages:
   - docs
@@ -30,9 +40,9 @@ catalog:
   relay-runtime: ^20.1.1
   tailwindcss: ^4.1.14
   typescript: ^6.0.2
-  vite: npm:@voidzero-dev/vite-plus-core@latest
-  vite-plus: ^0.1.13
-  vitest: npm:@voidzero-dev/vite-plus-test@latest
+  vite: ^8.0.5
+  vite-plus: ^0.1.16
+  vitest: ^4.1.2
   zod: ^3.25.76
 
 onlyBuiltDependencies:

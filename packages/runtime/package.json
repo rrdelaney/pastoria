@@ -1,6 +1,6 @@
 {
   "name": "@pastoria/runtime",
-  "version": "0.1.0",
+  "version": "0.1.1",
   "description": "Runtime utilities for Pastoria routing system",
   "type": "module",
   "main": "./dist/index.js",
@@ -15,12 +15,10 @@
       "import": "./dist/server/index.mjs"
     }
   },
-  "scripts": {
-    "build": "vp pack -f cjs,esm src/index.ts src/server/index.ts",
-    "check": "vp check"
+  "author": {
+    "name": "Ryan Delaney",
+    "url": "https://rdel.dev"
   },
-  "keywords": [],
-  "author": "",
   "license": "MIT",
   "dependencies": {
     "dataloader": "^2.2.3",

@@ -1,6 +1,6 @@
 {
   "name": "@pastoria/server",
-  "version": "0.1.0",
+  "version": "0.1.1",
   "description": "Production server for Pastoria apps",
   "exports": {
     "import": "./dist/index.mjs",
@@ -9,13 +9,12 @@
   "bin": {
     "pastoria-server": "./dist/cli.mjs"
   },
-  "author": "",
+  "author": {
+    "name": "Ryan Delaney",
+    "url": "https://rdel.dev"
+  },
   "license": "MIT",
   "type": "module",
-  "scripts": {
-    "build": "vp pack",
-    "check": "vp check"
-  },
   "dependencies": {
     "cookie-parser": "catalog:",
     "dotenv": "catalog:",

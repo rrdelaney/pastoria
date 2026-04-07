@@ -1,14 +1,10 @@
 {
   "name": "@pastoria/create",
-  "version": "0.1.0",
+  "version": "0.1.1",
   "description": "Scaffolding tool for creating new Pastoria projects",
   "type": "module",
   "bin": {
     "create-pastoria": "./dist/index.mjs"
-  },
-  "scripts": {
-    "build": "vp pack && cp ../../pnpm-workspace.yaml dist/",
-    "check": "vp check"
   },
   "keywords": [
     "pastoria",
@@ -16,7 +12,10 @@
     "scaffold",
     "create"
   ],
-  "author": "",
+  "author": {
+    "name": "Ryan Delaney",
+    "url": "https://rdel.dev"
+  },
   "license": "MIT",
   "dependencies": {
     "degit": "^2.8.4",
