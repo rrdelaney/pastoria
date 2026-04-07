@@ -23,12 +23,13 @@ export default defineConfig({
     },
   },
   fmt: {
+    ignorePatterns: ['__generated__/**'],
     proseWrap: 'always',
     bracketSpacing: false,
     singleQuote: true,
   },
   lint: {
-    ignorePatterns: ['__generated__/router/*'],
+    ignorePatterns: ['__generated__/**'],
     options: {
       typeAware: true,
       typeCheck: true,
