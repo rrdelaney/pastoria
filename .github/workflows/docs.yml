@@ -24,7 +24,7 @@ jobs:
         run: vp install --frozen-lockfile
 
       - name: Build docs
-        run: vp run --filter @pastoria/docs docs:build
+        run: vp run @pastoria/docs#build
 
       - name: Upload Build Artifact
         uses: actions/upload-pages-artifact@v3
