@@ -9,7 +9,7 @@ export default defineConfig({
   },
   pack: {
     entry: ['src/index.ts', 'src/cli.ts'],
-    format: ['cjs', 'esm'],
+    format: ['esm'],
     dts: true,
     deps: {
       skipNodeModulesBundle: true,

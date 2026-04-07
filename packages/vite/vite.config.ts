@@ -10,7 +10,7 @@ export default defineConfig({
   },
   pack: {
     entry: ['src/cli.ts', 'src/vite.ts'],
-    format: ['cjs', 'esm'],
+    format: ['esm'],
     dts: true,
     deps: {
       skipNodeModulesBundle: true,

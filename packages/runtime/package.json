@@ -3,16 +3,14 @@
   "version": "0.1.1",
   "description": "Runtime utilities for Pastoria routing system",
   "type": "module",
-  "main": "./dist/index.js",
-  "types": "./dist/index.d.ts",
   "exports": {
     ".": {
-      "require": "./dist/index.cjs",
-      "import": "./dist/index.mjs"
+      "import": "./dist/index.mjs",
+      "types": "./dist/index.d.mts"
     },
     "./server": {
-      "require": "./dist/server/index.cjs",
-      "import": "./dist/server/index.mjs"
+      "import": "./dist/server/index.mjs",
+      "types": "./dist/server/index.d.mts"
     }
   },
   "author": {

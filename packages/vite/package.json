@@ -10,7 +10,7 @@
   "type": "module",
   "exports": {
     "import": "./dist/vite.mjs",
-    "require": "./dist/vite.cjs"
+    "types": "./dist/vite.d.mts"
   },
   "bin": {
     "pastoria": "./dist/cli.mjs"

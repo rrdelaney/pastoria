@@ -2,11 +2,6 @@
   "name": "pastoria-monorepo",
   "private": true,
   "type": "module",
-  "scripts": {
-    "check:types": "pnpm -r check:types",
-    "check:format": "vp fmt --check .",
-    "format": "vp fmt ."
-  },
   "devDependencies": {
     "@changesets/cli": "^2.29.7",
     "vite-plus": "catalog:"
