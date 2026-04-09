@@ -12,7 +12,7 @@ export default defineConfig({
       'generate:relay': {
         command: 'relay-compiler',
         dependsOn: ['generate:schema'],
-        input: ['__generated__/schema/**', 'lib/**', 'pastora/**'],
+        input: ['__generated__/schema/**', 'lib/**', 'pastoria/**'],
       },
       generate: {
         command: 'pastoria',
