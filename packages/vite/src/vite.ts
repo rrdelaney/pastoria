@@ -88,6 +88,8 @@ function pastoriaEntryPlugin(): Plugin {
       }
     },
     configureServer(server) {
+      dotenv.config();
+
       return () => {
         server.middlewares.use(
           express()
