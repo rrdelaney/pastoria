@@ -3,11 +3,16 @@
 import {program} from 'commander';
 import {readFile} from 'node:fs/promises';
 import * as path from 'node:path';
-import {IndentationText, Project} from 'ts-morph';
+import {PastoriaAnalyzer} from './analyzer.js';
 import {PastoriaExecutionContext} from './generate.js';
 
-async function runCodeGeneration(project: Project) {
-  await new PastoriaExecutionContext(project).generatePastoriaArtifacts();
+async function runCodeGeneration() {
+  const analyzer = new PastoriaAnalyzer({projectDir: process.cwd()});
+  try {
+    await new PastoriaExecutionContext(analyzer).generatePastoriaArtifacts();
+  } finally {
+    analyzer.close();
+  }
 }
 
 async function main() {
@@ -15,21 +20,15 @@ async function main() {
     await readFile(path.join(import.meta.dirname, '../package.json'), 'utf-8'),
   );
 
-  const project = new Project({
-    tsConfigFilePath: path.join(process.cwd(), 'tsconfig.json'),
-    manipulationSettings: {
-      indentationText: IndentationText.TwoSpaces,
-    },
-  });
-
   await program
     .name('pastoria')
     .version(packageData.version)
     .description('Generate Pastoria router artifacts')
-    .action(async () => {
-      await runCodeGeneration(project);
-    })
+    .action(runCodeGeneration)
     .parseAsync();
 }
 
-main().catch(console.error);
+main().catch((e) => {
+  console.error(e);
+  process.exitCode = 1;
+});

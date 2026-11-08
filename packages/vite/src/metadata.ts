@@ -1,25 +1,14 @@
 import * as path from 'node:path';
-import {Directory, Project, SourceFile, Symbol, ts} from 'ts-morph';
+import type {PastoriaAnalyzer} from './analyzer.js';
 import {logInfo} from './logger.js';
 
-export interface ExportedSymbol {
-  sourceFile: SourceFile;
-  symbol: Symbol;
-}
-
-export interface RouterResource extends ExportedSymbol {
-  queries: Map<string, string>;
-  entryPoints: Map<string, string>;
-}
-
-export interface RouterRoute extends ExportedSymbol {
-  params: Map<string, ts.Type>;
-}
-
 /**
- * A Pastoria API routes, defined as a default export in a route.ts file.
+ * A route defined by a file under pastoria/, either a page.tsx (React route) or
+ * a route.ts (Express API route).
  */
-export interface ServerRoute extends ExportedSymbol {
+export interface PastoriaRoute {
+  /** Absolute path of the page.tsx or route.ts file. */
+  fileName: string;
   /**
    * Name of the route as defined relative to pastoria/.
    *
@@ -47,124 +36,90 @@ export class PastoriaMetadata {
   /**
    * route.ts files used to generate server route handlers.
    */
-  readonly serverRoutes: ServerRoute[];
+  readonly serverRoutes: PastoriaRoute[];
 
   /**
    * page.tsx files used to generate React routes.
    */
-  readonly entryPointRoutes: ServerRoute[];
+  readonly entryPointRoutes: PastoriaRoute[];
 
   /**
-   * Entry points defined in the #pastoria directory, not necessarily directly routable. Contains source files also
-   * in `entryPointRoutes`.
+   * Entry points defined in the #pastoria directory, not necessarily directly
+   * routable. Contains files also in `entryPointRoutes`.
    */
-  readonly resourceSourceFiles: SourceFile[];
+  readonly resourceFiles: string[];
 
-  private readonly pastoriaDirectory: Directory;
+  private readonly pastoriaDir: string;
 
-  /** Source files in the pastoria directory. */
-  private readonly projectSourceFiles: SourceFile[];
-
-  constructor(project: Project, projectDir: string) {
-    const pastoriaDirectory = project.getDirectory('pastoria');
-    if (!pastoriaDirectory) {
+  constructor(
+    analyzer: PastoriaAnalyzer,
+    private readonly projectDir: string,
+  ) {
+    this.pastoriaDir = path.join(projectDir, 'pastoria');
+    const sourceFiles = analyzer.getPastoriaSourceFiles();
+    if (sourceFiles.length === 0) {
       throw new Error('Could not locate pastoria source directory!');
     }
 
-    this.pastoriaDirectory = pastoriaDirectory;
-    this.projectSourceFiles = project.getSourceFiles('pastoria/**');
+    const hasDefaultExport = (fileName: string) =>
+      analyzer.getModuleInfo(fileName).exports.has('default');
+
     logInfo('Collecting server routes...');
-    this.serverRoutes = this.collectServerRoutes();
+    this.serverRoutes = sourceFiles
+      .filter((f) => path.basename(f) === 'route.ts' && hasDefaultExport(f))
+      .map((f) => this.routeOfFile(f));
+
     logInfo('Collecting entry points...');
-    this.entryPointRoutes = this.collectEntryPointRoutes();
+    this.entryPointRoutes = sourceFiles
+      .filter((f) => path.basename(f) === 'page.tsx' && hasDefaultExport(f))
+      .map((f) => this.routeOfFile(f));
+
     logInfo('Collecting resources...');
-    this.resourceSourceFiles = this.collectResourceFiles(projectDir);
+    this.resourceFiles = sourceFiles.filter((f) => this.isResourceFile(f));
     logInfo('Metadata complete');
   }
 
-  private collectServerRoutes(): ServerRoute[] {
-    const serverRoutes: ServerRoute[] = [];
+  private routeOfFile(fileName: string): PastoriaRoute {
+    // The route name is the path of the containing directory relative to
+    // pastoria/, with pastoria/page.tsx mapping to `/`.
+    const routeName =
+      '/' +
+      path
+        .relative(this.pastoriaDir, path.dirname(fileName))
+        .split(path.sep)
+        .join('/');
 
-    const visitSourceFile = (sourceFile: SourceFile) => {
-      if (sourceFile.getBaseName() !== 'route.ts') return;
-
-      const defaultExport = sourceFile.getDefaultExportSymbol();
-      if (defaultExport == null) return;
-
-      const routeName = this.pastoriaDirectory?.getRelativePathTo(
-        sourceFile.getDirectory(),
-      );
-
-      if (!routeName) return;
-
-      serverRoutes.push({
-        routeName: '/' + routeName,
-        routePath: '/' + routeName.replace(/\[(\w+)\]/g, ':$1'),
-        sourceFile,
-        symbol: defaultExport,
-      });
+    return {
+      fileName,
+      routeName,
+      routePath: routeName.replace(/\[(\w+)\]/g, ':$1'),
     };
-
-    this.projectSourceFiles.forEach(visitSourceFile);
-    return serverRoutes;
   }
 
-  private collectEntryPointRoutes(): ServerRoute[] {
-    const routes: ServerRoute[] = [];
+  private isResourceFile(fileName: string) {
+    const projectFilePath = path
+      .relative(this.projectDir, fileName)
+      .split(path.sep)
+      .join('/');
 
-    const visitSourceFile = (sourceFile: SourceFile) => {
-      if (sourceFile.getBaseName() !== 'page.tsx') return;
+    // Exclude files reserved for configuring the framework.
+    if (PastoriaMetadata.RESERVED_FILES.has(projectFilePath)) {
+      return false;
+    }
 
-      const defaultExport = sourceFile.getDefaultExportSymbol();
-      if (defaultExport == null) return;
+    // Don't generate for typing files.
+    if (projectFilePath.endsWith('.d.ts')) {
+      return false;
+    }
 
-      // The route name is the relative path to the directory containing page.tsx
-      let routeName = this.pastoriaDirectory?.getRelativePathTo(
-        sourceFile.getDirectory(),
-      );
+    // Exclude route.ts files used to generate server route handlers.
+    if (
+      projectFilePath.endsWith('route.ts') ||
+      projectFilePath.endsWith('route.tsx')
+    ) {
+      return false;
+    }
 
-      // Handle the special case of `#pastoria/page.tsx`
-      if (routeName === '../pastoria') {
-        routeName = '';
-      } else if (!routeName) {
-        return;
-      }
-
-      routes.push({
-        routeName: '/' + routeName,
-        routePath: '/' + routeName.replace(/\[(\w+)\]/g, ':$1'),
-        sourceFile,
-        symbol: defaultExport,
-      });
-    };
-
-    this.projectSourceFiles.forEach(visitSourceFile);
-    return routes;
-  }
-
-  private collectResourceFiles(projectDir: string) {
-    return this.projectSourceFiles.filter((sf) => {
-      const projectFilePath = path.relative(projectDir, sf.getFilePath());
-
-      // Exclude files reserved for configuring the framework.
-      if (PastoriaMetadata.RESERVED_FILES.has(projectFilePath)) {
-        return false;
-      }
-
-      // Don't generate for typing files.
-      if (projectFilePath.endsWith('.d.ts')) {
-        return false;
-      }
-
-      // Exclude route.ts files used to generate server route handlers.
-      if (
-        projectFilePath.endsWith('route.ts') ||
-        projectFilePath.endsWith('route.tsx')
-      ) {
-        return false;
-      }
-
-      return true;
-    });
+    return true;
   }
 }

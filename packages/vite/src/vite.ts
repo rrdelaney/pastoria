@@ -5,11 +5,17 @@ import cookieParser from 'cookie-parser';
 import express from 'express';
 import {readFile} from 'node:fs/promises';
 import path from 'node:path';
-import {IndentationText, Project} from 'ts-morph';
-import {type Manifest, type Plugin, type ViteDevServer} from 'vite';
+import pc from 'picocolors';
+import {
+  createLogger,
+  type Manifest,
+  type Plugin,
+  type ViteDevServer,
+} from 'vite';
 import {cjsInterop} from 'vite-plugin-cjs-interop';
+import {PastoriaAnalyzer} from './analyzer.js';
 import {PastoriaExecutionContext} from './generate.js';
-import {logger, logInfo} from './logger.js';
+import {logInfo} from './logger.js';
 import {createHandler} from '@pastoria/server';
 import dotenv from 'dotenv';
 
@@ -17,6 +23,10 @@ const stylex =
   stylexPluginImport as unknown as (typeof stylexPluginImport)['default'];
 
 type ViteMode = 'development' | 'production';
+
+const logger = createLogger('info', {
+  prefix: pc.greenBright('[pastoria]'),
+});
 
 export function pastoria(): Plugin[] {
   return [
@@ -36,12 +46,24 @@ export function pastoria(): Plugin[] {
 function pastoriaEntryPlugin(): Plugin {
   const clientEntryModuleId = 'virtual:pastoria-entry-client.tsx';
   const serverEntryModuleId = 'virtual:pastoria-entry-server.tsx';
-  const project = new Project({
-    tsConfigFilePath: path.join(process.cwd(), 'tsconfig.json'),
-    manipulationSettings: {
-      indentationText: IndentationText.TwoSpaces,
-    },
-  });
+  // Created lazily so builds that never generate don't start a tsgo process.
+  let analyzer: PastoriaAnalyzer | undefined;
+  function getAnalyzer() {
+    analyzer ??= new PastoriaAnalyzer({projectDir: process.cwd()});
+    return analyzer;
+  }
+
+  function closeAnalyzer() {
+    analyzer?.close();
+    analyzer = undefined;
+  }
+
+  async function generate() {
+    logInfo('Updating generated files');
+    await new PastoriaExecutionContext(
+      getAnalyzer(),
+    ).generatePastoriaArtifacts();
+  }
 
   let mode: ViteMode = 'development';
   let shouldGenerateOnBuildStart = false;
@@ -126,22 +148,31 @@ function pastoriaEntryPlugin(): Plugin {
         return;
       }
 
-      logInfo('Updating generated files');
-      await new PastoriaExecutionContext(project).generatePastoriaArtifacts();
+      await generate();
     },
     async watchChange(id, {event}) {
-      if (!id.match(/.tsx$/) || id.includes('__generated__')) return;
+      if (!/\.tsx?$/.test(id) || id.includes('__generated__/router')) return;
 
-      if (event === 'create') {
-        project.addSourceFileAtPath(id);
-      } else if (event === 'delete') {
-        project.getSourceFile(id)?.forget();
-      } else if (event === 'update') {
-        await project.getSourceFile(id)?.refreshFromFileSystem();
+      getAnalyzer().notifyChanges({
+        changed: event === 'update' ? [id] : [],
+        created: event === 'create' ? [id] : [],
+        deleted: event === 'delete' ? [id] : [],
+      });
+
+      // Changes to Relay artifacts can change query variables, but only
+      // sources under pastoria/ can change the set of routes and entrypoints.
+      const pastoriaDir = path.join(process.cwd(), 'pastoria') + path.sep;
+      const queriesDir =
+        path.join(process.cwd(), '__generated__/queries') + path.sep;
+      if (id.startsWith(pastoriaDir) || id.startsWith(queriesDir)) {
+        await generate();
       }
-
-      logInfo('Updating generated files');
-      await new PastoriaExecutionContext(project).generatePastoriaArtifacts();
+    },
+    buildEnd() {
+      if (!this.meta.watchMode) closeAnalyzer();
+    },
+    closeWatcher() {
+      closeAnalyzer();
     },
   };
 }

@@ -417,11 +417,24 @@ export const getPreloadProps: GetPreloadProps<'/commander/[commander]'> = ({
 
 ## Architecture
 
-### Code Generation System (`packages/pastoria/src/generate.ts`)
+### Code Generation System (`packages/vite/src/generate.ts`)
 
-`pastoria generate` uses **ts-morph** to statically analyze TypeScript source
-files in the user's `pastoria/` directory and generates artifacts in
-`__generated__/router/`:
+`pastoria generate` statically analyzes TypeScript source files in the user's
+`pastoria/` directory and generates artifacts in `__generated__/router/`:
+
+0. **`PastoriaAnalyzer`** (`analyzer.ts`) is the only module that talks to
+   TypeScript. It uses the **TypeScript 7 (tsgo) API** (`typescript/sync`,
+   `typescript/ast`), which runs the native compiler in a child process and is
+   queried over IPC. It returns plain data (export names, `schema` /
+   `getPreloadProps` initializer text, `Queries` / `EntryPoints` maps, and Zod
+   renderers for Relay `$variables`). In watch mode the same process is kept
+   alive and refreshed incrementally via `notifyChanges()`.
+   - `EntryPoints` is read from **syntax** (`EntryPoint<ModuleType<'…'>>`),
+     never resolved types, because `ModuleType` lives in generated code.
+     Analysis must not depend on Pastoria's own output.
+   - The `typescript` dependency is TS 7, which has no JS compiler API, so
+     `vp pack` emits declarations with `dts: {oxc: true}` (isolated
+     declarations). Exported functions need explicit return types.
 
 1. **`PastoriaMetadata`** (`metadata.ts`) scans `pastoria/**` and classifies:
    - `page.tsx` with a default export → route entrypoints
@@ -429,7 +442,8 @@ files in the user's `pastoria/` directory and generates artifacts in
    - `route.ts` files → server API routes
    - Reserved files (`app.tsx`, `environment.ts`) excluded
 
-2. **`PastoriaExecutionContext`** (`generate.ts`) generates:
+2. **`PastoriaExecutionContext`** (`generate.ts`) builds source text as plain
+   strings (templates are spliced, not parsed) and generates:
    - **`router.tsx`** — route config, navigation hooks, `Link`/`RouteLink`
      components
    - **`js_resource.ts`** — module registry mapping IDs to dynamic `import()`
@@ -445,10 +459,11 @@ files in the user's `pastoria/` directory and generates artifacts in
    - `schema` export or auto-generates Zod schema from query variables
    - `getPreloadProps` export or auto-generates one wiring all query variables
 
-4. **Checksum system** (`fs.ts`): Generated files are Prettier-formatted and
-   stamped with SHA-256 checksums. Re-runs skip files with unchanged checksums.
+4. **Checksum system** (`fs.ts`): Generated files are stamped with a SHA-256
+   checksum of their unformatted content, then Prettier-formatted. Re-runs skip
+   unchanged files without running Prettier.
 
-Templates for generation are in `packages/pastoria/templates/`.
+Templates for generation are in `packages/vite/templates/`.
 
 ### Build System
 

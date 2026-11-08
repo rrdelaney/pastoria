@@ -24,8 +24,8 @@
   ],
   "dependencies": {
     "@babel/core": "^7.29.0",
-    "@pastoria/server": "workspace:*",
     "@parcel/watcher": "^2.5.1",
+    "@pastoria/server": "workspace:*",
     "@rolldown/plugin-babel": "^0.2.1",
     "@stylexjs/unplugin": "^0.18.1",
     "@vitejs/plugin-react": "^6.0.1",
@@ -35,7 +35,7 @@
     "dotenv": "catalog:",
     "picocolors": "catalog:",
     "prettier": "^3.6.2",
-    "ts-morph": "^26.0.0",
+    "typescript": "7.1.0-beta",
     "vite-plugin-cjs-interop": "^2.4.4"
   },
   "devDependencies": {
@@ -50,7 +50,6 @@
     "@pastoria/runtime": "workspace:*",
     "radix3": "^1.1.2",
     "relay-compiler": "catalog:",
-    "typescript": "catalog:",
     "vitest": "catalog:",
     "zod": "catalog:",
     "vite-plus": "catalog:"

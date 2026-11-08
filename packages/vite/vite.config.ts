@@ -11,7 +11,7 @@ export default defineConfig({
   pack: {
     entry: ['src/cli.ts', 'src/vite.ts'],
     format: ['esm'],
-    dts: true,
+    dts: {oxc: true},
     deps: {
       skipNodeModulesBundle: true,
     },
