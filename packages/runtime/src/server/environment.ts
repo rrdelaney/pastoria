@@ -37,6 +37,16 @@ export interface PastoriaConfig {
    * @default true
    */
   persistedQueriesOnlyInProduction?: boolean;
+
+  /**
+   * Exempts individual requests from `persistedQueriesOnlyInProduction`.
+   * Called in production for each plain text query; returning true lets it
+   * execute. Use this to admit trusted clients, for example by API key.
+   *
+   * @param req - The Express request object
+   * @returns Whether the plain text query may run
+   */
+  allowPlainTextQuery?: (req: Request) => boolean | Promise<boolean>;
 }
 
 export class PastoriaEnvironment {
@@ -44,6 +54,7 @@ export class PastoriaEnvironment {
   createContext;
   enableGraphiQLInProduction;
   persistedQueriesOnlyInProduction;
+  allowPlainTextQuery;
 
   constructor(config: PastoriaConfig) {
     this.schema = config.schema;
@@ -52,5 +63,6 @@ export class PastoriaEnvironment {
       config.enableGraphiQLInProduction ?? false;
     this.persistedQueriesOnlyInProduction =
       config.persistedQueriesOnlyInProduction ?? true;
+    this.allowPlainTextQuery = config.allowPlainTextQuery ?? (() => false);
   }
 }
