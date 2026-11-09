@@ -353,6 +353,16 @@ function bootstrapScripts(
   } else if (entryPoint != null) {
     crawlEntryPoint(entryPoint);
     crawlImports('virtual:pastoria-entry-client.tsx');
+
+    // The client entry is what hydrates the page, so it has to run, not just
+    // be preloaded — a modulepreload only fetches. Page chunks used to reach it
+    // by accident, when the bundler happened to put code they share into the
+    // entry's chunk, but nothing guarantees that split; when it moves, the
+    // page renders and never becomes interactive.
+    const clientEntry = manifest?.['virtual:pastoria-entry-client.tsx'];
+    if (clientEntry) {
+      bootstrap.bootstrapModules.push('/' + clientEntry.file);
+    }
   }
 
   return bootstrap;
